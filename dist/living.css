@@ -1,0 +1,321 @@
+.scene{overflow:hidden;isolation:isolate}
+@font-face{font-family:Creepster;src:url('fonts/creepster.ttf') format('truetype');font-display:swap}
+@font-face{font-family:Barlow;src:url('fonts/barlow-bold.ttf') format('truetype');font-weight:700;font-display:swap}
+.scene{container-type:inline-size}
+.shade{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,rgba(5,3,2,.28),transparent 60%),linear-gradient(180deg,#0603027a,transparent 15%)}
+.headline{position:absolute;left:8.3%;top:16.7%;width:48%;margin:0;z-index:3;line-height:1.12;font-family:Creepster,Impact,sans-serif;font-weight:400;letter-spacing:-.035em;pointer-events:none;animation:title-float 6s ease-in-out infinite;filter:drop-shadow(0 6px 5px #000b)}
+.headline>span{display:block;white-space:nowrap;transform-origin:left center}
+.title-white{font-size:7.15cqw;color:#fff6e5;text-shadow:0 3px 2px #000,0 0 18px #fff0;animation:white-shimmer 5.5s ease-in-out infinite}
+.title-orange{font-size:6.25cqw;color:#ff6815;text-shadow:0 4px 3px #000,0 0 22px #ff5e0030;animation:orange-shimmer 5.5s ease-in-out infinite .35s}
+.intro{position:absolute;left:10.5%;top:49.4%;z-index:3;font-family:Barlow,Arial,sans-serif;font-size:1.85cqw;line-height:1.2;text-shadow:0 2px 5px #000;margin:0}
+.intro p{margin:0;line-height:1.2}.intro p:first-child{font-size:2.35cqw;margin-bottom:.35cqw}.intro strong{color:#ff971e}
+.logo{display:flex;align-items:center;gap:.8cqw;font-family:Creepster,Impact,sans-serif;font-size:3.6cqw;color:#ff791c;line-height:1;text-shadow:0 2px 4px #000}.brand-ghost{font-family:Arial;font-size:3cqw;color:#ffedca}
+.about,.token,.community,.roadmap{display:flex;align-items:center;justify-content:center;color:#f4e8d2;font:700 1.45cqw Barlow,Arial,sans-serif;background:transparent;padding:0;text-shadow:0 2px 4px #000}
+.buytop,.buy,.telegram,.chart,.contract{font-family:Barlow,Arial,sans-serif}
+@keyframes title-float{0%,100%{transform:translateY(0) rotate(-.25deg)}50%{transform:translateY(-.55cqw) rotate(.2deg)}}
+@keyframes white-shimmer{0%,100%{opacity:1;filter:brightness(1);text-shadow:0 4px 4px #000,0 0 8px #fff2}50%{opacity:.87;filter:brightness(1.12);text-shadow:0 7px 8px #000,0 0 22px #fff5}}
+@keyframes orange-shimmer{0%,100%{opacity:1;filter:brightness(1);text-shadow:0 4px 4px #000,0 0 13px #ff5e003d}50%{opacity:.89;filter:brightness(1.2);text-shadow:0 7px 8px #000,0 0 28px #ff730088}}
+.scene.motion-paused .headline,.scene.motion-paused .headline>span{animation-play-state:paused}
+.scene-art>img{position:relative;z-index:0}
+.atmosphere{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.hotspot{z-index:3}
+.buytop,.buy,.telegram,.chart,.contract{gap:.65cqw;padding:0 .75cqw;border-width:max(1px,.14cqw);overflow:hidden;line-height:1;letter-spacing:-.025em;font-size:1.12cqw}
+.buytop,.buy{font-size:1.18cqw}
+.hotspot span{min-width:0;flex-shrink:1;white-space:nowrap}
+.hotspot svg{width:1.55cqw;height:1.55cqw}
+.buy .arrow{width:1.3cqw}
+.telegram{font-size:1.04cqw;gap:.5cqw;padding:0 .55cqw}
+.telegram svg{width:1.45cqw;height:1.45cqw}
+.chart{font-size:1.12cqw}
+.contract{font-size:1.2cqw;padding:0 1.3cqw}
+.motion-toggle{position:absolute;right:1.4%;bottom:2%;z-index:4;border:1px solid #c0783b80;background:#120a06d9;color:#ffe5c4;border-radius:20px;padding:.55cqw .9cqw;font:600 max(9px,.8cqw) Arial;cursor:pointer}
+.motion-toggle:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.hotspot{transition:none}.headline,.headline>span{animation:none}}
+
+/* A moving dark band is clipped to the letters themselves. */
+.title-white,.title-orange{animation:none;background-size:320% 100%;background-position:0% 50%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;color:transparent;filter:none;opacity:1}
+.title-white{background-image:linear-gradient(108deg,#fff6e5 0%,#fff6e5 37%,#a49b8b 45%,#51463b 50%,#a49b8b 55%,#fff6e5 63%,#fff6e5 100%);text-shadow:0 4px 8px #0006}
+.title-orange{background-image:linear-gradient(108deg,#ff791f 0%,#ff791f 37%,#aa4112 45%,#492014 50%,#aa4112 55%,#ff791f 63%,#ff791f 100%);text-shadow:0 4px 8px #0006}
+
+/* One soft, restrained shadow traverses the whole headline. */
+.headline{animation:title-float 9s ease-in-out infinite;filter:drop-shadow(0 5px 7px #000a)}
+.title-white,.title-orange{background-size:280% 100%;text-shadow:none;filter:none}
+.title-white{background-image:linear-gradient(112deg,#fff6e5 0%,#fff6e5 30%,#eee4d1 40%,#c9beaa 49%,#d8cdb8 56%,#f3e9d6 66%,#fff6e5 76%,#fff6e5 100%)}
+.title-orange{background-image:linear-gradient(112deg,#ff791f 0%,#ff791f 30%,#ed6c1b 40%,#c35318 49%,#d66019 56%,#f4731c 66%,#ff791f 76%,#ff791f 100%)}
+
+/* Keep the text crisp; the shadow is its own clipped layer. */
+.headline>span{position:relative;background:none;background-clip:border-box;-webkit-text-fill-color:currentColor;text-shadow:0 4px 7px #0008}
+.title-white{color:#fff6e5}.title-orange{color:#ff791f}
+.headline>span::after{content:attr(data-text);position:absolute;inset:0;color:transparent;-webkit-text-fill-color:transparent;background:linear-gradient(110deg,transparent 0%,transparent 37%,#25171455 44%,#180e0baf 50%,#25171455 56%,transparent 63%,transparent 100%);background-size:280% 100%;background-position:var(--shadow-position,0%) 50%;background-clip:text;-webkit-background-clip:text;text-shadow:none}
+.ground-fog{position:absolute;left:0;bottom:0;width:67%;height:23%;z-index:2;overflow:hidden;pointer-events:none;mask-image:linear-gradient(to top,#000 0%,#000 30%,transparent 100%);-webkit-mask-image:linear-gradient(to top,#000 0%,#000 30%,transparent 100%)}
+.fog-stream{position:absolute;left:-45%;bottom:-15%;width:190%;height:120%;opacity:.5;mix-blend-mode:screen;animation:ground-drift 14s linear infinite;mask-image:radial-gradient(ellipse at center,#000 12%,transparent 73%);-webkit-mask-image:radial-gradient(ellipse at center,#000 12%,transparent 73%)}
+.fog-two{bottom:5%;opacity:.32;height:85%;animation:ground-drift 21s linear infinite reverse;animation-delay:-9s}
+@keyframes ground-drift{0%{transform:translateX(-10%) translateY(3%) scaleY(.92);opacity:.2}25%{opacity:.55}70%{opacity:.48}100%{transform:translateX(20%) translateY(-9%) scaleY(1.14);opacity:.2}}
+.scene.motion-paused .fog-stream{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.fog-stream{animation:none}}
+
+/* Letters fade in sequence, without a moving shadow band. */
+.headline>span::after{content:none;display:none}
+.title-letter{display:inline-block;animation:letter-fade 8s ease-in-out infinite;animation-delay:var(--letter-delay);will-change:opacity,transform;transform-origin:center 75%;white-space:pre}
+@keyframes letter-fade{0%,5%{opacity:1;transform:scale(1)}14%{opacity:.65;transform:scale(.95)}23%{opacity:1;transform:scale(1.015)}28%,100%{opacity:1;transform:scale(1)}}
+.scene.motion-paused .title-letter{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.title-letter{animation:none}}
+
+.pixel-shiba{position:absolute;bottom:.5%;left:106%;width:clamp(54px,10cqw,140px);height:auto;z-index:4;pointer-events:none;transform:translateX(-50%);image-rendering:pixelated;filter:drop-shadow(0 5px 3px #0009)}
+.pixel-shiba[hidden]{display:none}
+
+.shiba-speech{position:absolute;left:50%;bottom:calc(.5% + clamp(54px,10cqw,140px));transform:translateX(-50%);z-index:5;width:max-content;max-width:80%;padding:12px 17px;background:#fff4dc;color:#382017;border:2px solid #ff9d31;border-radius:15px;box-shadow:0 4px 14px #0007;font:700 clamp(14px,1.3cqw,19px)/1.25 Barlow,Arial,sans-serif;pointer-events:none;text-align:center}.shiba-speech::after{content:"";position:absolute;bottom:-9px;left:calc(50% - 7px);width:13px;height:13px;background:#fff4dc;border-right:2px solid #ff9d31;border-bottom:2px solid #ff9d31;transform:rotate(45deg)}.shiba-speech[hidden]{display:none}
+
+/* Sit beside the mascot, below the CA and all action buttons. */
+.shiba-speech{left:57%;bottom:2.8%;width:27%;max-width:none;transform:none;padding:10px 13px;font-size:clamp(11px,1.35cqw,18px);line-height:1.3}.shiba-speech::after{left:-8px;top:calc(65% - 7px);bottom:auto;transform:rotate(135deg)}
+
+/* Crisp stepped pixel controls, with independent little idle bounces. */
+.hotspot:not(.logo){border-radius:0!important;clip-path:polygon(0 6px,6px 6px,6px 0,calc(100% - 6px) 0,calc(100% - 6px) 6px,100% 6px,100% calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,6px calc(100% - 6px),0 calc(100% - 6px));border:2px solid #ffb34d;box-shadow:inset 3px 3px 0 #ffdd9a55,inset -3px -3px 0 #0007;background:#160c06;animation:pixel-idle 5.8s steps(4,end) infinite;transition:filter .1s,transform .1s steps(2,end);transform-origin:center}
+.hotspot.buy,.hotspot.buytop{background:#ff9e20;color:#170b03;border-color:#ffdd87;box-shadow:inset 3px 3px 0 #ffd879,inset -3px -3px 0 #ce560b}
+.hotspot.about,.hotspot.token,.hotspot.community,.hotspot.roadmap{font-size:1.25cqw;border-width:1px;background:#150b06e6}
+.hotspot:nth-of-type(2n){animation-delay:-1.8s}.hotspot:nth-of-type(3n){animation-delay:-3.3s}.hotspot:nth-of-type(4n){animation-delay:-4.7s}
+@keyframes pixel-idle{0%,60%,100%{transform:translateY(0) scale(1)}68%{transform:translateY(-1px) scale(1.012)}78%{transform:translateY(1px) scale(.995)}88%{transform:translateY(-1px) scale(1.006)}}
+.hotspot:not(.logo):hover{animation:pixel-hover .7s steps(3,end) infinite;filter:brightness(1.1);outline:none;box-shadow:inset 3px 3px 0 #fff5,inset -3px -3px 0 #0007}
+@keyframes pixel-hover{0%,100%{transform:translateY(-1px) scale(1.015)}50%{transform:translateY(-2px) scale(1.03)}}
+.hotspot:not(.logo):active{animation:none;transform:translateY(2px) scale(.98)}
+.scene.motion-paused .hotspot{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.hotspot:not(.logo),.hotspot:not(.logo):hover{animation:none}}
+
+.hotspot:not(.logo){font-family:ui-monospace,"Courier New",monospace;font-weight:700;font-size:1.05cqw;letter-spacing:-.04em}.hotspot.about,.hotspot.token,.hotspot.community,.hotspot.roadmap{font-size:.95cqw}.hotspot:not(.logo):focus-visible{border-color:#fff;box-shadow:inset 0 0 0 2px #fff;outline:none}
+
+@font-face{font-family:Arcade;src:url('fonts/pixel.ttf') format('truetype');font-display:swap}
+/* Layered arcade keycaps: black rim, raised orange face and shaded base. */
+.hotspot:not(.logo){--face:#f98b18;--shine:#ffd259;--mid:#c75b0d;--base:#71300b;color:#211307;font-family:Arcade,monospace;font-weight:400;font-size:.78cqw;letter-spacing:-.04em;line-height:1.3;border:0;background:linear-gradient(to bottom,#181719 0 7%,var(--shine) 7% 15%,var(--face) 15% 66%,var(--mid) 66% 78%,var(--base) 78% 92%,#17171a 92% 100%);box-shadow:inset 4px 0 0 #181719,inset -4px 0 0 #181719,inset 7px 0 0 #ffbd4260,inset -7px 0 0 #44210c70;padding-bottom:.55cqw;text-shadow:1px 1px 0 #ffd97e66;clip-path:polygon(0 10px,5px 10px,5px 5px,10px 5px,10px 0,calc(100% - 10px) 0,calc(100% - 10px) 5px,calc(100% - 5px) 5px,calc(100% - 5px) 10px,100% 10px,100% calc(100% - 10px),calc(100% - 5px) calc(100% - 10px),calc(100% - 5px) calc(100% - 5px),calc(100% - 10px) calc(100% - 5px),calc(100% - 10px) 100%,10px 100%,10px calc(100% - 5px),5px calc(100% - 5px),5px calc(100% - 10px),0 calc(100% - 10px))}
+.hotspot.buy,.hotspot.buytop{--face:#ffab20;--shine:#ffe46b;--mid:#e16b10;--base:#953d0c;background:linear-gradient(to bottom,#171719 0 7%,var(--shine) 7% 15%,var(--face) 15% 66%,var(--mid) 66% 78%,var(--base) 78% 92%,#17171a 92% 100%);box-shadow:inset 4px 0 0 #181719,inset -4px 0 0 #181719,inset 7px 0 0 #ffdf6266,inset -7px 0 0 #85360070}
+.hotspot.about,.hotspot.token,.hotspot.community,.hotspot.roadmap{--face:#c56b27;--shine:#ffc05f;--mid:#8c4118;--base:#4b2412;font-size:.55cqw;color:#ffefd5;background:linear-gradient(to bottom,#181719 0 7%,var(--shine) 7% 15%,var(--face) 15% 66%,var(--mid) 66% 78%,var(--base) 78% 92%,#17171a 92% 100%);border:0;text-shadow:1px 1px #50240d;padding-bottom:.35cqw}
+.hotspot.telegram,.hotspot.chart{font-size:.76cqw}.hotspot.contract{font-size:.78cqw}.hotspot.chart svg{color:#211307}.hotspot:not(.logo):hover{box-shadow:inset 4px 0 0 #181719,inset -4px 0 0 #181719,inset 7px 0 0 #fff7,inset -7px 0 0 #44210c70;filter:brightness(1.12)}.hotspot:not(.logo):active{transform:translateY(3px) scale(.99);padding-bottom:0;background:linear-gradient(to bottom,#171719 0 8%,var(--mid) 8% 17%,var(--face) 17% 85%,var(--base) 85% 93%,#171719 93% 100%)}
+
+.pixel-bat{position:absolute;height:auto;z-index:4;pointer-events:none;image-rendering:pixelated;filter:drop-shadow(0 2px 1px #0008)}.pixel-bat[hidden]{display:none}
+
+.community-choices{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0}.community-choices[hidden]{display:none}.community-choices a{flex:1;min-width:150px;text-align:center;text-decoration:none;background:#fd9e28;color:#1d1108;font:400 11px/1.5 Arcade,monospace;padding:18px 12px;border:3px solid #201c19;box-shadow:inset 0 3px #ffe18b,inset 0 -5px #ab500e}.community-choices a:hover{filter:brightness(1.15)}.community-choices a:focus-visible{outline:3px solid #fff;outline-offset:3px}dialog{background:#0c1820;border-radius:3px;border:3px solid #a36136;box-shadow:5px 5px 0 #0008}html,body{background:#040d13}.scene-art>img{image-rendering:pixelated}
+
+.ground-fog{filter:hue-rotate(120deg) saturate(.45)}
+
+/* Solid arcade faces on stepped steel bases, with unscaled live text. */
+.hotspot:not(.logo){--face:#e69018;--shine:#ffe175;--edge:#98530b;--ink:#17140e;display:flex;align-items:center;justify-content:center;border:3px solid #11181c;background:linear-gradient(to bottom,var(--shine) 0 3px,var(--face) 3px calc(100% - 10px),var(--edge) calc(100% - 10px) calc(100% - 6px),#737b7d calc(100% - 6px) calc(100% - 3px),#30393d calc(100% - 3px));box-shadow:inset 3px 0 #ffffff45,inset -3px 0 #0005,inset 0 -7px #242b30;clip-path:polygon(0 8px,4px 8px,4px 4px,8px 4px,8px 0,calc(100% - 8px) 0,calc(100% - 8px) 4px,calc(100% - 4px) 4px,calc(100% - 4px) 8px,100% 8px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px));padding:0 10px 7px;gap:8px;color:var(--ink);font-family:Arcade,monospace;font-size:12px;font-weight:400;letter-spacing:0;line-height:1;text-shadow:none;filter:none;animation:button-bob 7s steps(1,end) infinite;transform:none;transition:none;will-change:auto}
+.hotspot.about,.hotspot.token,.hotspot.community,.hotspot.roadmap{--face:#139a9e;--shine:#67e3d4;--edge:#08646f;--ink:#041b22;font-size:10px;padding:0 5px 7px}
+.hotspot.buy,.hotspot.buytop{--face:#ffb625;--shine:#fff082;--edge:#b96a12}
+.hotspot.telegram{--face:#21adc3;--shine:#92eff3;--edge:#126b86;--ink:#031c27}
+.hotspot.chart{--face:#aabd36;--shine:#edf38c;--edge:#677a20;--ink:#1a2308}
+.hotspot.contract{--face:#374c58;--shine:#79939d;--edge:#1a2c36;--ink:#fff6df;justify-content:flex-start}
+.hotspot.about{left:36%;width:6%}.hotspot.token{left:42.5%;width:9%}.hotspot.community{left:52%;width:9%}.hotspot.roadmap{left:61.5%;width:8%}
+.hotspot svg,.hotspot.buytop svg,.hotspot.telegram svg,.hotspot.buy .arrow{width:18px;height:18px;color:inherit}
+.hotspot:not(.logo):hover{animation:none;transform:translateY(-2px);filter:none;box-shadow:inset 3px 0 #ffffff75,inset -3px 0 #0005,inset 0 -7px #242b30}
+.hotspot:not(.logo):active{animation:none;transform:translateY(2px);padding-bottom:3px;background:linear-gradient(to bottom,var(--edge) 0 3px,var(--face) 3px calc(100% - 6px),#30393d calc(100% - 6px));box-shadow:inset 2px 2px #0004}
+.hotspot:not(.logo):focus-visible{outline:3px solid #fff;outline-offset:-5px}
+@keyframes button-bob{0%,72%,100%{transform:translateY(0)}78%,88%{transform:translateY(-1px)}}
+@media(prefers-reduced-motion:reduce){.hotspot:not(.logo){animation:none}}
+@media(max-width:600px){.hotspot:not(.logo){gap:3px;padding-left:4px;padding-right:4px;border-width:2px}.hotspot svg,.hotspot.buytop svg,.hotspot.telegram svg,.hotspot.buy .arrow{width:10px;height:10px}}
+
+/* Warm arcade palette; purple is reserved for the community links. */
+.hotspot.about{--face:#ffd02e;--shine:#fff49c;--edge:#ad7411;--ink:#231709}
+.hotspot.token{--face:#f59a29;--shine:#ffe27e;--edge:#a45714;--ink:#271507}
+.hotspot.roadmap{--face:#e94830;--shine:#ffac70;--edge:#92271d;--ink:#2c0805}
+.hotspot.community,.hotspot.telegram{--face:#aa58d9;--shine:#e8b8ff;--edge:#62318c;--ink:#220a35}
+.hotspot.chart{--face:#ef6430;--shine:#ffc174;--edge:#9c361b;--ink:#291108}
+.hotspot.contract{--face:#813225;--shine:#e68f50;--edge:#4a1c15;--ink:#fff2cb}
+.hotspot:not(.logo){border-color:#241916;box-shadow:inset 3px 0 #ffffff45,inset -3px 0 #0005,inset 0 -7px #312525;background:linear-gradient(to bottom,var(--shine) 0 3px,var(--face) 3px calc(100% - 10px),var(--edge) calc(100% - 10px) calc(100% - 6px),#766153 calc(100% - 6px) calc(100% - 3px),#362923 calc(100% - 3px));}
+.hotspot span{flex-shrink:0}.hotspot.buy .arrow{display:none}
+.hotspot:not(.logo):hover{box-shadow:inset 3px 0 #ffffff75,inset -3px 0 #0005,inset 0 -7px #312525}
+.hotspot:not(.logo):active{background:linear-gradient(to bottom,var(--edge) 0 3px,var(--face) 3px calc(100% - 6px),#362923 calc(100% - 6px))}
+
+/* An opaque bronze arcade rail seats the brand and navigation in the scene. */
+.arcade-header{position:absolute;inset:0 0 auto;height:12%;z-index:6;display:flex;align-items:center;gap:1%;padding:0 4%;background:linear-gradient(180deg,#a66835 0 3px,#59321f 3px 7px,#35251e 7px 13px,#291f1b 13px calc(100% - 10px),#432c21 calc(100% - 10px) calc(100% - 6px),#9c5b2c calc(100% - 6px) calc(100% - 3px),#1c1716 calc(100% - 3px));border-bottom:3px solid #130f10;box-shadow:inset 0 12px 0 #0002,0 5px 0 #100e0eb0,0 12px 18px #0005}
+.arcade-header::before,.arcade-header::after{content:"";position:absolute;top:calc(50% - 3px);width:6px;height:6px;background:#c48c54;border:1px solid #281810;box-shadow:1px 1px 0 #0d0b0a;pointer-events:none}.arcade-header::before{left:1.5%}.arcade-header::after{right:1.5%}
+.arcade-header .hotspot{position:relative;left:auto;top:auto;height:58%;flex-shrink:0;animation:none}
+.arcade-header .logo{width:27%;height:auto;font-size:3.1cqw;gap:.5cqw;white-space:nowrap;color:#ffb443;text-shadow:0 2px 0 #130d09}
+.arcade-header .brand-ghost{font-size:2.4cqw;color:#ffefd5}
+.arcade-header .about{width:8%}.arcade-header .token{width:12%}.arcade-header .community{width:12%}.arcade-header .roadmap{width:10%}.arcade-header .buytop{width:23%;margin-left:auto}
+.headline{left:8.3%;top:21%;width:55%;line-height:1.08;letter-spacing:-.015em;animation:none;filter:drop-shadow(0 3px 2px #031019b3)}
+.title-white{font-size:6.15cqw;color:#f0e4cf}.title-orange{font-size:5.15cqw;color:#f6a143}
+.headline>span{text-shadow:0 2px 0 #182028,0 0 14px #ffb45b14}
+@media(max-width:600px){.arcade-header{padding:0 2%;gap:.8%}.arcade-header .logo{width:26%;font-size:3cqw}.arcade-header .brand-ghost{display:none}.arcade-header .buytop{width:24%}.arcade-header::before,.arcade-header::after{display:none}}
+
+/* The introduction sits in a shallow warm inset, aligned with the title. */
+.intro{left:8.3%;top:47.5%;width:44%;padding:1.1cqw 1.5cqw 1.2cqw;margin:0;background:linear-gradient(180deg,#343028 0 2px,#1a231fed 2px calc(100% - 3px),#4d3628 calc(100% - 3px));border-left:3px solid #aa7138;border-right:2px solid #664627;box-shadow:inset 0 0 0 1px #b4833f25,0 4px 0 #081413a6;color:#e2decb;font-size:1.65cqw;line-height:1.35;text-shadow:0 1px 0 #0b1515;clip-path:polygon(0 5px,5px 5px,5px 0,calc(100% - 5px) 0,calc(100% - 5px) 5px,100% 5px,100% calc(100% - 5px),calc(100% - 5px) calc(100% - 5px),calc(100% - 5px) 100%,5px 100%,5px calc(100% - 5px),0 calc(100% - 5px))}
+.intro p{line-height:1.35}.intro p:first-child{font-size:2.05cqw;margin-bottom:.35cqw;letter-spacing:.015em}.intro strong{color:#ffc066}
+
+.intro{left:8.3%;top:48%;width:auto;max-width:47%;padding:0;background:none;border:0;box-shadow:none;clip-path:none;color:#d9ddcd;font-family:"Courier New",monospace;font-weight:700;font-size:1.48cqw;line-height:1.4;text-shadow:0 1px 0 #071516}
+.intro p{line-height:1.4}.intro p:first-child{font-family:Barlow,Arial,sans-serif;font-size:2cqw;margin-bottom:.45cqw;letter-spacing:0}.intro strong{color:#ffbf68}
+
+/* A restrained warm blink distinguishes both buy calls to action. */
+.scene .hotspot.buy,.scene .hotspot.buytop{animation:buy-glimmer 4.8s ease-in-out infinite;transform:none}
+.scene .hotspot.buytop{animation-delay:1.6s}
+@keyframes buy-glimmer{0%,52%,88%,100%{filter:brightness(1);box-shadow:inset 3px 0 #ffffff45,inset -3px 0 #0005,inset 0 -7px #312525}68%{filter:brightness(1.17);box-shadow:inset 3px 0 #fff4bb,inset -3px 0 #9b5216,inset 0 -7px #493020,inset 0 3px #fff3b8}}
+.scene .hotspot.buy:hover,.scene .hotspot.buytop:hover,.scene .hotspot.buy:focus-visible,.scene .hotspot.buytop:focus-visible{animation:none;filter:brightness(1.13);transform:translateY(-2px)}
+.scene .hotspot.buy:active,.scene .hotspot.buytop:active{animation:none;transform:translateY(2px)}
+.scene.motion-paused .hotspot.buy,.scene.motion-paused .hotspot.buytop{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.scene .hotspot.buy,.scene .hotspot.buytop{animation:none}}
+
+.scene .hotspot.buy,.scene .hotspot.buytop{animation:buy-glimmer 4.8s ease-in-out infinite,buy-bounce 3.9s ease-in-out infinite}
+.scene .hotspot.buytop{animation-delay:1.6s,-1.3s}
+@keyframes buy-bounce{0%,100%{transform:translate(0,0)}25%{transform:translate(0,-3px)}48%{transform:translate(0,-1px)}64%{transform:translate(0,-4px)}68%{transform:translate(-.65px,-3px)}72%{transform:translate(.65px,-3px)}76%{transform:translate(-.45px,-2px)}80%{transform:translate(.45px,-2px)}88%{transform:translate(0,-1px)}}
+.scene .hotspot.buy:hover,.scene .hotspot.buytop:hover,.scene .hotspot.buy:focus-visible,.scene .hotspot.buytop:focus-visible{animation:none}
+.scene.motion-paused .hotspot.buy,.scene.motion-paused .hotspot.buytop{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.scene .hotspot.buy,.scene .hotspot.buytop{animation:none}}
+dialog[data-panel="about"]{width:min(660px,90vw);max-height:85svh;overflow-y:auto}dialog[data-panel="about"] #content{white-space:pre-line;line-height:1.65;font-size:16px;color:#eee4d0}dialog[data-panel="about"] h2{font-family:Creepster,Impact,sans-serif;font-weight:400;font-size:36px;margin-bottom:16px}
+
+.primary-actions{display:contents}.mobile-art-space{display:none}
+button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+  html,body{width:100%;min-height:100%;overflow-x:hidden}body{display:block;padding:0;min-height:100svh}
+  .scene{width:100%;aspect-ratio:auto;min-height:100svh;display:flex;flex-direction:column;gap:0;background:linear-gradient(180deg,#111c20,#09242c 55%,#06171d);padding-bottom:120px;isolation:isolate}
+  .scene-art>img,.atmosphere{position:absolute;inset:auto 0 120px auto;width:180%;height:auto;aspect-ratio:16/9;max-width:none;pointer-events:none;object-fit:fill}
+  .shade{background:linear-gradient(180deg,#06131900 50%,#06131925 72%,transparent);z-index:2}
+  .arcade-header{position:relative;inset:auto;width:100%;height:auto;min-height:156px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 7px;padding:16px max(12px,env(safe-area-inset-left)) 20px;align-items:center;flex:none}
+  .arcade-header::before,.arcade-header::after{display:none}
+  .arcade-header .hotspot{width:100%;height:48px;min-height:48px;left:auto;top:auto;margin:0;grid-row:2;padding:0 5px 7px;animation:none}
+  .arcade-header .logo{grid-row:1;grid-column:1 / 3;width:100%;height:52px;min-height:52px;font-size:clamp(26px,6.7vw,40px);gap:0;padding:0}
+  .arcade-header .buytop{grid-row:1;grid-column:3 / 5;width:100%;height:52px;min-height:52px}
+  .arcade-header .about{grid-column:1}.arcade-header .token{grid-column:2}.arcade-header .community{grid-column:3}.arcade-header .roadmap{grid-column:4}
+  .headline{position:relative;left:auto;top:auto;width:auto;margin:30px 22px 20px;z-index:3;line-height:1.12;letter-spacing:-.02em}
+  .headline>span{white-space:nowrap}.title-white{font-size:clamp(32px,10.2vw,64px)}.title-orange{font-size:clamp(29px,9.1vw,58px)}
+  .intro{position:relative;left:auto;top:auto;width:auto;max-width:none;margin:0 24px 25px;font-size:16px;line-height:1.5;z-index:3}.intro p{line-height:1.5}.intro p:first-child{font-size:22px;margin-bottom:6px}
+  .primary-actions{position:relative;z-index:3;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 22px}
+  .primary-actions .hotspot{position:relative;left:auto;top:auto;width:100%;height:56px;min-height:56px;gap:8px;padding:0 10px 7px}
+  .primary-actions .buy{grid-column:1 / -1}
+  .hotspot.contract{position:relative;left:auto;top:auto;width:auto;min-height:52px;height:52px;margin:16px 22px 0;padding:0 12px 7px;gap:8px;z-index:3}
+  .scene .hotspot svg,.scene .hotspot.buytop svg,.scene .hotspot.telegram svg{width:18px;height:18px;flex-shrink:0}
+  .mobile-art-space{display:block;height:clamp(280px,80vw,460px);flex:none;pointer-events:none}
+  .ground-fog{height:25%;width:100%;bottom:90px}
+  .pixel-shiba{width:90px;bottom:18px;filter:drop-shadow(0 3px 2px #0008)}
+  .shiba-speech{left:44%;bottom:42px;width:52%;max-width:none;padding:9px 10px;font-size:13px;line-height:1.35;box-shadow:0 3px 0 #0005}
+  .motion-toggle{bottom:8px;left:16px;right:auto;font:600 12px Arial;padding:8px 12px;min-height:36px}
+  dialog,dialog[data-panel="about"]{width:calc(100vw - 28px);max-width:620px;max-height:calc(100dvh - 32px);padding:22px 18px;overflow-y:auto;overscroll-behavior:contain;margin:auto}
+  dialog h2,dialog[data-panel="about"] h2{font-size:30px;line-height:1.15}dialog p,dialog[data-panel="about"] #content{font-size:16px;line-height:1.6}
+  .community-choices{flex-direction:column;gap:12px}.community-choices a{min-height:54px;min-width:0;font-size:13px;padding:16px 12px}.close{min-height:48px;width:100%;font-size:16px}
+  .scene .hotspot.buy,.scene .hotspot.buytop{animation:buy-glimmer 4.8s ease-in-out infinite,buy-bounce 3.9s ease-in-out infinite}.scene .hotspot.buytop{animation-delay:1.6s,-1.3s}
+}
+@media(max-width:360px){.arcade-header{gap:8px 5px;padding-left:10px;padding-right:10px}.arcade-header .logo{font-size:25px}.headline{margin-left:18px;margin-right:18px}.primary-actions{margin-left:18px;margin-right:18px;gap:10px}.hotspot.contract{margin-left:18px;margin-right:18px}.intro{margin-left:20px;margin-right:20px;font-size:15px}}
+@media(prefers-reduced-motion:reduce){.scene .hotspot.buy,.scene .hotspot.buytop{animation:none}}
+
+.mobile-buy-label{display:none}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .arcade-header{min-height:214px;grid-template-rows:52px 48px 48px}
+ .arcade-header .about{grid-column:1 / 3;grid-row:2}.arcade-header .token{grid-column:3 / 5;grid-row:2}
+ .arcade-header .community{grid-column:1 / 3;grid-row:3}.arcade-header .roadmap{grid-column:3 / 5;grid-row:3}
+ .arcade-header .desktop-buy-label{display:none}.arcade-header .mobile-buy-label{display:inline}
+}
+
+.mobile-chart-label{display:none}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){.desktop-chart-label{display:none}.mobile-chart-label{display:inline}.scene .hotspot.telegram svg,.scene .hotspot.contract svg:first-child{display:none}}
+
+.scene-art{display:contents}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .intro{display:none}
+ .headline{order:0;margin-top:30px;margin-bottom:24px}
+ .scene-art{order:1;display:block;position:relative;width:100%;height:clamp(320px,101.25vw,600px);overflow:hidden;flex:none}
+ .scene-art>img,.scene-art>.atmosphere{position:absolute;inset:0 0 auto auto;width:min(180%,1066.67px);height:auto;aspect-ratio:16/9;max-width:none}
+ .scene-art>.ground-fog{bottom:0;height:30%;width:100%}
+ .arcade-header{order:2;margin-top:0}
+ .primary-actions{order:3;margin-top:20px}
+ .primary-actions .buy{display:none}
+ .hotspot.contract{order:4}
+ .mobile-art-space{display:none}
+ .shade{display:none}
+}
+
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){.primary-actions .telegram{display:none}.primary-actions{grid-template-columns:minmax(0,1fr)}.primary-actions .chart{max-width:none;width:100%}}
+
+/* The mobile brand emerges from the scene instead of a separate bronze slab. */
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .arcade-header{background:linear-gradient(180deg,#081b2000 0%,#081b20b0 22%,#081b20 75%);border:0;box-shadow:none;padding-top:24px;padding-bottom:16px;margin-top:-2px;row-gap:13px}
+ .arcade-header .logo{color:#f6b857;text-shadow:0 2px 0 #06171b,0 0 16px #fcb75b16;transform:translateY(var(--brand-drift,0px));transition:none;will-change:transform}
+ .arcade-header .logo:hover,.arcade-header .logo:focus-visible{box-shadow:none;filter:none}
+}
+
+/* Desktop introduction with a small floating spooky companion. */
+.intro{display:flex;align-items:center;gap:1.3cqw}
+.intro-spook{display:block;font-family:Arial,sans-serif;font-size:3.2cqw;line-height:1;filter:drop-shadow(0 3px 5px #0009);animation:intro-spook-float 4s ease-in-out infinite;pointer-events:none}
+@keyframes intro-spook-float{0%,100%{transform:translateY(.25cqw) rotate(-6deg)}50%{transform:translateY(-.65cqw) rotate(6deg)}}
+.scene.motion-paused .intro-spook{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.intro-spook{animation:none}}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){.intro{display:none}}
+
+/* Match the desktop keycap exactly; mobile changes only placement and label size. */
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .scene .hotspot:not(.logo){border:3px solid #241916;clip-path:polygon(0 8px,4px 8px,4px 4px,8px 4px,8px 0,calc(100% - 8px) 0,calc(100% - 8px) 4px,calc(100% - 4px) 4px,calc(100% - 4px) 8px,100% 8px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px));background:linear-gradient(to bottom,var(--shine) 0 3px,var(--face) 3px calc(100% - 10px),var(--edge) calc(100% - 10px) calc(100% - 6px),#766153 calc(100% - 6px) calc(100% - 3px),#362923 calc(100% - 3px));box-shadow:inset 3px 0 #ffffff45,inset -3px 0 #0005,inset 0 -7px #312525;padding:0 10px 7px;gap:8px}
+ .scene .hotspot.contract{justify-content:flex-start}
+ .scene .hotspot:not(.logo):hover{box-shadow:inset 3px 0 #ffffff75,inset -3px 0 #0005,inset 0 -7px #312525}
+ .scene .hotspot:not(.logo):active{padding-bottom:3px;background:linear-gradient(to bottom,var(--edge) 0 3px,var(--face) 3px calc(100% - 6px),#362923 calc(100% - 6px));box-shadow:inset 2px 2px #0004}
+}
+
+/* Use the desktop bronze navigation rail for both mobile control groups. */
+.mobile-control-rail{display:contents}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .arcade-header,.mobile-control-rail{background:linear-gradient(180deg,#a66835 0 3px,#59321f 3px 7px,#35251e 7px 13px,#291f1b 13px calc(100% - 10px),#432c21 calc(100% - 10px) calc(100% - 6px),#9c5b2c calc(100% - 6px) calc(100% - 3px),#1c1716 calc(100% - 3px));border-bottom:3px solid #130f10;box-shadow:inset 0 12px 0 #0002,0 5px 0 #100e0eb0,0 12px 18px #0005}
+ .arcade-header{margin-top:0;padding-top:22px;padding-bottom:24px}
+ .arcade-header .logo{color:#ffb443;text-shadow:0 2px 0 #130d09}
+ .mobile-control-rail{display:flex;flex-direction:column;order:3;width:100%;margin-top:16px;padding:22px 0 24px;position:relative;z-index:3}
+ .mobile-control-rail .primary-actions{order:0;margin-top:0}
+ .mobile-control-rail .hotspot.contract{order:1}
+}
+
+/* The mobile headline sits on the same bronze rail as the navigation. */
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .headline{width:100%;margin:0;padding:30px 22px 28px;background:linear-gradient(180deg,#a66835 0 3px,#59321f 3px 7px,#35251e 7px 13px,#291f1b 13px calc(100% - 10px),#432c21 calc(100% - 10px) calc(100% - 6px),#9c5b2c calc(100% - 6px) calc(100% - 3px),#1c1716 calc(100% - 3px));border-bottom:3px solid #130f10;box-shadow:inset 0 12px 0 #0002,0 5px 0 #100e0eb0,0 12px 18px #0005;filter:none}
+}
+@media(max-width:360px){.headline{margin:0;padding-left:18px;padding-right:18px}}
+
+/* Reuse the mascot head in the requested desktop and mobile brand placements. */
+.mobile-title-mascot{display:none}
+.arcade-header .desktop-brand-mascot{display:block;width:3.2cqw;height:3.2cqw;object-fit:contain;flex:none;image-rendering:pixelated;filter:drop-shadow(0 2px 0 #130d09)}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .arcade-header .desktop-brand-mascot{display:none}
+ .headline{padding-right:86px}
+ .headline .title-white{font-size:clamp(27px,8.3vw,56px)}
+ .headline .title-orange{font-size:clamp(24px,7.4vw,50px)}
+ .mobile-title-mascot{display:block;position:absolute;right:16px;top:50%;transform:translateY(-50%);width:62px;height:62px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 3px 0 #130d09)}
+}
+@media(max-width:360px){.headline{padding-right:72px}.mobile-title-mascot{right:12px;width:52px;height:52px}.headline .title-white{font-size:8.1vw}.headline .title-orange{font-size:7.2vw}}
+
+/* Launch controls keep the existing arcade surfaces and palette. */
+.motion-toggle{display:none!important}
+.scene .hotspot.contract{cursor:default;gap:8px;min-width:0}
+.scene .hotspot.contract .ca-label{font:700 12px Barlow,Arial,sans-serif;flex:none}
+.ca-value{font:700 clamp(10px,.9cqw,14px)/1.4 monospace;white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-width:0;flex:1;user-select:all}
+.ca-copy{flex:none;min-height:32px;min-width:48px;padding:5px;background:#e68f50;border:2px solid #4a1c15;color:#291108;font:700 10px/1.2 monospace;cursor:pointer}
+.ca-copy:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.live-chart{width:min(1100px,calc(100% - 44px));min-width:0;margin:28px auto 36px;padding:22px;background:#291f1b;border:3px solid #59321f;box-shadow:inset 0 3px #a66835,0 5px #130f10;color:#fff2cb}
+.launch-status{margin:0 0 16px;font:700 16px/1.5 Barlow,Arial,sans-serif;color:#ffc066}
+.live-chart h2{font:400 24px/1.4 Arcade,monospace;color:#ffb443;margin:0 0 20px}
+.chart-frame{position:relative;width:100%;min-width:0;height:500px;display:grid;place-items:center;background:#0c1820;border:2px solid #664627;overflow:hidden}
+.chart-state{padding:20px;text-align:center;color:#ffc066;font:400 14px/1.8 Arcade,monospace;overflow-wrap:anywhere}
+.chart-frame iframe{display:block;width:100%;height:100%;border:0;position:absolute;inset:0}.chart-frame iframe[hidden],.chart-state[hidden]{display:none}
+.official-links{display:flex;flex-wrap:wrap;gap:20px;margin-top:22px;font:700 16px Barlow,Arial,sans-serif}.official-links a{color:#ffc066;min-height:44px;display:inline-flex;align-items:center}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){
+ .scene .hotspot.contract{height:auto;min-height:68px;padding:10px 12px 14px;align-items:center}
+ .ca-value{font-size:12px;line-height:1.5}.ca-copy{min-width:58px;min-height:44px;font-size:11px}
+ .live-chart{width:calc(100% - 32px);padding:18px;margin-top:0}.live-chart h2{font-size:20px}.chart-frame{height:450px}.chart-state{font-size:12px}
+}
+
+/* Roadmap expands inside the existing pixel dialog, leaving navigation intact. */
+dialog[data-panel="roadmap"]{width:min(700px,90vw);max-height:85svh;overflow-y:auto;overscroll-behavior:contain}
+.roadmap-content[hidden]{display:none}
+.roadmap-phase{padding:18px 0;border-top:2px solid #59321f;min-width:0}
+.roadmap-phase:first-child{padding-top:0;border-top:0}
+.roadmap-phase h3{font:700 18px/1.5 Barlow,Arial,sans-serif;color:#ffc066;margin:12px 0;overflow-wrap:anywhere}
+.phase-status{display:inline-block;padding:6px 8px;border:2px solid #a36136;font:700 12px/1.5 monospace;letter-spacing:.06em}
+.completed .phase-status{color:#d3e7c2;border-color:#749158;background:#21301e}
+.current .phase-status{color:#ffe095;border-color:#d09137;background:#3a2913}
+.future .phase-status{color:#dcc9e8;border-color:#80608f;background:#251c30}
+.roadmap-phase ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.roadmap-phase li{display:flex;gap:10px;align-items:flex-start;color:#eee4d0;font:400 16px/1.5 Arial,sans-serif;min-width:0}
+.roadmap-phase li>span:last-child{min-width:0;overflow-wrap:anywhere}
+.phase-marker{width:18px;flex:none;font-weight:bold}.completed .phase-marker{color:#bdd497}.current .phase-marker{color:#ffc066}.future .phase-marker{color:#b9a4c8}
+@media(max-width:900px), (max-device-width:900px) and (pointer:coarse){dialog[data-panel="roadmap"]{width:calc(100vw - 28px);max-height:calc(100dvh - 32px);padding:22px 18px}.roadmap-phase h3{font-size:17px}}
+
+.ca-copy[hidden]{display:none}
+
+/* Warm light feedback for every actionable control, including touch taps. */
+@media(hover:hover){
+ .scene .hotspot:not(.contract):hover,dialog button:not(:disabled):hover,.community-choices a:hover,.official-links a:hover{animation:none!important;filter:brightness(1.28) drop-shadow(0 0 7px #ffb44399)!important}
+ .scene .hotspot:not(.logo):not(.contract):hover{box-shadow:inset 3px 0 #fff2b8,inset -3px 0 #ffac4777,inset 0 -7px #68452b,inset 0 3px #fff4c9!important}
+}
+.scene .hotspot:not(.contract):is(:active,:focus-visible,.is-pressed),dialog button:not(:disabled):is(:active,:focus-visible,.is-pressed),.community-choices a:is(:active,:focus-visible,.is-pressed),.official-links a:is(:active,:focus-visible,.is-pressed){animation:none!important;filter:brightness(1.32) drop-shadow(0 0 8px #ffb443aa)!important}
+.scene .hotspot:not(.logo):not(.contract):is(:active,:focus-visible,.is-pressed){box-shadow:inset 3px 0 #fff2b8,inset -3px 0 #ffac4777,inset 0 -7px #68452b,inset 0 3px #fff4c9!important}
