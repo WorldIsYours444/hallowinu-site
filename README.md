@@ -11,8 +11,8 @@ Statische website van $HALLOWINU. Alles wat live staat zit in `dist/`.
 - `dist/fonts/` — Creepster, Press Start 2P, Barlow Condensed, Inter (woff)
 
 ## Hosting
-Cloudflare Worker (static assets), gekoppeld aan deze repo. Elke push naar `main` = automatisch live.
-Deploy command: `npx wrangler deploy --assets=./dist --name=hallowinu-site --compatibility-date=2026-10-01`
+Cloudflare Worker (static assets + Arcade API), gekoppeld aan deze repo. Elke push naar `main` = automatisch live.
+Config: `wrangler.jsonc`.
 
 ## Launch-dag
 Vul `dist/launch-config.js` in:
@@ -21,3 +21,10 @@ window.HALLOWINU_LAUNCH = {contract:"<adres>", dexscreenerUrl:"https://dexscreen
 ```
 Leeg = "coming soon"-modus. Ingevuld = CA + copy-knop, status LIVE, Buy-knoppen linken door, live chart.
 Verhoog daarna het `?v=` nummer in `index.html` zodat browsers de nieuwe versie laden.
+
+## HALLOWINU Arcade
+De Arcade (4 games, punten, seizoenen, prize pool) draait in dezelfde Worker met een D1-database.
+Zie **docs/ARCADE.md** voor architectuur, admin-handleiding en configuratie (`worker/config.js`).
+- Tests: `npm test` · Lokaal: `node tools/dev-server.mjs 8788 /tmp/dev.db`
+- Admin: `/admin.html` met het `ADMIN_TOKEN` secret
+- Deploy command (Workers Builds): `npx wrangler d1 migrations apply DB --remote && npx wrangler deploy`

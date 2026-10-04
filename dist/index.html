@@ -20,7 +20,8 @@
 <link rel="preload" href="img/hero-world.webp" as="image" type="image/webp" imagesrcset="img/hero-world-1200.webp 1200w, img/hero-world.webp 2042w" imagesizes="(max-width:700px) 148vw, 100vw">
 <link rel="preload" href="fonts/creepster.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="fonts/press-start.woff" as="font" type="font/woff" crossorigin>
-<link rel="stylesheet" href="hallowinu.css?v=41">
+<link rel="stylesheet" href="hallowinu.css?v=42">
+<link rel="stylesheet" href="arcade.css?v=42">
 <script>document.documentElement.classList.replace('no-js','js')</script>
 </head>
 <body>
@@ -192,64 +193,129 @@
 <section class="section arcade" id="arcade" aria-labelledby="arcade-title">
   <div class="wrap">
     <div class="section-head center reveal">
-      <p class="eyebrow">Future game world</p>
+      <p class="eyebrow">Play · Earn points · Climb the board</p>
       <h2 class="neon-sign" id="arcade-title"><span class="o">HALLOWINU</span> <span class="p">ARCADE</span></h2>
-      <p class="lead">Trick-or-treat battles, pumpkin hunts, daily spins and a leaderboard for the pack. The cabinets are being built — doors open after launch.</p>
+      <p class="lead">Four haunted cabinets. Every play earns Arcade Points, XP and achievements. The Top 10 of each season share the verified SOL prize pool.</p>
     </div>
 
-    <div class="arcade-grid">
-      <div class="cabinet px-frame reveal">
-        <div class="cabinet-top"><span>CABINET 01</span><span class="tag"><span class="dot blink"></span>Coming soon</span></div>
-        <div class="screen">
-          <img src="img/arcade-720.webp" srcset="img/arcade-720.webp 720w, img/arcade.webp 1206w" sizes="(max-width:1020px) 92vw, 560px" width="1206" height="1198" loading="lazy" alt="HALLOWINU in his ghost hood plays a Trick or Treat game on his laptop, with floating game-mode and leaderboard panels.">
-          <span class="insert-coin" aria-hidden="true">INSERT COIN · SOON</span>
+    <div class="ax" data-arcade aria-live="polite">
+      <!-- Season / prize pool bar -->
+      <div class="ax-season px-frame is-orange hud-glass reveal">
+        <div class="ax-season-left">
+          <span class="tag" data-season-phase><span class="dot blink"></span>Loading…</span>
+          <h3 class="ax-season-name" data-season-name>SEASON 01</h3>
+          <p class="ax-countdown"><span data-season-countdown-label>ENDS IN</span> <b data-season-countdown>--:--:--:--</b></p>
         </div>
-        <div class="cabinet-controls" aria-hidden="true"><span class="stick"></span><span class="knob"></span><span class="knob o"></span><span class="knob"></span></div>
+        <div class="ax-pool">
+          <span class="ax-pool-label">PRIZE POOL</span>
+          <span class="ax-pool-value"><span class="sol">◎</span> <b data-pool>—</b> <small>SOL</small></span>
+          <span class="ax-pool-sub" data-pool-sub>Funded by HALLOWINU maker rewards</span>
+          <span class="ax-pool-bump" data-pool-bump hidden></span>
+        </div>
+        <div class="ax-season-actions">
+          <button class="btn btn-orange btn-sm" type="button" data-open="prizes"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-chest"/></svg>Prizes &amp; rules</button>
+          <button class="btn btn-purple btn-sm icon-btn ax-sound" type="button" data-sound aria-pressed="true" aria-label="Sound on">♪</button>
+        </div>
       </div>
 
-      <div class="arcade-side">
-        <div class="panel px-frame hud-glass reveal" data-delay="1">
-          <h3 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-skull"/></svg></span>GAME MODES<span class="tag">Soon</span></h3>
-          <ul class="modes" role="list">
-            <li class="mode"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg></span><span>Trick or treat</span><em>SOON</em></li>
-            <li class="mode"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-ghost"/></svg></span><span>Pumpkin hunt</span><em>SOON</em></li>
-            <li class="mode"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-chest"/></svg></span><span>Daily spin</span><em>SOON</em></li>
-            <li class="mode"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-trophy"/></svg></span><span>Quiz &amp; more</span><em>SOON</em></li>
-          </ul>
-        </div>
-        <div class="duo">
-          <div class="panel px-frame hud-glass reveal" data-delay="2">
-            <h3 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-crown"/></svg></span>LEADERBOARD</h3>
-            <ol class="board" aria-label="Leaderboard, not started yet">
-              <li><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-trophy"/></svg></span><span class="rk">#1</span><span>???</span><span class="pts">? PTS</span></li>
-              <li><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-trophy"/></svg></span><span class="rk">#2</span><span>???</span><span class="pts">? PTS</span></li>
-              <li><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-trophy"/></svg></span><span class="rk">#3</span><span>???</span><span class="pts">? PTS</span></li>
-            </ol>
-            <p class="board-note">Season 0 hasn’t started. Your name could be here.</p>
+      <div class="ax-main">
+        <!-- Player card -->
+        <aside class="ax-player px-frame hud-glass reveal" data-player>
+          <div class="ax-enter" data-enter>
+            <img src="img/head.webp" alt="" width="72" height="72">
+            <h3>Enter the Arcade</h3>
+            <p>Get your player card and start earning points. No wallet or sign-up needed to play.</p>
+            <button class="btn btn-primary" type="button" data-enter-btn><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-ghost"/></svg>Enter the Arcade</button>
+            <p class="ax-fine">Playing creates an anonymous player saved in a secure cookie on this device.</p>
           </div>
-          <div class="panel px-frame is-orange hud-glass reveal" data-delay="3">
-            <h3 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-chest"/></svg></span>PRIZES</h3>
-            <ul class="prize">
-              <li>#1<b>???</b></li><li>#2<b>???</b></li><li>#3<b>???</b></li>
-            </ul>
-            <p class="prize-note">Revealed when the arcade opens.</p>
+          <div class="ax-card" data-card hidden>
+            <div class="ax-id">
+              <img src="img/head.webp" alt="" width="56" height="56">
+              <div>
+                <button class="ax-name" type="button" data-rename title="Rename"><span data-name>—</span> <span class="ax-pen" aria-hidden="true">✎</span></button>
+                <span class="ax-pid">ID <b data-pid>—</b></span>
+              </div>
+            </div>
+            <div class="ax-level">
+              <span class="ax-lvl">LVL <b data-level>1</b></span><span class="ax-title" data-title>Lost Soul</span>
+              <span class="ax-xp"><b data-xp>0</b> XP · <span data-xpnext>100</span> to next</span>
+              <span class="ax-xpbar" aria-hidden="true"><i data-xpbar></i></span>
+            </div>
+            <dl class="ax-stats">
+              <div><dt>Season pts</dt><dd data-stat="seasonPoints">0</dd></div>
+              <div><dt>Total pts</dt><dd data-stat="totalPoints">0</dd></div>
+              <div><dt>Season rank</dt><dd data-stat="seasonRank">—</dd></div>
+              <div><dt>All-time rank</dt><dd data-stat="allTimeRank">—</dd></div>
+              <div><dt>Games</dt><dd data-stat="gamesPlayed">0</dd></div>
+              <div><dt>Streak / best</dt><dd data-stat="streak">0 / 0</dd></div>
+            </dl>
+            <div class="ax-elig" data-elig><span class="tag is-dim">Prize eligibility: not verified</span><button class="ax-link" type="button" data-open="eligibility">Why?</button></div>
+            <button class="btn btn-purple btn-sm ax-profile-btn" type="button" data-open="profile"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-trophy"/></svg>Achievements &amp; history</button>
           </div>
-        </div>
-      </div>
-    </div>
+        </aside>
 
-    <div class="tot px-frame hud-glass reveal" data-tot>
-      <div>
-        <h3><span class="o">Trick</span> or <span class="p">Treat?</span></h3>
-        <p>Sneak preview — just for fun. No points, no prizes, no wallet.</p>
+        <!-- Game cabinets -->
+        <div class="ax-games" data-games>
+          <article class="ax-game px-frame reveal" data-game="trick-or-treat">
+            <div class="ax-game-art is-tot"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg></span><span class="ico b"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-candy"/></svg></span></div>
+            <h3>Trick or Treat</h3><p>Pick your fate. The crypt decides the reward.</p>
+            <div class="ax-game-foot"><span class="tag" data-limit>— / day</span><button class="btn btn-primary btn-sm" type="button" data-play="trick-or-treat">Play</button></div>
+          </article>
+          <article class="ax-game px-frame reveal" data-delay="1" data-game="pumpkin-hunt">
+            <div class="ax-game-art is-hunt"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg></span><span class="ico b gold"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg></span><span class="ico c rare"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg></span></div>
+            <h3>Pumpkin Hunt</h3><p>30 seconds. Smash every pumpkin you can find.</p>
+            <div class="ax-game-foot"><span class="tag" data-limit>— / day</span><button class="btn btn-primary btn-sm" type="button" data-play="pumpkin-hunt">Play</button></div>
+          </article>
+          <article class="ax-game px-frame reveal" data-delay="2" data-game="daily-spin">
+            <div class="ax-game-art is-spin"><span class="ax-mini-wheel" aria-hidden="true"></span></div>
+            <h3>Daily Spin</h3><p>One free spin every 24 hours. Jackpot lurks.</p>
+            <div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="daily-spin">Spin</button></div>
+          </article>
+          <article class="ax-game px-frame reveal" data-delay="3" data-game="quiz">
+            <div class="ax-game-art is-quiz"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-skull"/></svg></span><span class="ax-q" aria-hidden="true">?</span></div>
+            <h3>HALLOWINU Quiz</h3><p>Halloween, Solana & memecoin lore. Streaks pay.</p>
+            <div class="ax-game-foot"><span class="tag" data-limit>— / day</span><button class="btn btn-primary btn-sm" type="button" data-play="quiz">Play</button></div>
+          </article>
+        </div>
       </div>
-      <div class="tot-buttons">
-        <button class="btn btn-orange tot-btn" type="button" data-tot-pick="trick"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg></span>Trick</button>
-        <button class="btn btn-purple tot-btn" type="button" data-tot-pick="treat"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-candy"/></svg></span>Treat</button>
+
+      <!-- Leaderboard -->
+      <div class="ax-board px-frame hud-glass reveal" data-board>
+        <div class="ax-board-head">
+          <h3 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-crown"/></svg></span>LEADERBOARD <span class="ax-top">TOP 100</span></h3>
+          <div class="ax-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected="true" data-scope="season">This season</button>
+            <button type="button" role="tab" aria-selected="false" data-scope="all">All time</button>
+          </div>
+        </div>
+        <div class="ax-table-wrap">
+          <table class="ax-table">
+            <thead><tr><th>#</th><th>Player</th><th class="r">Points</th><th class="r" data-prize-col>Est. prize</th></tr></thead>
+            <tbody data-rows><tr><td colspan="4" class="ax-empty">Loading the graveyard…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="ax-me" data-me hidden></p>
+        <p class="ax-fine">Est. prizes are calculated from the verified prize pool and can change until the season ends. Payouts require a verified identity and wallet.</p>
       </div>
-      <p class="tot-result" role="status" aria-live="polite" data-tot-result>Pick one, if you dare…</p>
+      <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
     </div>
   </div>
+
+  <!-- Game screen -->
+  <dialog class="ax-modal ax-game-modal" data-game-modal aria-label="Arcade game">
+    <div class="ax-modal-box px-frame hud-glass">
+      <div class="ax-modal-head"><h3 data-game-title>Game</h3><button class="modal-close" type="button" data-close aria-label="Close game">✕</button></div>
+      <div class="ax-screen" data-screen></div>
+    </div>
+  </dialog>
+  <!-- Generic info dialog (profile, prizes, eligibility, rename) -->
+  <dialog class="ax-modal" data-info-modal aria-label="Arcade info">
+    <div class="ax-modal-box px-frame is-orange hud-glass">
+      <div class="ax-modal-head"><h3 data-info-title>Info</h3><button class="modal-close" type="button" data-close aria-label="Close">✕</button></div>
+      <div class="ax-info" data-info></div>
+    </div>
+  </dialog>
+  <div class="ax-toasts" data-toasts aria-live="polite"></div>
 </section>
 
 <!-- ============ ROADMAP ============ -->
@@ -427,8 +493,9 @@
   </div>
 </dialog>
 
-<script src="launch-config.js?v=41"></script>
-<script src="hallowinu.js?v=41" defer></script>
-<script src="launch.js?v=41" defer></script>
+<script src="launch-config.js?v=42"></script>
+<script src="hallowinu.js?v=42" defer></script>
+<script src="arcade.js?v=42" defer></script>
+<script src="launch.js?v=42" defer></script>
 </body>
 </html>

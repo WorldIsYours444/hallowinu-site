@@ -1,0 +1,26 @@
+{
+  // HALLOWINU — static site (dist/) + Arcade API (worker/) on one Cloudflare Worker.
+  // Workers Builds deploy command:
+  //   npx wrangler d1 migrations apply DB --remote && npx wrangler deploy
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hallowinu-site",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hallowinu-arcade",
+      "database_id": "60e13611-662f-44a8-8a1c-8ab5d39417b4",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Auto-finalizes seasons at their end time + housekeeping.
+  "triggers": { "crons": ["*/10 * * * *"] },
+  // Keep variables/secrets that are set in the Cloudflare dashboard (ADMIN_TOKEN, POOL_WALLET).
+  "keep_vars": true,
+  "observability": { "enabled": true }
+}

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>HALLOWINU Arcade — Admin</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="hallowinu.css?v=42">
+<style>
+  body{padding:24px 16px 80px}
+  .adm{max-width:1200px;margin:auto;display:grid;gap:22px}
+  .adm h1{font:40px/1 var(--f-horror);margin:0}
+  .adm h1 .o{color:var(--orange)}.adm h1 .p{color:var(--neon)}
+  .card{padding:18px}
+  .card h2{font:12px/1.4 var(--f-pixel);color:var(--orange);margin:0 0 14px;letter-spacing:.05em}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px;border-top:2px solid #1d0d36;vertical-align:top;color:var(--lavender)}
+  th{font:8px var(--f-pixel);color:var(--muted);border:0}
+  td.mono,code{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}
+  input,select,textarea{font:14px var(--f-body);padding:10px;background:#0b0516;color:var(--ghost);border:0;box-shadow:inset 0 0 0 2px #4b2780;width:100%}
+  label{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end}
+  .acts{display:flex;gap:8px;flex-wrap:wrap}
+  .msg{font:10px/1.6 var(--f-pixel);color:var(--amber);min-height:1.6em}
+  .ok{color:var(--green)}.bad{color:#ff4d6d}
+  .scroll{max-height:420px;overflow:auto}
+  .stats{display:flex;gap:18px;flex-wrap:wrap;font:10px var(--f-pixel);color:var(--lavender)}
+  .stats b{color:var(--amber);font-weight:400}
+</style>
+</head>
+<body>
+<main class="adm">
+  <h1><span class="o">HALLOWINU</span> <span class="p">ARCADE</span> admin</h1>
+  <section class="card px-frame is-orange hud-glass">
+    <h2>AUTHENTICATE</h2>
+    <form class="row" id="auth"><label>Admin token (kept in this tab only)<input type="password" id="token" autocomplete="off" required></label><button class="btn btn-primary btn-sm">Load</button></form>
+    <p class="msg" id="msg"></p>
+  </section>
+  <div id="app" hidden style="display:grid;gap:22px">
+    <section class="card px-frame hud-glass"><h2>OVERVIEW</h2><div class="stats" id="stats"></div></section>
+    <section class="card px-frame hud-glass"><h2>SEASONS</h2><div class="scroll"><table id="seasons"></table></div>
+      <h2 style="margin-top:18px">EDIT SEASON</h2>
+      <form class="row" id="seasonEdit"><label>Season id<input name="id" placeholder="s01" required></label><label>Name (optional)<input name="name"></label><label>Starts (UTC, only before start)<input name="startsAt" type="datetime-local"></label><label>Ends (UTC)<input name="endsAt" type="datetime-local"></label><button class="btn btn-purple btn-sm">Save</button></form>
+      <h2 style="margin-top:18px">CREATE SEASON</h2>
+      <form class="row" id="seasonNew"><label>Id<input name="id" placeholder="s02" required></label><label>Name<input name="name" placeholder="SEASON 02" required></label><label>Starts (UTC)<input name="startsAt" type="datetime-local" required></label><label>Ends (UTC)<input name="endsAt" type="datetime-local" required></label><button class="btn btn-purple btn-sm">Create</button></form>
+    </section>
+    <section class="card px-frame hud-glass"><h2>PRIZE POOL FUNDING</h2><p class="ax-fine" id="wallet"></p><div class="scroll"><table id="funding"></table></div>
+      <h2 style="margin-top:18px">RECORD FUNDING (STARTS AS PENDING)</h2>
+      <form class="row" id="fundNew"><label>Season<input name="seasonId" value="s01" required></label><label>Amount (SOL)<input name="amountSol" placeholder="0.42" required></label>
+        <label>Source<select name="source"><option>MAKER_REWARD</option><option>INITIAL_FUNDING</option><option>MANUAL_CONTRIBUTION</option><option>ADJUSTMENT</option></select></label>
+        <label>Tx signature (recommended)<input name="txSignature"></label><label>Notes<input name="notes"></label><button class="btn btn-purple btn-sm">Record</button></form>
+    </section>
+    <section class="card px-frame hud-glass"><h2>PRIZE ENTITLEMENTS</h2><div id="ents"></div>
+      <h2 style="margin-top:18px">DISQUALIFY PLAYER</h2>
+      <form class="row" id="dq"><label>Season<input name="season" value="s01" required></label><label>Player id<input name="playerId" required></label><label>Reason<input name="reason" required></label><label>Evidence<input name="evidence"></label><button class="btn btn-orange btn-sm">Disqualify</button></form>
+    </section>
+    <section class="card px-frame hud-glass"><h2>PLAYERS</h2>
+      <form class="row" id="psearch"><label>Search id or name<input name="q"></label><button class="btn btn-purple btn-sm">Search</button></form>
+      <div class="scroll"><table id="players"></table></div>
+      <h2 style="margin-top:18px">MANUAL PAYOUT VERIFICATION (PHASE 1)</h2>
+      <p class="ax-fine">Only after you verified the person's identity out-of-band AND they proved ownership of the wallet. Public address only — never ask for a seed phrase or private key.</p>
+      <form class="row" id="verify"><label>Player id<input name="playerId" required></label><label>Public Solana wallet<input name="wallet" required></label><label>Evidence / how verified<input name="evidence" required></label><button class="btn btn-orange btn-sm">Mark verified</button></form>
+    </section>
+    <section class="card px-frame hud-glass"><h2>GAMES &amp; LIMITS</h2><div id="settings" class="row"></div></section>
+    <section class="card px-frame hud-glass"><h2>QUIZ BANK</h2>
+      <form class="row" id="qnew"><label>Question<input name="question" required></label><label>Correct answer<input name="a0" required></label><label>Wrong 1<input name="a1" required></label><label>Wrong 2<input name="a2" required></label><label>Wrong 3<input name="a3" required></label>
+        <label>Difficulty<select name="difficulty"><option>easy</option><option>medium</option><option>hard</option></select></label><label>Category<input name="category" value="HALLOWINU"></label><button class="btn btn-purple btn-sm">Add</button></form>
+      <div class="scroll" style="margin-top:12px"><table id="quiz"></table></div>
+    </section>
+    <section class="card px-frame hud-glass"><h2>AUDIT LOG (LATEST 40)</h2><div class="scroll"><table id="audit"></table></div></section>
+  </div>
+</main>
+<script src="admin.js?v=42" defer></script>
+</body>
+</html>

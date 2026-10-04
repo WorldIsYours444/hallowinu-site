@@ -258,22 +258,5 @@
     });
   }
 
-  /* ---------- trick or treat preview (pure fun, no rewards) ---------- */
-  const tot = $('[data-tot]');
-  if (tot) {
-    const out = $('[data-tot-result]', tot);
-    const res = {
-      trick: ['TRICK! The pumpkin winked at you. Rude.', 'TRICK! A bat stole your sock. Classic.', 'TRICK! The ghost dog hid behind you. Boo!', 'TRICK! You walked into a cobweb. Spooky.'],
-      treat: ['TREAT! The ghost dog wags his tail at you.', 'TREAT! A warm lantern lights your way home.', 'TREAT! +1 spooky vibe. (Not redeemable.)', 'TREAT! The pack welcomes you. Say gm in TG.']
-    };
-    let last = '';
-    tot.addEventListener('click', e => {
-      const b = e.target.closest('[data-tot-pick]'); if (!b) return;
-      const kind = b.dataset.totPick, list = res[kind];
-      let pick; do { pick = list[Math.floor(Math.random() * list.length)]; } while (pick === last && list.length > 1);
-      last = pick; out.textContent = pick; out.classList.toggle('is-treat', kind === 'treat');
-    });
-  }
-
   applyMotion();
 })();
