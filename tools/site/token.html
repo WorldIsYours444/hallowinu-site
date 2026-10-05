@@ -1,0 +1,55 @@
+<!-- ============ TOKEN TERMINAL (/token) ============ -->
+<section class="section token token-page" id="live-chart" aria-labelledby="live-chart-heading">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">$HALLOWINU terminal</p>
+      <h1 class="section-title" id="live-chart-heading">Token <span class="o">&amp;</span> <span class="p">chart</span></h1>
+      <p class="lead launch-status">Contract, tokenomics and chart go live here at launch. Until then: nothing to buy, nothing to ape. Just the pack.</p>
+    </div>
+    <div class="terminal px-frame reveal">
+      <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>hallowinu://terminal</span></div>
+      <div class="term-body">
+        <dl class="term-lines">
+          <div class="tl"><dt class="k">TOKEN</dt><dd class="v">$HALLOWINU</dd></div>
+          <div class="tl"><dt class="k">NETWORK</dt><dd class="v">SOLANA</dd></div>
+          <div class="tl"><dt class="k">STATUS</dt><dd class="v o" data-status>PRE-LAUNCH<span class="blink" aria-hidden="true">_</span></dd></div>
+          <div class="tl ca-line"><dt class="k">CONTRACT</dt>
+            <dd class="ca" aria-label="Contract address">
+              <code class="ca-value">COMING SOON</code>
+              <button class="btn btn-orange btn-sm ca-copy" type="button" hidden>Copy</button>
+              <span class="sr ca-feedback" role="status" aria-live="polite"></span>
+            </dd>
+          </div>
+          <div class="tl"><dt class="k">CHART</dt><dd class="v o" data-chart-status>COMING SOON</dd></div>
+          <p class="term-warn">Only trust the contract address published on this site and in our official X and Telegram. Token details will be announced through the official community.</p>
+        </dl>
+        <div class="term-chart">
+          <div class="chart-frame">
+            <svg class="chart-ghost" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,100 40,92 80,96 120,80 160,84 200,66 240,70 280,50 320,56 360,34 400,28" fill="none" stroke="#a43bff" stroke-width="2" stroke-dasharray="6 6"/></svg>
+            <div class="chart-state" role="status">
+              <span class="chart-badge">PRE-LAUNCH</span>
+              <span class="chart-title">CHART COMING SOON</span>
+              <span class="chart-note">The live chart appears here once $HALLOWINU launches. The dashed line is decoration, not price data.</span>
+            </div>
+          </div>
+          {{socials:terminal}}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REWARD MODEL ============ -->
+<section class="section token-pool" id="rewards" aria-labelledby="rewards-title">
+  <div class="wrap">
+    <div class="pool-model px-frame is-orange hud-glass reveal">
+      <h2 class="panel-title" id="rewards-title"><span class="ico">{{icon:chest}}</span>COMMUNITY REWARD MODEL</h2>
+      <div class="pool-split" aria-label="80% community pool, 20% outside the pool">
+        <div class="ps-bar"><i style="width:80%"></i></div>
+        <div class="ps-legend"><span><b>80%</b> of verified maker rewards → Season prize pool (Top 10)</span><span><b>20%</b> stays outside the pool</span></div>
+      </div>
+      <p>Only maker/creator rewards that the project wallet has <strong>actually received on-chain</strong> count. Estimated or unclaimed fees never count. Every reward is recorded once, with its transaction, and prizes are reviewed by the team before payout.</p>
+      <a class="btn btn-purple btn-sm" href="/leaderboard#pool">{{icon:chest}}See the live pool</a>
+    </div>
+  </div>
+</section>

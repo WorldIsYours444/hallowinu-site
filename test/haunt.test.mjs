@@ -2,7 +2,7 @@ import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeEnv, client, adminClient, clock, cron, S01_START, walletPlayer } from './helpers.mjs';
 import { CONFIG } from '../worker/config.js';
-import { parseStatusUrl, cryptoRelevance, fingerprint, checkReplyContent } from '../worker/haunt/content.js';
+import { parseStatusUrl, parseTikTokUrl, mentionsProject, cryptoRelevance, fingerprint, checkReplyContent } from '../worker/haunt/content.js';
 import * as ENGINE from '../worker/haunt/engine.js';
 
 const MID = S01_START + 3 * 86400_000 + 10 * 3600_000;
@@ -14,6 +14,7 @@ const sid = () => String(1900000000000000000n + BigInt(seq++));
 
 /* ---------- fake X API ---------- */
 const tweets = new Map();       // id -> data | { _status }
+const tiktoks = new Map();      // video id -> { creator, caption } | { _status }
 let calls = [];
 let realFetch;
 function installX() {
@@ -21,13 +22,24 @@ function installX() {
   globalThis.fetch = async (u, init) => {
     const url = String(u);
     calls.push(url);
+    if (url.startsWith('https://www.tiktok.com/oembed')) {
+      const vid = decodeURIComponent(url).match(/\/video\/(\d+)/)[1];
+      const v = tiktoks.get(vid);
+      if (!v) return new Response(JSON.stringify({ code: 400, message: 'Something went wrong' }), { status: 400 });
+      if (v._status) return new Response('{}', { status: v._status });
+      return new Response(JSON.stringify({ version: '1.0', type: 'video', author_unique_id: v.creator, author_name: v.creator, title: v.caption, embed_product_id: vid }), { status: 200 });
+    }
     const m = url.match(/\/2\/tweets\/(\d+)\?/);
     if (!m) throw new Error('unexpected ' + url);
     const t = tweets.get(m[1]);
     if (!t) return new Response(JSON.stringify({ errors: [{ title: 'Not Found Error', type: 'https://api.twitter.com/2/problems/resource-not-found' }] }), { status: 200 });
     if (t._status) return new Response(JSON.stringify({ title: 'err' }), { status: t._status });
     const includes = url.includes('expansions=author_id') ? { users: [{ id: t.author_id, username: t._username || 'cryptoKOL', public_metrics: { followers_count: 5000 } }] } : undefined;
-    return new Response(JSON.stringify({ data: t, includes }), { status: 200 });
+    let inc = includes;
+    if (url.includes('attachments.media_keys') && t._media) inc = { ...(inc || {}), media: t._media.map((type, i) => ({ media_key: `3_${t.id}_${i}`, type })) };
+    const data = { ...t }; delete data._media;
+    if (t._media) data.attachments = { media_keys: t._media.map((_, i) => `3_${t.id}_${i}`) };
+    return new Response(JSON.stringify({ data, includes: inc }), { status: 200 });
   };
 }
 function reply({ id = sid(), author, parent = TARGET_ID, conv = TARGET_ID, text = 'Solana memecoin season is here, the ghost dog is early ' + id, created = Date.now() - 60_000 } = {}) {
@@ -58,7 +70,7 @@ async function newTarget(env, a, opts = {}) {
 }
 
 describe('THE HAUNT', () => {
-  beforeEach(() => { clock.set(MID); calls = []; tweets.clear(); installX(); });
+  beforeEach(() => { clock.set(MID); calls = []; tweets.clear(); tiktoks.clear(); installX(); });
   afterEach(() => { globalThis.fetch = realFetch; });
 
   test('valid reply: auto-approved, +5 Haunt XP via ledger, Arcade points + season untouched', async () => {
@@ -72,7 +84,7 @@ describe('THE HAUNT', () => {
     assert.equal(s.submission.status, 'AUTO_APPROVED');
     assert.equal(s.submission.points, 5);
     assert.ok(s.submission.checks.every(c => c.ok));
-    assert.deepEqual(s.submission.checks.map(c => c.key), ['URL', 'ACCOUNT', 'DUPLICATE', 'TARGET', 'LIMITS', 'POST', 'AUTHOR', 'REPLY', 'CONTEXT', 'TIMING', 'CONTENT', 'ORIGINALITY', 'CRYPTO']);
+    assert.deepEqual(s.submission.checks.map(c => c.key), ['TYPE_SELECT', 'URL', 'ACCOUNT', 'DUPLICATE', 'TARGET', 'LIMITS', 'POST', 'AUTHOR', 'REPLY', 'CONTEXT', 'TIMING', 'CONTENT', 'ORIGINALITY', 'CRYPTO']);
     assert.equal(calls.length, 1, 'exactly one paid X read per submission (target is pre-verified)');
     const p = await env.DB.prepare('SELECT total_points, xp, haunt_xp, haunt_count FROM players WHERE id=?').bind(r.player.id).first();
     assert.equal(p.haunt_xp, 5); assert.equal(p.haunt_count, 1); assert.equal(p.xp, before.xp + 5);
@@ -323,12 +335,156 @@ describe('THE HAUNT', () => {
   });
 });
 
+function post({ id = sid(), author, text = 'The ghost dog $HALLOWINU is haunting Solana tonight, join the pack ' + id, media, reply: rep, repost, created = Date.now() - 60_000 } = {}) {
+  const refs = rep ? [{ type: 'replied_to', id: rep }] : repost ? [{ type: 'retweeted', id: repost }] : undefined;
+  tweets.set(id, { id, author_id: author, conversation_id: rep || id, created_at: new Date(created).toISOString(), text, referenced_tweets: refs, _media: media });
+  return { id, url: `https://x.com/me/status/${id}` };
+}
+let tk = 7300000000000000000n;
+function tiktok({ creator = 'ghostmaker', caption = 'Ghost dog dance #hallowinu 👻', handle } = {}) {
+  const id = String(tk++);
+  tiktoks.set(id, { creator, caption });
+  return { id, url: `https://www.tiktok.com/@${handle || creator}/video/${id}?is_from_webapp=1` };
+}
+
+describe('THE HAUNT — submission types', () => {
+  beforeEach(() => { clock.set(MID); calls = []; tweets.clear(); tiktoks.clear(); installX(); });
+  afterEach(() => { globalThis.fetch = realFetch; });
+
+  test('rules expose 4 types with server-side rewards; v1 client without type = X_REPLY', async () => {
+    const { env, targetId } = await setup();
+    const r = await raider(env);
+    const st = await r.c.get('/api/haunt');
+    assert.deepEqual(Object.keys(st.rules.types), ['X_REPLY', 'X_POST', 'X_MEME', 'TIKTOK_POST']);
+    assert.equal(st.rules.types.X_MEME.reward, H.types.X_MEME.reward);
+    const s = await r.c.post('/api/haunt/submit', { url: reply({ author: r.x }).url, targetId });
+    assert.equal(s.submission.type, 'X_REPLY'); assert.equal(s.submission.status, 'AUTO_APPROVED');
+    assert.equal((await r.c.post('/api/haunt/submit', { type: 'X_SPACE', url: post({ author: r.x }).url })).error, 'BAD_TYPE');
+  });
+
+  test('X_POST: own original post about HALLOWINU → approved with the config reward (browser cannot pick it)', async () => {
+    const { env } = await setup();
+    const r = await raider(env);
+    calls = [];
+    const s = await r.c.post('/api/haunt/submit', { type: 'X_POST', url: post({ author: r.x }).url, reward: 9999, points: 9999 });
+    assert.equal(s.submission.status, 'AUTO_APPROVED', JSON.stringify(s.submission.checks));
+    assert.equal(s.submission.points, H.types.X_POST.reward);
+    assert.equal(calls.length, 1, 'one paid read');
+    const led = await env.DB.prepare("SELECT amount, source_type, currency FROM point_transactions WHERE player_id = ? AND game = 'haunt'").bind(r.player.id).all();
+    assert.deepEqual(led.results.map(x => [x.amount, x.source_type, x.currency]), [[H.types.X_POST.reward, 'HAUNT_X_POST', 'HAUNT_XP']]);
+    const me = (await r.c.get('/api/haunt')).me;
+    assert.equal(me.submissions[0].type, 'X_POST');
+  });
+
+  test('X_POST rejections: not about HALLOWINU, a reply, a repost, someone else\'s post', async () => {
+    const { env } = await setup();
+    const r = await raider(env);
+    const go = async (u) => { clock.advance(3 * 60_000); return (await r.c.post('/api/haunt/submit', { type: 'X_POST', url: u })).submission; };
+    assert.equal((await go(post({ author: r.x, text: 'Solana is pumping hard today, what a great day for all of crypto' }).url)).reason, 'NOT_ABOUT_HALLOWINU');
+    assert.equal((await go(post({ author: r.x, reply: TARGET_ID }).url)).reason, 'IS_A_REPLY');
+    assert.equal((await go(post({ author: r.x, repost: TARGET_ID }).url)).reason, 'IS_REPOST');
+    assert.equal((await go(post({ author: '999999' }).url)).reason, 'AUTHOR_MISMATCH');
+    assert.equal((await go(post({ author: r.x, created: Date.now() - 3 * 86400_000 }).url)).reason, 'POST_TOO_OLD');
+  });
+
+  test('X_MEME: needs image/GIF/video media; detects photo + gif', async () => {
+    const { env } = await setup();
+    const r = await raider(env);
+    const ok = await r.c.post('/api/haunt/submit', { type: 'X_MEME', url: post({ author: r.x, text: '$HALLOWINU 👻', media: ['photo'] }).url });
+    assert.equal(ok.submission.status, 'AUTO_APPROVED', JSON.stringify(ok.submission.checks));
+    assert.equal(ok.submission.points, H.types.X_MEME.reward);
+    assert.ok(calls.some(u => u.includes('attachments.media_keys')));
+    clock.advance(3 * 60_000);
+    const no = await r.c.post('/api/haunt/submit', { type: 'X_MEME', url: post({ author: r.x, text: '$HALLOWINU 👻 no picture here sorry' }).url });
+    assert.equal(no.submission.reason, 'NO_MEDIA');
+    clock.advance(3 * 60_000);
+    const gif = await r.c.post('/api/haunt/submit', { type: 'X_MEME', url: post({ author: r.x, text: '#hallowinu', media: ['animated_gif'] }).url });
+    assert.equal(gif.submission.status, 'AUTO_APPROVED');
+  });
+
+  test('wrong platform + short links are rejected before any paid call', async () => {
+    const { env, targetId } = await setup();
+    const r = await raider(env);
+    calls = [];
+    assert.equal((await r.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: post({ author: r.x }).url })).error, 'WRONG_PLATFORM');
+    assert.equal((await r.c.post('/api/haunt/submit', { type: 'X_POST', url: tiktok().url })).error, 'WRONG_PLATFORM');
+    assert.equal((await r.c.post('/api/haunt/submit', { type: 'X_REPLY', url: tiktok().url, targetId })).error, 'WRONG_PLATFORM');
+    assert.equal((await r.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: 'https://vm.tiktok.com/ZMabc123/' })).error, 'TIKTOK_SHORT_LINK');
+    assert.equal((await r.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: 'https://tiktok.com.evil.io/@a/video/123456789012' })).error, 'INVALID_URL');
+    assert.equal(calls.length, 0);
+  });
+
+  test('TIKTOK_POST: video found → MANUAL_REVIEW (no XP), admin approves with a note → XP once; reject path; mismatch', async () => {
+    const { env, a } = await setup();
+    const p = await walletPlayer(env);             // TikTok does not need a connected X account
+    const v = tiktok();
+    const s = await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: v.url });
+    assert.equal(s.submission.status, 'MANUAL_REVIEW', JSON.stringify(s));
+    assert.equal(s.submission.reason, 'TIKTOK_OWNERSHIP_REVIEW');
+    assert.equal(s.submission.points, 0);
+    assert.equal((await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: v.url.replace('?is_from_webapp=1', '') })).duplicateOf, s.submission.id);
+    const thief = await walletPlayer(env);
+    assert.equal((await thief.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: v.url })).error, 'DUPLICATE_STATUS');
+    // unauthorized review
+    assert.equal((await client(env).post(`/api/admin/haunt/submissions/${s.submission.id}/review`, { decision: 'approve', note: 'ok' })).status, 401);
+    assert.equal((await a.post(`haunt/submissions/${s.submission.id}/review`, { decision: 'approve' })).error, 'NOTE_REQUIRED');
+    const ap = await a.post(`haunt/submissions/${s.submission.id}/review`, { decision: 'approve', note: 'bio links wallet' });
+    assert.equal(ap.ok, true, JSON.stringify(ap));
+    assert.equal((await a.post(`haunt/submissions/${s.submission.id}/review`, { decision: 'approve', note: 'again' })).error, 'NOT_IN_REVIEW');
+    const pl = await env.DB.prepare('SELECT haunt_xp FROM players WHERE id = ?').bind(p.player.id).first();
+    assert.equal(pl.haunt_xp, H.types.TIKTOK_POST.reward);
+    const view = await p.c.get(`/api/haunt/submissions/${s.submission.id}`);
+    assert.equal(view.submission.status, 'MANUAL_APPROVED');
+    // reject path
+    clock.advance(3 * 60_000);
+    const s2 = await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: tiktok().url });
+    await a.post(`haunt/submissions/${s2.submission.id}/review`, { decision: 'reject', note: 'not the player' });
+    assert.equal((await p.c.get(`/api/haunt/submissions/${s2.submission.id}`)).submission.status, 'MANUAL_REJECTED');
+    // creator mismatch + not found + not about project
+    clock.advance(3 * 60_000);
+    assert.equal((await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: tiktok({ creator: 'someoneelse', handle: 'me' }).url })).submission.reason, 'CREATOR_MISMATCH');
+    clock.advance(3 * 60_000);
+    assert.equal((await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: 'https://www.tiktok.com/@me/video/7399999999999999999' })).submission.reason, 'VIDEO_NOT_FOUND');
+    // approved TikTok counts on the leaderboard; invalidation reverses it
+    const lb = await p.c.get('/api/haunt/leaderboard?range=today');
+    assert.equal(lb.rows[0].xp, H.types.TIKTOK_POST.reward); assert.equal(lb.rows[0].me, true);
+    await a.post(`haunt/submissions/${s.submission.id}/invalidate`, { reason: 'stolen video' });
+    assert.equal((await env.DB.prepare('SELECT haunt_xp FROM players WHERE id = ?').bind(p.player.id).first()).haunt_xp, 0);
+  });
+
+  test('TikTok down → VERIFICATION_PENDING, never fake-approved', async () => {
+    const { env } = await setup();
+    const p = await walletPlayer(env);
+    const v = tiktok(); tiktoks.set(v.id, { _status: 503 });
+    const s = await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: v.url });
+    assert.equal(s.submission.status, 'VERIFICATION_PENDING');
+    assert.equal(s.submission.points, 0);
+  });
+
+  test('per-type daily limits are enforced atomically per type', async () => {
+    const { env } = await setup();
+    const p = await walletPlayer(env);
+    for (let i = 0; i < H.types.TIKTOK_POST.perDay; i++) {
+      const s = await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: tiktok().url });
+      assert.equal(s.ok, true, JSON.stringify(s));
+      clock.advance(H.limits.minGapMs + 1000);
+      if ((i + 1) % H.limits.window.count === 0) clock.advance(H.limits.window.ms);
+    }
+    assert.equal((await p.c.post('/api/haunt/submit', { type: 'TIKTOK_POST', url: tiktok().url })).error, 'TYPE_DAILY_LIMIT');
+    const st = await p.c.get('/api/haunt');
+    assert.equal(st.me.types.TIKTOK_POST.used, H.types.TIKTOK_POST.perDay);
+  });
+});
+
 describe('haunt content + relevance', () => {
   test('URL parsing', () => {
     assert.equal(parseStatusUrl('https://x.com/user/status/1800000000000000001?s=20').id, '1800000000000000001');
     assert.equal(parseStatusUrl('https://twitter.com/user/status/123456789').normalizedUrl, 'https://x.com/i/status/123456789');
     assert.equal(parseStatusUrl('https://mobile.x.com/i/web/status/123456789').id, '123456789');
     for (const bad of ['https://x.com.evil.io/u/status/123456', 'https://x.com/u/likes', 'ftp://x.com/u/status/123456', '']) assert.equal(parseStatusUrl(bad), null);
+    assert.deepEqual(parseTikTokUrl('https://m.tiktok.com/@Ghost.Dog/video/7300000000000000001?lang=en'), { id: '7300000000000000001', handle: 'ghost.dog', normalizedUrl: 'https://www.tiktok.com/@Ghost.Dog/video/7300000000000000001' });
+    assert.equal(parseTikTokUrl('https://www.tiktok.com/@a/live'), null);
+    assert.equal(mentionsProject('the $HallowInu pack'), true); assert.equal(mentionsProject('random solana meme'), false);
   });
   test('fingerprint ignores case, spacing, emoji and the reply mention', () => {
     assert.equal(fingerprint('@kol HALLOWINU is   early 👻!!'), fingerprint('hallowinu is early'));

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>THE HAUNT — HALLOWINU X raid board</title>
+<title>THE HAUNT — post, meme, raid & earn XP | HALLOWINU</title>
 <meta name="description" content="HALLOWINU is the ghost dog of Halloween on Solana. A pixel-art Halloween memecoin universe built by its community. Coming soon.">
 <meta name="theme-color" content="#06030c">
 <link rel="canonical" href="https://hallowinu.xyz/haunt">
@@ -20,9 +20,9 @@
 
 <link rel="preload" href="fonts/creepster.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="fonts/press-start.woff" as="font" type="font/woff" crossorigin>
-<link rel="stylesheet" href="hallowinu.css?v=46">
-<link rel="stylesheet" href="arcade.css?v=46">
-<link rel="stylesheet" href="haunt.css?v=46">
+<link rel="stylesheet" href="hallowinu.css?v=47">
+<link rel="stylesheet" href="arcade.css?v=47">
+<link rel="stylesheet" href="haunt.css?v=47">
 <script>document.documentElement.classList.replace('no-js','js')</script>
 </head>
 <body>
@@ -38,11 +38,10 @@
     </a>
     <ul class="nav-links">
       <li><a href="/#about">About</a></li>
-      <li><a href="/#dream">Dream</a></li>
       <li><a href="/arcade">Arcade</a></li>
-      <li><a href="/haunt" aria-current="true">Haunt</a></li>
-      <li><a href="/#roadmap">Roadmap</a></li>
-      <li><a href="/#live-chart">Token</a></li>
+      <li><a href="/haunt" aria-current="true">The Haunt<span class="soon nav-new" aria-hidden="true">NEW</span><span class="sr"> (new)</span></a></li>
+      <li><a href="/leaderboard">Leaderboard</a></li>
+      <li><a href="/token">Token</a></li>
       <li><a href="/#community">Community</a></li>
     </ul>
     <div class="hud-actions">
@@ -55,11 +54,10 @@
 <div class="mobile-menu" id="mobile-menu">
   <ul>
     <li><a href="/#about">About</a></li>
-    <li><a href="/#dream">Dream</a></li>
     <li><a href="/arcade">Arcade</a></li>
-      <li><a href="/haunt" aria-current="true">Haunt</a></li>
-    <li><a href="/#roadmap">Roadmap</a></li>
-    <li><a href="/#live-chart">Token</a></li>
+    <li><a href="/haunt" aria-current="true"><span>The Haunt<span class="soon nav-new" aria-hidden="true">NEW</span><span class="sr"> (new)</span></span></a></li>
+    <li><a href="/leaderboard">Leaderboard</a></li>
+    <li><a href="/token">Token</a></li>
     <li><a href="/#community">Community</a></li>
   </ul>
   <div class="menu-actions"><a class="btn btn-orange soc-btn soc-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.8 2.5h3.3l-7.2 8.2 8.5 10.8h-6.6l-5.2-6.8-6 6.8H1.3l7.7-8.8L.9 2.5h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.1h1.8L6.6 4.3H4.6l12 15.3Z"/></svg>X / Twitter</a><a class="btn btn-purple soc-btn soc-tg" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13 1.2 11.5c-1.1-.3-1.1-1.1.2-1.6L20.6 2.5c.9-.3 1.7.2 1.3 1.8Z"/></svg>Telegram</a></div>
@@ -70,10 +68,10 @@
 <section class="section haunt" id="haunt" aria-labelledby="haunt-title" data-haunt>
   <div class="wrap">
     <div class="section-head center reveal">
-      <p class="eyebrow">Raid · Verify · Climb</p>
+      <p class="eyebrow">Reply · Post · Meme · TikTok</p>
       <h1 class="neon-sign" id="haunt-title"><span class="o">THE</span> <span class="p">HAUNT</span></h1>
       <p class="lead hn-tagline">Haunt the timeline. Earn XP. Climb the graveyard.</p>
-      <p class="hn-intro">Pick a Haunt, reply on X in your own words, paste the link of your reply — HALLOWINU checks it on X automatically and drops the XP in your player card.</p>
+      <p class="hn-intro">Reply under a Haunt, post about $HALLOWINU, drop a meme or make a TikTok. Paste the link in the terminal — HALLOWINU verifies it and drops the XP in your player card.</p>
     </div>
 
     <!-- Status HUD (player state, always visible) -->
@@ -105,10 +103,16 @@
           <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>hallowinu://submit-haunt</span></div>
           <div class="hn-term-body">
             <h2 class="hn-submit-title" id="hn-submit-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-ghost"/></svg></span>SUBMIT YOUR HAUNT</h2>
-            <p class="hn-term-text">Completed the raid? Paste the link of <b>your</b> X reply below.</p>
+            <div class="hn-types" role="radiogroup" aria-label="What did you create?" data-types>
+              <button type="button" role="radio" aria-checked="true" data-type="X_REPLY"><b>X REPLY</b><small data-type-meta="X_REPLY">under a Haunt</small></button>
+              <button type="button" role="radio" aria-checked="false" data-type="X_POST"><b>X POST</b><small data-type-meta="X_POST">your own post</small></button>
+              <button type="button" role="radio" aria-checked="false" data-type="X_MEME"><b>X MEME</b><small data-type-meta="X_MEME">image / GIF / video</small></button>
+              <button type="button" role="radio" aria-checked="false" data-type="TIKTOK_POST"><b>TIKTOK</b><small data-type-meta="TIKTOK_POST">your video</small></button>
+            </div>
+            <p class="hn-term-text" data-type-help>Completed the raid? Paste the link of <b>your</b> X reply below.</p>
             <div class="hn-picked" data-picked><span class="tag is-dim">NO HAUNT SELECTED</span><small>Pick a Haunt from the list first.</small></div>
             <form class="hn-form" data-form novalidate>
-              <label class="sr" for="hn-url">Your X reply URL</label>
+              <label class="sr" for="hn-url" data-url-label>Your X reply URL</label>
               <input id="hn-url" name="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://x.com/you/status/…" required>
               <button class="btn btn-primary" type="submit" data-claim><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-ghost"/></svg>Verify &amp; claim XP</button>
             </form>
@@ -120,22 +124,14 @@
     </div>
 
     <div class="hn-lower">
-      <div class="hn-board px-frame hud-glass reveal">
+      <div class="hn-board hn-rank px-frame hud-glass reveal">
         <div class="ax-board-head">
-          <h2 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-crown"/></svg></span>HAUNT LEADERBOARD</h2>
-          <div class="ax-tabs" role="tablist">
-            <button type="button" role="tab" aria-selected="true" data-range="today">Today</button>
-            <button type="button" role="tab" aria-selected="false" data-range="week">Week</button>
-            <button type="button" role="tab" aria-selected="false" data-range="all">All time</button>
-          </div>
+          <h2 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-crown"/></svg></span>TODAY'S TOP HAUNTERS</h2>
+          <a class="btn btn-purple btn-sm" href="/leaderboard">View full leaderboard</a>
         </div>
-        <div class="ax-table-wrap">
-          <table class="ax-table">
-            <thead><tr><th>#</th><th>Player</th><th class="r">Haunts</th><th class="r">XP</th></tr></thead>
-            <tbody data-board><tr><td colspan="4" class="ax-empty">Loading the graveyard…</td></tr></tbody>
-          </table>
-        </div>
-        <p class="ax-fine">Haunt XP is separate from Arcade Points and does not count toward the SOL prize pool.</p>
+        <div class="hn-myrank" data-myrank></div>
+        <ol class="hn-top" data-board><li class="hn-empty">Loading the graveyard…</li></ol>
+        <p class="ax-fine">Haunt XP is separate from Arcade Points. The SOL prize pool (80% of verified maker rewards) goes to the Arcade Season Top 10 — <a href="/leaderboard#pool">see the pool</a>.</p>
       </div>
       <div class="hn-side">
         <div class="hn-activity px-frame hud-glass reveal" data-delay="1">
@@ -153,16 +149,16 @@
     <div class="hn-how reveal">
       <h2 class="section-title hn-h2">How <span class="o">the</span> <span class="p">Haunt</span> works</h2>
       <ol class="hn-steps">
-        <li><b>01</b><span>Connect Phantom &amp; your X account</span></li>
-        <li><b>02</b><span>Pick a Haunt</span></li>
-        <li><b>03</b><span>Open the target on X</span></li>
-        <li><b>04</b><span>Reply naturally, in your own words</span></li>
-        <li><b>05</b><span>Copy the link of your reply</span></li>
-        <li><b>06</b><span>Paste it in Submit your Haunt</span></li>
-        <li><b>07</b><span>HALLOWINU checks who, where &amp; what on X</span></li>
-        <li><b>08</b><span>Earn XP</span></li>
-        <li><b>09</b><span>Climb the Haunt leaderboard</span></li>
-        <li><b>10</b><span>Pick the next Haunt</span></li>
+        <li><b>01</b><span>Sign in with Phantom (+ connect X for X haunts)</span></li>
+        <li><b>02</b><span>Choose: X reply, X post, X meme or TikTok</span></li>
+        <li><b>03</b><span>Replies: pick a Haunt and reply on X</span></li>
+        <li><b>04</b><span>Posts &amp; memes: mention HALLOWINU, $HALLOWINU or @HIonchains</span></li>
+        <li><b>05</b><span>TikTok: put #hallowinu in your caption</span></li>
+        <li><b>06</b><span>Copy the link of YOUR post</span></li>
+        <li><b>07</b><span>Paste it in Submit your Haunt</span></li>
+        <li><b>08</b><span>HALLOWINU verifies who, where &amp; what</span></li>
+        <li><b>09</b><span>Earn XP (TikTok after a quick team check)</span></li>
+        <li><b>10</b><span>Climb the leaderboard</span></li>
       </ol>
     </div>
 
@@ -170,13 +166,15 @@
     <div class="hn-faq reveal">
       <h2 class="section-title hn-h2">Rules <span class="o">&amp;</span> <span class="p">FAQ</span></h2>
       <div class="hn-faq-grid" data-faq>
-        <details><summary>What counts?</summary><p>A real reply from <b>your connected X account</b>, posted under the selected Haunt (or inside its thread) after the Haunt opened. Write like a human: short is fine, copy-paste spam is not.</p></details>
+        <details><summary>What counts?</summary><p><b>X reply:</b> your reply under the selected Haunt, posted after it opened. <b>X post:</b> your own original post (not a repost or reply) that mentions HALLOWINU, $HALLOWINU or @HIonchains. <b>X meme:</b> your post with an image, GIF or video about HALLOWINU. <b>TikTok:</b> your public video with HALLOWINU / #hallowinu in the caption. Posts must be less than 48 hours old. Write like a human — copy-paste spam is rejected.</p></details>
+        <details><summary>How much XP?</summary><p data-faq-rewards>X reply: the Haunt's reward · X post: 10 XP · X meme: 15 XP · TikTok: 20 XP (after review). The server decides every reward.</p></details>
+        <details><summary>Why does TikTok need a review?</summary><p>TikTok does not let us prove automatically that a TikTok account is yours. HALLOWINU checks that the video exists, matches the link and mentions HALLOWINU — then the team confirms it is your account before the XP is added. Your TikTok shows as "in review" until then.</p></details>
         <details><summary>Why was I rejected?</summary><p>The terminal tells you the exact reason: wrong X account, not under the Haunt, too short, text you already used, text copy-pasted by others, or the post could not be found on X.</p></details>
         <details><summary>How often can I haunt?</summary><p data-faq-limits>Up to 3 rewarded haunts per 10 minutes, 2 minutes apart, 20 per day (UTC), one per Haunt.</p></details>
         <details><summary>What happens during cooldown?</summary><p>You can still browse Haunts, the leaderboard and activity. The status shows a live countdown until your next haunt can be claimed.</p></details>
-        <details><summary>Can I use someone else's reply?</summary><p>No. HALLOWINU compares the author of the reply with your connected X account (by permanent X user id). Someone else's reply is always rejected.</p></details>
+        <details><summary>Can I use someone else's post?</summary><p>No. For X, HALLOWINU compares the author with your connected X account (by permanent X user id). Every post or video can only be submitted once, ever — by its creator.</p></details>
         <details><summary>What if X verification fails?</summary><p>If X is busy, your haunt is queued and checked again automatically. You never lose XP because of an outage — and nothing is paid out before it is verified.</p></details>
-        <details><summary>What is Haunt XP for?</summary><p>Haunt XP levels up your HALLOWINU player and ranks you on the Haunt leaderboard. It is separate from Arcade Points and not part of the SOL prize pool.</p></details>
+        <details><summary>What is Haunt XP for?</summary><p>Haunt XP levels up your HALLOWINU player and ranks you on the <a href="/leaderboard">leaderboard</a>. It is separate from Arcade Points and is not a claim on the SOL prize pool.</p></details>
         <details><summary>Is this spam?</summary><p>No bots, no copy-paste, no flooding: limits keep the pack natural and within X's rules. Fraud (e.g. deleting replies after claiming) is removed by the team.</p></details>
       </div>
     </div>
@@ -202,7 +200,7 @@
       </div>
       <div class="foot-col">
         <h4>EXPLORE</h4>
-        <ul><li><a href="/#about">About</a></li><li><a href="/arcade">Arcade</a></li><li><a href="/haunt">The Haunt</a></li><li><a href="/#roadmap">Roadmap</a></li><li><a href="/#live-chart">Token</a></li></ul>
+        <ul><li><a href="/#about">About</a></li><li><a href="/arcade">Arcade</a></li><li><a href="/haunt">The Haunt</a></li><li><a href="/leaderboard">Leaderboard</a></li><li><a href="/token">Token</a></li><li><a href="/#roadmap">Roadmap</a></li></ul>
       </div>
       <div class="foot-col">
         <h4>OFFICIAL</h4>
@@ -226,11 +224,11 @@
   </div>
 </dialog>
 
-<script src="site-config.js?v=46"></script>
-<script src="launch-config.js?v=46"></script>
-<script src="hallowinu.js?v=46" defer></script>
-<script src="wallet.js?v=46" defer></script>
-<script src="haunt.js?v=46" defer></script>
-<script src="launch.js?v=46" defer></script>
+<script src="site-config.js?v=47"></script>
+<script src="launch-config.js?v=47"></script>
+<script src="hallowinu.js?v=47" defer></script>
+<script src="wallet.js?v=47" defer></script>
+<script src="haunt.js?v=47" defer></script>
+<script src="launch.js?v=47" defer></script>
 </body>
 </html>

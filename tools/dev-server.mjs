@@ -17,14 +17,20 @@ if (fresh) DB.migrate(path.join(root, 'migrations'));
 const env = { DB, ADMIN_TOKEN: process.env.ADMIN_TOKEN || 'dev-admin-token-please-change-0000', POOL_WALLET: process.env.POOL_WALLET || '', IP_SALT: 'dev' };
 for (const k of ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_USERNAME', 'TELEGRAM_CHAT_ID', 'X_CLIENT_ID', 'X_CLIENT_SECRET', 'X_OFFICIAL_USER_ID']) if (process.env[k]) env[k] = process.env[k];
 /* DEV ONLY: DEV_FAKE_X=1 simulates the X API (no network, no cost) for local E2E tests.
-   Targets: 19-digit ids. Replies: <target id>0<n>, authored by the fake connected user 4242. */
+   Targets: 19-digit ids. Replies: <target id>0<n>, authored by the fake connected user 4242.
+   X posts: 18-digit ids starting with 8 (text post) or 9 (meme with a photo), by 4242.
+   TikTok oEmbed: any tiktok.com/@handle/video/<id> exists, creator = handle, caption mentions #hallowinu. */
 if (process.env.DEV_FAKE_X) {
   Object.assign(env, { X_BEARER_TOKEN: 'dev', X_CLIENT_ID: 'dev', X_CLIENT_SECRET: 'dev' });
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (u, init) => {
     const url = String(u);
-    if (!url.startsWith('https://api.x.com/')) return realFetch(u, init);
     const j = (b, st = 200) => new Response(JSON.stringify(b), { status: st, headers: { 'content-type': 'application/json' } });
+    if (url.startsWith('https://www.tiktok.com/oembed')) {
+      const mm = decodeURIComponent(url).match(/@([\w.]+)\/video\/(\d+)/);
+      return mm ? j({ type: 'video', author_unique_id: mm[1].toLowerCase(), title: 'ghost dog dance #hallowinu', embed_product_id: mm[2] }) : j({}, 400);
+    }
+    if (!url.startsWith('https://api.x.com/')) return realFetch(u, init);
     if (url.endsWith('/2/oauth2/token')) return j({ access_token: 'dev' });
     if (url.endsWith('/2/oauth2/revoke')) return j({});
     if (url.endsWith('/2/users/me')) return j({ data: { id: '4242', username: 'devghost' } });
@@ -32,6 +38,11 @@ if (process.env.DEV_FAKE_X) {
     if (m) {
       const id = m[1];
       if (id.length === 19) return j({ data: { id, author_id: '777', conversation_id: id, created_at: new Date(Date.now() - 3600_000).toISOString(), text: 'Solana memecoin season — which $SOL meme are you holding?' }, includes: { users: [{ id: '777', username: 'solanaKOL' }] } });
+      if (id.length === 18 && (id[0] === '8' || id[0] === '9')) {
+        const meme = id[0] === '9';
+        return j({ data: { id, author_id: '4242', conversation_id: id, created_at: new Date().toISOString(), text: meme ? '$HALLOWINU 👻' : `The ghost dog $HALLOWINU is haunting Solana tonight ${id.slice(-4)}`, ...(meme ? { attachments: { media_keys: ['3_' + id] } } : {}) },
+          includes: meme ? { media: [{ media_key: '3_' + id, type: 'photo' }] } : {} });
+      }
       const parent = id.slice(0, 19), n = id.slice(20);
       if (id.length > 20 && id[19] === '0') return j({ data: { id, author_id: '4242', conversation_id: parent, created_at: new Date().toISOString(), text: `@solanaKOL the ghost dog is haunting this timeline ${n}`, referenced_tweets: [{ type: 'replied_to', id: parent }] } });
       return j({ errors: [{ title: 'Not Found Error' }] });

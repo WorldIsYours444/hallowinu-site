@@ -181,7 +181,6 @@ export function publicSeason(season, pool, phase) {
     status: season.status, phase,
     displayStatus: ({ UPCOMING: 'UPCOMING', ACTIVE: 'ACTIVE', ENDED: 'LOCKED', FINALIZING: 'UNDER_REVIEW', FINALIZED: 'FINALIZED' })[phase] || phase,
     distributionBps: distributionOf(season),
-    announcedLamports: season.announced_lamports != null ? String(season.announced_lamports) : null,
     rules: JSON.parse(season.rules_json || '{}'),
     pool: pool && {
       totalLamports: pool.totalLamports.toString(), totalSol: lamportsToSolString(pool.totalLamports),

@@ -10,14 +10,15 @@ const SHOTS = process.argv[3] || '';
 const WIDTHS = [1920, 1440, 1280, 1024, 768, 430, 390, 375];
 const browser = await chromium.launch();
 let problems = 0;
-for (const w of WIDTHS) {
+const PATHS = ['/', '/arcade', '/haunt', '/leaderboard', '/token'];
+for (const path of PATHS) for (const w of WIDTHS) {
   const mobile = w <= 430;
   const ctx = await browser.newContext({ viewport: { width: w, height: mobile ? 844 : 900 }, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + path, { waitUntil: 'networkidle' });
   // reveal everything
   await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 30)); } window.scrollTo(0, 0); });
   await page.waitForTimeout(600);
@@ -45,12 +46,12 @@ for (const w of WIDTHS) {
   });
   const bad = r.hscroll > 0 || r.clipped.length || r.outside.length || r.unpaired.length || r.deadButtons || errs.length;
   if (bad) problems++;
-  console.log(`${w}px  hscroll:${r.hscroll}  clipped:${r.clipped.length}  outside:${r.outside.length}  unpairedSocials:${r.unpaired.length}  deadLinks:${r.deadButtons}  jsErrors:${errs.length}`);
+  console.log(`${path} ${w}px  hscroll:${r.hscroll}  clipped:${r.clipped.length}  outside:${r.outside.length}  unpairedSocials:${r.unpaired.length}  deadLinks:${r.deadButtons}  jsErrors:${errs.length}`);
   for (const k of ['clipped', 'outside', 'unpaired']) r[k].slice(0, 6).forEach(x => console.log(`   ${k}: ${x}`));
   errs.slice(0, 3).forEach(e => console.log('   err:', e));
-  if (SHOTS) {
+  if (SHOTS && path === '/') {
     fs.mkdirSync(SHOTS, { recursive: true });
-    for (const sel of ['.hud', '.hero-hud', '#arcade', '#roadmap', '#live-chart', '#community', '.footer']) {
+    for (const sel of ['.hud', '.hero-hud', '#arcade', '#roadmap', '#explore', '#community', '.footer']) {
       const el = page.locator(sel).first();
       await el.scrollIntoViewIfNeeded(); await page.waitForTimeout(250);
       await el.screenshot({ path: `${SHOTS}/${w}-${sel.replace(/[^a-z-]/g, '')}.png` }).catch(() => {});

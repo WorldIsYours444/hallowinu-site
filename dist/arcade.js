@@ -183,7 +183,8 @@
 
   /* ---------- state + rendering ---------- */
   async function refresh() {
-    const r = await api('GET', '/api/arcade');
+    const [r, pi] = await Promise.all([api('GET', '/api/arcade'), S.poolInfo ? Promise.resolve(null) : api('GET', '/api/pool')]);
+    if (pi && pi.ok) S.poolInfo = pi;
     if (!r.ok) { renderOffline(r); return r; }
     S.season = r.season;
     S.games = Object.fromEntries(r.games.map(g => [g.id, g]));
@@ -205,16 +206,17 @@
     const poolL = s.pool ? s.pool.totalLamports : '0';
     const target = Number(BigInt(poolL) / 1000000n) / 1000; // display only
     const el = $('[data-pool]', root);
-    if (shownPool == null || reduce) el.textContent = sol(poolL);
+    const waiting = BigInt(poolL) === 0n && S.poolInfo && S.poolInfo.state !== 'LIVE';
+    if (waiting) { el.textContent = '—'; shownPool = null; }
+    else if (shownPool == null || reduce) el.textContent = sol(poolL);
     else if (shownPool !== target) countUp(el, shownPool, target, poolL);
     shownPool = target;
     const sub = $('[data-pool-sub]', root), ann = $('[data-pool-announced]', root);
-    sub.textContent = s.pool && s.pool.frozen ? 'Frozen for final review' : 'Current verified pool';
-    if (s.announcedLamports != null) {
-      ann.hidden = false;
-      const pending = BigInt(poolL) < BigInt(s.announcedLamports);
-      ann.textContent = `Announced base ◎ ${sol(s.announcedLamports)}${pending ? ' · awaiting verification' : ''}`;
-    } else ann.hidden = true;
+    sub.textContent = s.pool && s.pool.frozen ? 'Frozen for final review'
+      : waiting ? (S.poolInfo.state === 'AWAITING_REWARD_SOURCE' ? 'AWAITING REWARD SOURCE' : 'WAITING FOR FIRST MAKER REWARD')
+      : 'Current verified pool';
+    ann.hidden = false;
+    ann.textContent = '80% of verified maker rewards';
     // "pool increased" banner: only for real, verified maker-reward records
     const lm = s.pool && s.pool.latestMaker;
     if (!lm && store.get('hw-seen-maker') == null) store.set('hw-seen-maker', '0');
@@ -806,22 +808,20 @@
       const c = r.current, pool = c.pool;
       const fmtD = ts => new Date(ts).toUTCString().replace(':00 GMT', ' UTC');
       const tot = S.games['trick-or-treat']?.odds;
-      const base = c.announcedLamports != null ? BigInt(c.announcedLamports) : null;
-      const at = (bps, total) => (total * BigInt(bps)) / 10000n;
       info.innerHTML = `<div class="info">
         <p><b style="color:var(--ghost)">${esc(c.name)}</b><br>${fmtD(c.startsAt)} → ${fmtD(c.endsAt)}</p>
         <h4>PRIZE POOL</h4>
         <dl class="pool-break">
-          ${base != null ? `<div><dt>Announced base pool</dt><dd>◎ ${sol(base)}</dd></div>` : ''}
-          <div><dt>Verified base funding</dt><dd>◎ ${sol(pool.initialLamports)}</dd></div>
-          <div><dt>Verified additions (maker rewards)</dt><dd>◎ ${sol(pool.verifiedAdditionsLamports)}</dd></div>
+          <div><dt>Community share of maker rewards (80%)</dt><dd>◎ ${sol(pool.makerLamports)}</dd></div>
+          ${BigInt(pool.initialLamports) > 0n ? `<div><dt>Verified earlier funding</dt><dd>◎ ${sol(pool.initialLamports)}</dd></div>` : ''}
+          ${BigInt(pool.adjustmentLamports) !== 0n ? `<div><dt>Labelled admin adjustments</dt><dd>◎ ${sol(pool.adjustmentLamports)}</dd></div>` : ''}
           <div class="tot"><dt>Current verified pool</dt><dd>◎ ${sol(pool.totalLamports)}</dd></div>
         </dl>
-        <p class="ax-fine">Only funding verified by the team or on-chain counts. ${base != null && BigInt(pool.totalLamports) < base ? 'The announced base pool is not fully verified yet, so it is not counted below.' : ''} Verified maker rewards grow every prize proportionally.</p>
+        <p class="ax-fine">The pool is funded automatically: 80% of every maker/creator reward that the project wallet actually receives on-chain goes to this Season's Top 10. The other 20% stays outside the pool. Estimated or unclaimed rewards never count. ${S.poolInfo && S.poolInfo.state === 'AWAITING_REWARD_SOURCE' ? '<b>Status: AWAITING REWARD SOURCE</b> — the token is not live yet, so no rewards have been received.' : ''} <a href="/leaderboard#pool" style="color:var(--neon-soft)">Pool details</a></p>
         ${c.funding?.length ? `<ul class="hist">${c.funding.map(f => `<li><span>${esc(f.source.replace('_', ' '))}${f.txSignature ? ` · <a href="https://solscan.io/tx/${encodeURIComponent(f.txSignature)}" target="_blank" rel="noopener noreferrer" style="color:var(--neon-soft)">tx</a>` : ''}<br><small style="color:var(--muted)">verified ${new Date(f.verifiedAt).toLocaleDateString()}</small></span><b>◎ ${sol(f.lamports)}</b></li>`).join('')}</ul>` : ''}
         <h4>TOP 10 PRIZES</h4>
-        <table class="dist"><thead><tr><th>Prize</th><th class="r">Share</th>${base != null ? '<th class="r">At base</th>' : ''}<th class="r">Now (verified)</th></tr></thead><tbody>
-        ${c.estPrizes.map(p => `<tr><td>#${p.rank}</td><td class="r">${(p.bps / 100).toFixed(p.bps % 100 ? (p.bps % 10 ? 2 : 1) : 0)}%</td>${base != null ? `<td class="r">◎ ${sol(at(p.bps, base))}</td>` : ''}<td class="r sol">◎ ${sol(p.lamports)}</td></tr>`).join('')}
+        <table class="dist"><thead><tr><th>Prize</th><th class="r">Share</th><th class="r">Now (verified)</th></tr></thead><tbody>
+        ${c.estPrizes.map(p => `<tr><td>#${p.rank}</td><td class="r">${(p.bps / 100).toFixed(p.bps % 100 ? (p.bps % 10 ? 2 : 1) : 0)}%</td><td class="r sol">◎ ${sol(p.lamports)}</td></tr>`).join('')}
         </tbody></table>
         <h4>RULES</h4>
         <ul>

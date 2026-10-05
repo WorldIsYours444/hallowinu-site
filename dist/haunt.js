@@ -11,7 +11,15 @@
   const sicon = n => `<svg class="soc-ico" aria-hidden="true"><use href="#i-${n}"/></svg>`;
   const fmt = n => (n == null ? '—' : Number(n).toLocaleString('en-US'));
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const S = { offset: 0, data: null, picked: null, range: 'today', busy: false, pendingPoll: null };
+  const S = { offset: 0, data: null, picked: null, type: 'X_REPLY', busy: false, pendingPoll: null };
+  const APPROVED = ['AUTO_APPROVED', 'MANUAL_APPROVED'], REJECTED = ['AUTO_REJECTED', 'MANUAL_REJECTED', 'INVALIDATED'];
+  const TYPE_UI = {
+    X_REPLY: { platform: 'X', help: 'Completed the raid? Pick the Haunt, then paste the link of <b>your</b> X reply.', ph: 'https://x.com/you/status/…', label: 'Your X reply URL', re: /^https?:\/\/(www\.|mobile\.)?(x|twitter)\.com\/.+\/status(es)?\/\d+/i, bad: 'On X: tap Share on your reply → Copy link.' },
+    X_POST: { platform: 'X', help: 'Post about $HALLOWINU on X in your own words — mention <b>HALLOWINU</b>, <b>$HALLOWINU</b> or <b>@HIonchains</b> — then paste the link.', ph: 'https://x.com/you/status/…', label: 'Your X post URL', re: /^https?:\/\/(www\.|mobile\.)?(x|twitter)\.com\/.+\/status(es)?\/\d+/i, bad: 'On X: tap Share on your post → Copy link.' },
+    X_MEME: { platform: 'X', help: 'Post a HALLOWINU meme or generated image on X (image, GIF or video + mention HALLOWINU), then paste the link.', ph: 'https://x.com/you/status/…', label: 'Your X meme post URL', re: /^https?:\/\/(www\.|mobile\.)?(x|twitter)\.com\/.+\/status(es)?\/\d+/i, bad: 'On X: tap Share on your meme post → Copy link.' },
+    TIKTOK_POST: { platform: 'TIKTOK', help: 'Post a HALLOWINU TikTok with <b>#hallowinu</b> in the caption, then paste the full link. The team confirms it is your account before the XP is added.', ph: 'https://www.tiktok.com/@you/video/…', label: 'Your TikTok video URL', re: /^https?:\/\/((www|m)\.)?tiktok\.com\/@[\w.]+\/(video|photo)\/\d+/i, bad: 'Open TikTok → Share → Copy link, open it once and paste the full tiktok.com/@you/video/… link.' },
+  };
+  const typeLabel = t => (S.data && S.data.rules.types && S.data.rules.types[t] ? S.data.rules.types[t].label : t.replace('_', ' '));
   const serverNow = () => Date.now() + S.offset;
 
   function clock(ms) {
@@ -43,9 +51,12 @@
     if (!d.ok) { $('[data-targets]').innerHTML = `<p class="hn-empty">${esc(d.message || 'THE HAUNT is waking up. Check back soon.')}</p>`; return; }
     S.data = d;
     if (S.picked && !d.targets.some(t => t.id === S.picked)) S.picked = null;
-    renderHud(); renderGate(); renderTargets(); renderPicked(); renderMine();
+    renderHud(); renderGate(); renderTargets(); renderTypes(); renderPicked(); renderMine();
     const r = d.rules; const fl = $('[data-faq-limits]');
-    if (fl) fl.textContent = `Up to ${r.window} rewarded haunts per ${r.windowMinutes} minutes, at least ${r.minGapMinutes} minutes apart, ${r.perDay} per day (resets 00:00 UTC), one per Haunt.`;
+    const T = r.types || {};
+    if (fl) fl.textContent = `Up to ${r.window} rewarded haunts per ${r.windowMinutes} minutes, at least ${r.minGapMinutes} minutes apart, ${r.perDay} per day in total (resets 00:00 UTC), one per Haunt.` + (T.X_POST ? ` Per type per day: X reply ${T.X_REPLY.perDay}, X post ${T.X_POST.perDay}, X meme ${T.X_MEME.perDay}, TikTok ${T.TIKTOK_POST.perDay}.` : '');
+    const fr = $('[data-faq-rewards]');
+    if (fr && T.X_POST) fr.textContent = `X reply: the Haunt's reward · X post: ${T.X_POST.reward} XP · X meme: ${T.X_MEME.reward} XP · TikTok: ${T.TIKTOK_POST.reward} XP (after review). The server decides every reward — the browser never can.`;
   }
 
   function renderHud() {
@@ -77,8 +88,8 @@
   function renderGate() {
     const g = $('[data-gate]'), d = S.data, a = d.access || {};
     let html = '';
-    if (!d.available) {
-      html = `<div class="hn-gate-row"><span class="hn-gate-ico">${icon('moon')}</span><div><b>THE HAUNT OPENS SOON</b><p>X verification is being switched on. Targets, limits and the leaderboard are ready — the first Haunts drop very soon.</p></div>
+    if (!d.available && a.profileComplete) {
+      html = `<div class="hn-gate-row"><span class="hn-gate-ico">${icon('moon')}</span><div><b>X HAUNTS OPEN SOON</b><p>X verification is being switched on. TikTok haunts already work — pick TIKTOK in the terminal.</p></div>
         <div class="hn-gate-acts"><a class="btn btn-orange btn-sm" href="${esc(SITE.links.x)}" target="_blank" rel="noopener noreferrer">${sicon('x')}X / Twitter</a><a class="btn btn-purple btn-sm" href="${esc(SITE.links.telegram)}" target="_blank" rel="noopener noreferrer">${sicon('tg')}Telegram</a></div></div>`;
     } else if (!a.walletVerified) {
       const p = W.phantom();
@@ -89,10 +100,10 @@
     } else if (!a.profileComplete) {
       html = `<div class="hn-gate-row"><span class="hn-gate-ico">${icon('trophy')}</span><div><b>STEP 2 · CHOOSE YOUR PLAYER NAME</b><p>Finish your player card in the Arcade, then come back to haunt.</p></div><div class="hn-gate-acts"><a class="btn btn-primary btn-sm" href="/arcade">Go to the Arcade</a></div></div>`;
     } else if (!d.me.x.connected) {
-      html = `<div class="hn-gate-row"><span class="hn-gate-ico">${sicon('x')}</span><div><b>STEP 3 · CONNECT YOUR X ACCOUNT</b><p>HALLOWINU needs to know which X account is yours, so nobody can claim your replies. Read-only, no posting.</p></div><div class="hn-gate-acts"><a class="btn btn-orange btn-sm" href="/api/socials/x/start?return=haunt">${sicon('x')}Connect X</a></div></div>`;
+      html = `<div class="hn-gate-row"><span class="hn-gate-ico">${sicon('x')}</span><div><b>STEP 3 · CONNECT YOUR X ACCOUNT</b><p>Needed for X replies, posts and memes, so nobody can claim your posts. Read-only, no posting. TikTok haunts work without X.</p></div><div class="hn-gate-acts"><a class="btn btn-orange btn-sm" href="/api/socials/x/start?return=haunt">${sicon('x')}Connect X</a></div></div>`;
     }
     g.hidden = !html; g.innerHTML = html;
-    root.classList.toggle('is-locked', !!html);
+    root.classList.toggle('is-locked', !!html && !(d.me && a.profileComplete));
     const who = d.me && d.me.x.connected ? `<span class="hn-who">${sicon('x')}@${esc(d.me.x.username || 'connected')}</span>` : '';
     $('[data-hud]').dataset.who = d.me && d.me.x.connected ? d.me.x.username || '' : '';
     const old = $('.hn-who'); if (old) old.remove();
@@ -104,7 +115,7 @@
     $('[data-target-count]').textContent = `${ts.length} OPEN`;
     if (!ts.length) { list.innerHTML = `<div class="hn-empty-card">${icon('moon')}<b>NO HAUNTS RIGHT NOW</b><p>New targets drop throughout the day. Keep this page open — it refreshes by itself.</p></div>`; return; }
     list.innerHTML = ts.map(t => {
-      const done = t.mine === 'AUTO_APPROVED', queued = t.mine && !done;
+      const done = APPROVED.includes(t.mine), queued = t.mine && !done;
       const state = done ? '<span class="tag is-green">✓ HAUNTED</span>' : queued ? '<span class="tag">VERIFYING</span>' : t.full ? '<span class="tag is-dim">FULL</span>' : '<span class="tag is-purple">OPEN</span>';
       return `<article class="hn-card ${done ? 'is-done' : ''} ${t.full ? 'is-full' : ''} ${S.picked === t.id ? 'is-picked' : ''}" data-tid="${t.id}">
         <div class="hn-card-top"><b class="hn-num">HAUNT #${t.id}</b>${state}</div>
@@ -120,12 +131,37 @@
     tick();
   }
 
+  function typeLocked(type) {
+    const d = S.data; if (!d || !d.me) return true;
+    return TYPE_UI[type].platform === 'X' && (!d.available || !d.me.x.connected);
+  }
+  function renderTypes() {
+    const d = S.data, T = d && d.rules.types; if (!T) return;
+    $$('[data-type]').forEach(b => {
+      const k = b.dataset.type, me = d.me && d.me.types && d.me.types[k];
+      b.setAttribute('aria-checked', String(k === S.type));
+      b.classList.toggle('is-off', typeLocked(k));
+      const meta = $(`[data-type-meta="${k}"]`);
+      if (meta) meta.textContent = `${T[k].reward ? '+' + T[k].reward + ' XP' : 'Haunt XP'} · ${me ? me.used + '/' + me.limit : T[k].perDay + '/day'}`;
+    });
+    const u = TYPE_UI[S.type];
+    $('[data-type-help]').innerHTML = u.help;
+    $('#hn-url').placeholder = u.ph; $('[data-url-label]').textContent = u.label;
+  }
   function renderPicked() {
     const box = $('[data-picked]'), t = S.data && S.data.targets.find(x => x.id === S.picked);
-    const st = stateNow();
+    const st = stateNow(), reply = S.type === 'X_REPLY';
     const btn = $('[data-claim]'), input = $('#hn-url');
-    const locked = !S.data || !S.data.available || !S.data.me || !S.data.me.x.connected;
-    input.disabled = locked; btn.disabled = locked || S.busy || !t || st !== 'ACTIVE';
+    const locked = !S.data || typeLocked(S.type);
+    const meT = S.data && S.data.me && S.data.me.types && S.data.me.types[S.type];
+    const typeFull = meT && meT.used >= meT.limit;
+    input.disabled = locked; btn.disabled = locked || S.busy || (reply && !t) || st !== 'ACTIVE' || typeFull;
+    box.hidden = !reply && !typeFull && st === 'ACTIVE';
+    if (!reply) {
+      box.innerHTML = typeFull ? `<span class="tag is-dim">${esc(typeLabel(S.type))} LIMIT REACHED</span><small>Try another type or come back after 00:00 UTC.</small>`
+        : st !== 'ACTIVE' && S.data && S.data.me ? `<small class="hn-wait">${st === 'DAILY_LIMIT' ? 'Daily limit reached' : 'Cooldown active'} — see status above.</small>` : '';
+      return;
+    }
     if (!t) { box.innerHTML = '<span class="tag is-dim">NO HAUNT SELECTED</span><small>Pick a Haunt with “I replied →”.</small>'; return; }
     box.innerHTML = `<span class="tag">HAUNT #${t.id}</span><small>@${esc(t.author || '')} · +${fmt(t.reward)} XP</small><button class="ax-link" type="button" data-unpick>change</button>`;
     if (st !== 'ACTIVE' && S.data.me) box.insertAdjacentHTML('beforeend', `<small class="hn-wait">${st === 'DAILY_LIMIT' ? 'Daily limit reached' : 'Cooldown active'} — see status above.</small>`);
@@ -135,9 +171,13 @@
     const box = $('[data-mine-box]'), ul = $('[data-mine]'), me = S.data.me;
     if (!me || !me.submissions.length) { box.hidden = true; return; }
     box.hidden = false;
-    ul.innerHTML = me.submissions.map(s => `<li class="${s.status === 'AUTO_APPROVED' ? 'ok' : s.status === 'AUTO_REJECTED' || s.status === 'INVALIDATED' ? 'bad' : 'wait'}">
-      <span>${s.status === 'AUTO_APPROVED' ? '👻' : s.status === 'AUTO_REJECTED' || s.status === 'INVALIDATED' ? '✕' : '…'} HAUNT #${s.targetId}<small>${esc(s.status === 'AUTO_APPROVED' ? 'approved' : s.message || s.status.replace('_', ' ').toLowerCase())}</small></span>
-      <b>${s.points ? '+' + fmt(s.points) + ' XP' : ''}</b></li>`).join('');
+    ul.innerHTML = me.submissions.map(s => {
+      const ok = APPROVED.includes(s.status), bad = REJECTED.includes(s.status), review = s.status === 'MANUAL_REVIEW';
+      const what = s.type === 'X_REPLY' || !s.type ? `HAUNT #${s.targetId}` : esc(s.typeLabel || typeLabel(s.type));
+      const note = ok ? (s.status === 'MANUAL_APPROVED' ? 'approved by the team' : 'approved') : review ? 'in review' : s.message || s.status.replace(/_/g, ' ').toLowerCase();
+      return `<li class="${ok ? 'ok' : bad ? 'bad' : 'wait'}"><span><i class="hn-type t-${esc((s.type || 'X_REPLY').toLowerCase())}">${esc(s.typeLabel || typeLabel(s.type || 'X_REPLY'))}</i> ${ok ? '👻' : bad ? '✕' : '…'} ${what}<small>${esc(note)}</small></span>
+      <b>${s.points ? '+' + fmt(s.points) + ' XP' : ''}</b></li>`;
+    }).join('');
   }
 
   /* ---------- submit terminal ---------- */
@@ -148,25 +188,34 @@
   async function submit(e) {
     e.preventDefault();
     if (S.busy) return;
-    const url = $('#hn-url').value.trim();
-    if (!S.picked) { toast('PICK A HAUNT', 'Choose the Haunt you replied to first.', 'ghost', true); return; }
-    if (!/^https?:\/\/(www\.|mobile\.)?(x|twitter)\.com\/.+\/status(es)?\/\d+/i.test(url)) { result.hidden = false; result.className = 'hn-result bad'; result.innerHTML = '<b>THAT IS NOT AN X POST LINK</b><p>On X: tap Share on your reply → Copy link.</p>'; return; }
+    const url = $('#hn-url').value.trim(), type = S.type, u = TYPE_UI[type];
+    if (type === 'X_REPLY' && !S.picked) { toast('PICK A HAUNT', 'Choose the Haunt you replied to first.', 'ghost', true); return; }
+    if (!u.re.test(url)) {
+      const other = Object.entries(TYPE_UI).find(([k, v]) => v.platform !== u.platform && v.re.test(url));
+      result.hidden = false; result.className = 'hn-result bad';
+      result.innerHTML = other ? `<b>WRONG PLATFORM</b><p>That is a ${other[1].platform === 'X' ? 'X' : 'TikTok'} link. Pick ${other[1].platform === 'X' ? 'an X type' : 'TIKTOK'} above, or paste your ${u.platform === 'X' ? 'X' : 'TikTok'} link.</p>`
+        : `<b>THAT IS NOT ${u.platform === 'X' ? 'AN X POST' : 'A TIKTOK VIDEO'} LINK</b><p>${esc(u.bad)}</p>`;
+      return;
+    }
     S.busy = true; renderPicked(); log.innerHTML = ''; result.hidden = true;
-    const head = line('VERIFYING ON X', 'run');
-    const req = api('POST', '/api/haunt/submit', { url, targetId: S.picked });
-    let dots = 0; const anim = setInterval(() => { head.textContent = 'VERIFYING ON X' + '.'.repeat(++dots % 4); }, 300);
+    const where = u.platform === 'X' ? 'ON X' : 'ON TIKTOK';
+    const head = line('VERIFYING ' + where, 'run');
+    const req = api('POST', '/api/haunt/submit', type === 'X_REPLY' ? { type, url, targetId: S.picked } : { type, url });
+    let dots = 0; const anim = setInterval(() => { head.textContent = 'VERIFYING ' + where + '.'.repeat(++dots % 4); }, 300);
     const r = await req; clearInterval(anim);
-    head.textContent = 'VERIFYING ON X…'; head.className = 'done';
+    head.textContent = 'VERIFYING ' + where + '…'; head.className = 'done';
     if (!r.ok) {
       line(r.message ? r.message.toUpperCase() : 'SOMETHING WENT WRONG', 'fail');
       if (r.error === 'COOLDOWN' || r.error === 'DAILY_LIMIT') { S.data.me.state = r.error; S.data.me.nextAt = r.nextAt; tick(); }
-      showResult('bad', r.error === 'COOLDOWN' ? 'COOLDOWN' : r.error === 'DAILY_LIMIT' ? 'DAILY LIMIT REACHED' : 'NOT CLAIMED', r.message || 'Try again.');
+      showResult('bad', r.error === 'COOLDOWN' ? 'COOLDOWN' : r.error === 'DAILY_LIMIT' ? 'DAILY LIMIT REACHED' : r.error === 'TYPE_DAILY_LIMIT' ? 'TYPE LIMIT REACHED' : r.error === 'WRONG_PLATFORM' ? 'WRONG PLATFORM' : 'NOT CLAIMED', r.message || 'Try again.');
     } else {
       const s = r.submission;
-      for (const c of s.checks) { await wait(140); line(`${c.label.toUpperCase()}…`, c.ok ? 'ok' : 'fail'); }
+      for (const c of s.checks) { await wait(140); line(`${c.label.toUpperCase()}…`, c.ok ? 'ok' : c.ok === null ? 'run' : 'fail'); }
       await wait(200);
-      if (s.status === 'AUTO_APPROVED') { showResult('good', 'APPROVED 👻', `+${fmt(s.points)} XP · HAUNT #${s.targetId}`); $('#hn-url').value = ''; S.picked = null; burst(); }
-      else if (s.status === 'AUTO_REJECTED') showResult('bad', 'REJECTED', s.message || s.reason);
+      const what = s.type === 'X_REPLY' ? `HAUNT #${s.targetId}` : (s.typeLabel || typeLabel(s.type));
+      if (APPROVED.includes(s.status)) { showResult('good', 'APPROVED 👻', `+${fmt(s.points)} XP · ${what}`); $('#hn-url').value = ''; S.picked = null; burst(); }
+      else if (REJECTED.includes(s.status)) showResult('bad', 'REJECTED', s.message || s.reason);
+      else if (s.status === 'MANUAL_REVIEW') { showResult('wait', 'IN REVIEW 🔍', s.message || 'The team checks it and adds the XP.'); $('#hn-url').value = ''; }
       else { showResult('wait', 'QUEUED FOR VERIFICATION', s.message || 'We will check it automatically.'); pollPending(s.id); }
       if (r.duplicateOf) line('ALREADY SUBMITTED — SHOWING THE EXISTING RESULT', 'done');
     }
@@ -186,34 +235,40 @@
       const r = await api('GET', `/api/haunt/submissions/${id}`);
       if (!r.ok) return;
       const s = r.submission;
-      if (s.status === 'AUTO_APPROVED') { clearInterval(S.pendingPoll); toast('HAUNT APPROVED', `+${s.points} XP · HAUNT #${s.targetId}`); load(); loadBoard(); }
-      else if (s.status === 'AUTO_REJECTED' || s.status === 'MANUAL_REVIEW') { clearInterval(S.pendingPoll); toast(s.status === 'MANUAL_REVIEW' ? 'SENT TO REVIEW' : 'HAUNT REJECTED', s.message || '', 'skull', true); load(); }
+      if (APPROVED.includes(s.status)) { clearInterval(S.pendingPoll); toast('HAUNT APPROVED', `+${s.points} XP · ${s.type === 'X_REPLY' ? 'HAUNT #' + s.targetId : s.typeLabel}`); load(); loadBoard(); }
+      else if (REJECTED.includes(s.status) || s.status === 'MANUAL_REVIEW') { clearInterval(S.pendingPoll); toast(s.status === 'MANUAL_REVIEW' ? 'SENT TO REVIEW' : 'HAUNT REJECTED', s.message || '', 'skull', true); load(); }
     }, 30000);
   }
 
   /* ---------- leaderboard + feed ---------- */
+  /* compact rank preview — the full board lives on /leaderboard */
   async function loadBoard() {
-    const r = await api('GET', `/api/haunt/leaderboard?range=${S.range}`), tb = $('[data-board]');
-    if (!r.ok) { tb.innerHTML = `<tr><td colspan="4" class="ax-empty">${esc(r.message || 'Could not load.')}</td></tr>`; return; }
-    tb.innerHTML = r.rows.length ? r.rows.map(x => `<tr class="${x.me ? 'me ' : ''}${x.rank <= 3 ? 'top' : ''}"><td class="rk">#${x.rank}</td><td class="nm">${esc(x.name)}</td><td class="r">${fmt(x.haunts)}</td><td class="r pts">${fmt(x.xp)}</td></tr>`).join('')
-      : `<tr><td colspan="4" class="ax-empty">No haunts ${S.range === 'today' ? 'today' : S.range === 'week' ? 'this week' : 'yet'}. Be the first ghost on the board.</td></tr>`;
+    const r = await api('GET', '/api/haunt/leaderboard?range=today&size=3'), ol = $('[data-board]'), mine = $('[data-myrank]');
+    if (!r.ok) { ol.innerHTML = `<li class="hn-empty">${esc(r.message || 'Could not load.')}</li>`; return; }
+    ol.innerHTML = r.rows.length ? r.rows.map(x => `<li class="${x.me ? 'me ' : ''}top${x.rank}"><span class="rk">#${x.rank}</span><b>${esc(x.name)}</b>${x.me ? '<em>YOU</em>' : ''}<span class="xp">${fmt(x.xp)} XP</span></li>`).join('')
+      : '<li class="hn-empty">No haunts today yet. Be the first ghost on the board.</li>';
+    const me = S.data && S.data.me, row = r.rows.find(x => x.me) || r.me;
+    mine.innerHTML = !me ? '<span>Sign in to see your rank.</span>'
+      : row ? `<span>YOUR RANK TODAY</span><b>#${fmt(row.rank)}</b><small>${fmt(row.xp)} XP</small>${me.rank ? `<span class="hn-all">ALL TIME #${fmt(me.rank)}</span>` : ''}`
+        : `<span>Not ranked today yet.</span>${me.rank ? `<span class="hn-all">ALL TIME #${fmt(me.rank)}</span>` : ''}`;
   }
   async function loadFeed() {
     const r = await api('GET', '/api/haunt/activity'), ul = $('[data-feed]');
     if (!r.ok) return;
-    ul.innerHTML = r.items.length ? r.items.map(i => `<li class="ok"><span>👻 <b>${esc(i.name)}</b> haunted #${i.targetId}<small>${ago(i.at)}</small></span><b>+${fmt(i.xp)} XP</b></li>`).join('') : '<li class="hn-empty">Quiet in the graveyard… for now.</li>';
+    const verb = i => ({ X_POST: 'posted on X', X_MEME: 'dropped a meme', TIKTOK_POST: 'posted a TikTok' })[i.type] || `haunted #${i.targetId}`;
+    ul.innerHTML = r.items.length ? r.items.map(i => `<li class="ok"><span><i class="hn-type t-${esc((i.type || 'X_REPLY').toLowerCase())}">${esc(i.typeLabel || 'X REPLY')}</i> <b>${esc(i.name)}</b> ${verb(i)}<small>${ago(i.at)}</small></span><b>+${fmt(i.xp)} XP</b></li>`).join('') : '<li class="hn-empty">Quiet in the graveyard… for now.</li>';
   }
 
   /* ---------- events ---------- */
   $('[data-form]').addEventListener('submit', submit);
   root.addEventListener('click', async e => {
     const t = e.target;
+    const ty = t.closest('[data-type]');
+    if (ty) { S.type = ty.dataset.type; result.hidden = true; renderTypes(); renderPicked(); return; }
     const pick = t.closest('[data-pick]');
-    if (pick) { S.picked = Number(pick.dataset.pick); renderTargets(); renderPicked(); $('[data-submit]').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); setTimeout(() => $('#hn-url').focus({ preventScroll: true }), 350); return; }
+    if (pick) { S.type = 'X_REPLY'; renderTypes(); S.picked = Number(pick.dataset.pick); renderTargets(); renderPicked(); $('[data-submit]').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); setTimeout(() => $('#hn-url').focus({ preventScroll: true }), 350); return; }
     const ox = t.closest('[data-open-x]'); if (ox) { S.picked = Number(ox.dataset.openX); renderTargets(); renderPicked(); return; }
     if (t.closest('[data-unpick]')) { S.picked = null; renderTargets(); renderPicked(); return; }
-    const rg = t.closest('[data-range]');
-    if (rg) { S.range = rg.dataset.range; $$('[data-range]').forEach(b => b.setAttribute('aria-selected', String(b === rg))); loadBoard(); return; }
     if (t.closest('[data-connect]')) {
       const btn = t.closest('[data-connect]'); btn.disabled = true; btn.textContent = 'CHECK PHANTOM…';
       const r = await W.signIn();

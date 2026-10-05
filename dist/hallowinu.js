@@ -27,7 +27,12 @@
   const onMotion = fn => { listeners.add(fn); fn(paused); };
 
   /* old shared links (hallowinu.xyz/#arcade) now live on their own page */
-  const toArcade = () => { if (/^#arcade/.test(location.hash) && !document.querySelector('[data-arcade]')) { location.replace('/arcade'); return true; } return false; };
+  const toArcade = () => {
+    if (/^#arcade/.test(location.hash) && !document.querySelector('[data-arcade]')) { location.replace('/arcade'); return true; }
+    if (/^#(live-chart|token|chart)$/.test(location.hash) && !document.querySelector('#live-chart')) { location.replace('/token'); return true; }   // token terminal moved to /token
+    if (/^#(leaderboard|haunt-leaderboard)$/.test(location.hash) && !document.querySelector('[data-lb]')) { location.replace('/leaderboard'); return true; }
+    return false;
+  };
   if (toArcade()) return;
   addEventListener('hashchange', toArcade);
 

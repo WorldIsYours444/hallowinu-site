@@ -68,7 +68,10 @@ for (const [w, h, mobile] of [[1440, 900, false], [390, 844, true]]) {
     check(/COOLDOWN/.test(await page.textContent('[data-s="state"]')) && /NEXT HAUNT IN \d\d:\d\d/.test(await page.textContent('[data-s="next"]')), 'cooldown with live countdown');
     check(await page.locator('.hn-card.is-done').count() === 1, 'card marked HAUNTED');
     await page.waitForTimeout(400);
-    check(/HAUNTER/.test(await page.textContent('[data-board]')), 'leaderboard shows player name');
+    check(/HAUNTER/.test(await page.textContent('[data-board]')), 'rank preview shows player name');
+    check(/YOUR RANK TODAY/.test(await page.textContent('[data-myrank]')), 'rank preview shows my rank');
+    check(await page.locator('.hn-board table').count() === 0 && await page.locator('a[href="/leaderboard"]:has-text("View full leaderboard")').count() === 1, 'no full board on /haunt; link to /leaderboard');
+    check(/X REPLY/.test(await page.textContent('[data-mine]')), 'history shows submission type');
     check(/haunted #/.test(await page.textContent('[data-feed]')), 'activity feed updated');
     // resubmitting the same reply -> idempotent
     const other = await page.getAttribute('.hn-card:not(.is-done)', 'data-tid');
@@ -84,6 +87,69 @@ for (const [w, h, mobile] of [[1440, 900, false], [390, 844, true]]) {
     check(overflow <= 0, 'mobile: no horizontal overflow');
     if (SHOTS) { await page.screenshot({ path: `${SHOTS}/haunt-${w}.png`, fullPage: true }); }
   }
+  await ctx.close();
+}
+/* ---------- second player: TikTok (no X needed) → in review; type selector ---------- */
+{
+  console.log('TIKTOK FLOW');
+  const kp2 = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+  const pub2 = base58Encode(new Uint8Array(await crypto.subtle.exportKey('raw', kp2.publicKey)));
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await ctx.exposeBinding('__s', async (_s, bytes) => [...new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, kp2.privateKey, new Uint8Array(bytes)))]);
+  await ctx.addInitScript(p => { window.phantom = { solana: { isPhantom: true, async connect() { return { publicKey: { toString: () => p } }; }, async signMessage(m) { return { signature: new Uint8Array(await window.__s([...m])) }; }, on() {}, async disconnect() {} } }; }, pub2);
+  const page = await ctx.newPage();
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(BASE + '/haunt'); await page.waitForSelector('[data-connect]'); await page.click('[data-connect]');
+  await page.waitForSelector('text=CHOOSE YOUR PLAYER NAME');
+  await page.evaluate(() => fetch('/api/me', { method: 'PATCH', headers: { 'content-type': 'application/json', 'x-hw-client': '1' }, body: JSON.stringify({ displayName: 'TIKGHOST' + Math.floor(Math.random() * 1e4) }) }));
+  await page.reload(); await page.waitForSelector('text=CONNECT YOUR X ACCOUNT');
+  check(await page.locator('[data-type]').count() === 4, 'four submission types in one terminal');
+  check(/\+20 XP/.test(await page.textContent('[data-type-meta="TIKTOK_POST"]')), 'type reward comes from server rules');
+  check(await page.locator('#hn-url').isDisabled(), 'X reply locked without X account');
+  await page.click('[data-type="TIKTOK_POST"]');
+  check(await page.locator('[data-picked]').isHidden(), 'no Haunt picker for TikTok');
+  check(!(await page.locator('#hn-url').isDisabled()), 'TikTok works without X');
+  await page.fill('#hn-url', 'https://x.com/someone/status/1234567890');
+  await page.click('[data-claim]');
+  check(/WRONG PLATFORM/.test(await page.textContent('[data-result]')), 'wrong platform caught in the browser');
+  await page.fill('#hn-url', `https://www.tiktok.com/@tikghost/video/73${Date.now()}`);
+  await page.click('[data-claim]');
+  await page.waitForSelector('.hn-result.wait', { timeout: 10000 });
+  check(/IN REVIEW/.test(await page.textContent('[data-result]')), 'TikTok → in review (never auto-approved)');
+  await page.waitForTimeout(400);
+  check(/TIKTOK/.test(await page.textContent('[data-mine]')) && /in review/.test(await page.textContent('[data-mine]')), 'history shows TikTok in review');
+  check((await page.textContent('[data-s="xp"]')) === '0', 'no XP before review');
+  await ctx.close();
+}
+
+/* ---------- new pages + nav ---------- */
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  page.on('pageerror', e => errors.push(e.message));
+  for (const path of ['/', '/arcade', '/haunt', '/leaderboard', '/token']) {
+    await page.goto(BASE + path);
+    const labels = (await page.locator('.nav-links a').allTextContents()).map(t => t.replace(/\s+/g, ' ').trim());
+    check(JSON.stringify(labels) === JSON.stringify(['About', 'Arcade', 'The HauntNEW (new)', 'Leaderboard', 'Token', 'Community']), `${path}: nav order ${JSON.stringify(labels)}`);
+    check(await page.locator('.nav-links .nav-new, .mobile-menu .nav-new').count() === 2 && await page.locator('a[href="/haunt"] .nav-new').count() >= 2, `${path}: NEW only on The Haunt`);
+  }
+  await page.goto(BASE + '/#live-chart'); await page.waitForURL(/\/token/);
+  check(true, 'legacy #live-chart redirects to /token');
+  check(await page.locator('#live-chart .term-chart').count() === 1, '/token has the terminal + chart');
+  await page.goto(BASE + '/');
+  check(await page.locator('.term-chart').count() === 0 && await page.locator('.explore-card').count() === 4, 'home: no duplicate chart, 4 teaser cards');
+  await page.goto(BASE + '/leaderboard'); await page.waitForSelector('.lb-row:not(.lb-head), .lb-empty');
+  await page.waitForTimeout(500);
+  check(await page.locator('.lb-podium .pd').count() >= 1, 'leaderboard podium rendered');
+  check(/HAUNTER/.test(await page.textContent('[data-list]')), 'leaderboard lists real players');
+  check(/AWAITING REWARD SOURCE/.test(await page.textContent('[data-pool]')), 'pool shows AWAITING REWARD SOURCE (no fake value)');
+  await page.click('[data-board="arcade"]'); await page.waitForTimeout(500);
+  check(/Season/.test(await page.textContent('[data-ranges]')), 'arcade tab: season/all ranges');
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/leaderboard-1440.png`, fullPage: true });
+  await page.setViewportSize({ width: 360, height: 800 }); await page.click('[data-board="haunt"]'); await page.waitForTimeout(500);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  check(overflow <= 0, 'leaderboard mobile: no horizontal overflow (cards)');
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/leaderboard-360.png`, fullPage: true });
   await ctx.close();
 }
 await browser.close();

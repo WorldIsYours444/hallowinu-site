@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>HALLOWINU Arcade — play, earn points, climb the board</title>
+<title>HALLOWINU Leaderboard — top haunters, players & the community pool</title>
 <meta name="description" content="HALLOWINU is the ghost dog of Halloween on Solana. A pixel-art Halloween memecoin universe built by its community. Coming soon.">
 <meta name="theme-color" content="#06030c">
-<link rel="canonical" href="https://hallowinu.xyz/arcade">
+<link rel="canonical" href="https://hallowinu.xyz/leaderboard">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://hallowinu.xyz/arcade">
+<meta property="og:url" content="https://hallowinu.xyz/leaderboard">
 <meta property="og:title" content="HALLOWINU — The ghost dog of Halloween on Solana">
 <meta property="og:description" content="No tricks. Just treats. Join the pack before spooky season peaks.">
 <meta property="og:image" content="https://hallowinu.xyz/img/og.jpg">
@@ -22,6 +22,7 @@
 <link rel="preload" href="fonts/press-start.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="hallowinu.css?v=47">
 <link rel="stylesheet" href="arcade.css?v=47">
+<link rel="stylesheet" href="leaderboard.css?v=47">
 <script>document.documentElement.classList.replace('no-js','js')</script>
 </head>
 <body>
@@ -37,9 +38,9 @@
     </a>
     <ul class="nav-links">
       <li><a href="/#about">About</a></li>
-      <li><a href="/arcade" aria-current="true">Arcade</a></li>
+      <li><a href="/arcade">Arcade</a></li>
       <li><a href="/haunt">The Haunt<span class="soon nav-new" aria-hidden="true">NEW</span><span class="sr"> (new)</span></a></li>
-      <li><a href="/leaderboard">Leaderboard</a></li>
+      <li><a href="/leaderboard" aria-current="true">Leaderboard</a></li>
       <li><a href="/token">Token</a></li>
       <li><a href="/#community">Community</a></li>
     </ul>
@@ -53,130 +54,66 @@
 <div class="mobile-menu" id="mobile-menu">
   <ul>
     <li><a href="/#about">About</a></li>
-    <li><a href="/arcade" aria-current="true">Arcade</a></li>
+    <li><a href="/arcade">Arcade</a></li>
     <li><a href="/haunt"><span>The Haunt<span class="soon nav-new" aria-hidden="true">NEW</span><span class="sr"> (new)</span></span></a></li>
-    <li><a href="/leaderboard">Leaderboard</a></li>
+    <li><a href="/leaderboard" aria-current="true">Leaderboard</a></li>
     <li><a href="/token">Token</a></li>
     <li><a href="/#community">Community</a></li>
   </ul>
   <div class="menu-actions"><a class="btn btn-orange soc-btn soc-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.8 2.5h3.3l-7.2 8.2 8.5 10.8h-6.6l-5.2-6.8-6 6.8H1.3l7.7-8.8L.9 2.5h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.1h1.8L6.6 4.3H4.6l12 15.3Z"/></svg>X / Twitter</a><a class="btn btn-purple soc-btn soc-tg" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13 1.2 11.5c-1.1-.3-1.1-1.1.2-1.6L20.6 2.5c.9-.3 1.7.2 1.3 1.8Z"/></svg>Telegram</a></div>
 </div>
 
-<main id="main" class="arcade-page">
-<!-- ============ ARCADE ============ -->
-<section class="section arcade" id="arcade" aria-labelledby="arcade-title">
+<main id="main" class="lb-page">
+<!-- ============ LEADERBOARD (/leaderboard) ============ -->
+<section class="section lb" id="leaderboard" aria-labelledby="lb-title" data-lb>
   <div class="wrap">
     <div class="section-head center reveal">
-      <p class="eyebrow">Play · Earn points · Climb the board</p>
-      <h1 class="neon-sign" id="arcade-title"><span class="o">HALLOWINU</span> <span class="p">ARCADE</span></h1>
-      <p class="lead">Four haunted cabinets. Connect Phantom, pick a player name and earn Arcade Points, XP and achievements. The Top 10 verified players of each season share the SOL prize pool.</p>
+      <p class="eyebrow">Graveyard rankings</p>
+      <h1 class="neon-sign" id="lb-title"><span class="o">LEADER</span><span class="p">BOARD</span></h1>
+      <p class="lead">The top haunters and arcade players of the pack. Live data only — every point here was earned and verified.</p>
     </div>
 
-    <div class="ax" data-arcade aria-live="polite">
-      <!-- Season / prize pool bar -->
-      <div class="ax-season px-frame is-orange hud-glass reveal">
-        <div class="ax-season-left">
-          <span class="tag" data-season-phase><span class="dot blink"></span>Loading…</span>
-          <h3 class="ax-season-name" data-season-name>SEASON 01</h3>
-          <p class="ax-countdown"><span data-season-countdown-label>ENDS IN</span> <b data-season-countdown>--:--:--:--</b></p>
-        </div>
-        <div class="ax-pool">
-          <span class="ax-pool-label">PRIZE POOL</span>
-          <span class="ax-pool-value"><span class="sol">◎</span> <b data-pool>—</b> <small>SOL</small></span>
-          <span class="ax-pool-sub" data-pool-sub>Verified funding only</span>
-          <span class="ax-pool-announced" data-pool-announced hidden></span>
-          <span class="ax-pool-bump" data-pool-bump hidden></span>
-        </div>
-        <div class="ax-season-actions">
-          <button class="btn btn-orange btn-sm" type="button" data-open="prizes"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-chest"/></svg>Prizes &amp; rules</button>
-          <button class="btn btn-purple btn-sm icon-btn ax-sound" type="button" data-sound aria-pressed="true" aria-label="Sound on">♪</button>
+    <div class="lb-controls px-frame hud-glass reveal">
+      <div class="lb-ctl">
+        <span class="lb-ctl-label">BOARD</span>
+        <div class="ax-tabs" role="tablist" aria-label="Leaderboard">
+          <button type="button" role="tab" aria-selected="true" data-board="haunt">Haunt XP</button>
+          <button type="button" role="tab" aria-selected="false" data-board="arcade">Arcade</button>
         </div>
       </div>
-
-      <div class="ax-main">
-        <!-- Player card -->
-        <aside class="ax-player px-frame hud-glass reveal" data-player>
-          <div class="ax-enter" data-enter>
-            <img src="img/head.webp" alt="" width="72" height="72">
-            <h3>Welcome to the Arcade</h3>
-            <p>Connect your Phantom wallet and sign a message to get your player card. Signing is free and is never a transaction.</p>
-            <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
-          </div>
-          <div class="ax-card" data-card hidden>
-            <div class="ax-id">
-              <img src="img/head.webp" alt="" width="56" height="56">
-              <div>
-                <button class="ax-name" type="button" data-rename title="Change name"><span data-name>—</span> <span class="ax-pen" aria-hidden="true">✎</span></button>
-                <span class="ax-pid"><span data-wallet>—</span></span>
-              </div>
-            </div>
-            <div class="ax-level">
-              <span class="ax-lvl">LVL <b data-level>1</b></span><span class="ax-title" data-title>Lost Soul</span>
-              <span class="ax-xp"><b data-xp>0</b> XP · <span data-xpnext>100</span> to next</span>
-              <span class="ax-xpbar" aria-hidden="true"><i data-xpbar></i></span>
-            </div>
-            <dl class="ax-stats">
-              <div><dt>Season pts</dt><dd data-stat="seasonPoints">0</dd></div>
-              <div><dt>Total pts</dt><dd data-stat="totalPoints">0</dd></div>
-              <div><dt>Season rank</dt><dd data-stat="seasonRank">—</dd></div>
-              <div><dt>All-time rank</dt><dd data-stat="allTimeRank">—</dd></div>
-              <div><dt>Games</dt><dd data-stat="gamesPlayed">0</dd></div>
-              <div><dt>Streak / best</dt><dd data-stat="streak">0 / 0</dd></div>
-            </dl>
-            <div class="ax-elig" data-elig></div>
-            <button class="btn btn-purple btn-sm ax-profile-btn" type="button" data-open="profile"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-trophy"/></svg>Achievements &amp; history</button>
-            <div class="ax-session"><button class="ax-link" type="button" data-logout>Log out</button><button class="ax-link" type="button" data-disconnect>Disconnect wallet</button></div>
-          </div>
-        </aside>
-
-        <!-- Game cabinets -->
-        <div class="ax-games" data-games>
-          <article class="ax-game px-frame reveal" data-game="trick-or-treat" id="game-trick-or-treat"><div class="ax-game-art is-chance"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-bag"/></svg></span></div><h3>Trick or Treat</h3><p>Pick TRICK or TREAT. The crypt decides the reward.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="trick-or-treat">Play</button></div></article>
-          <article class="ax-game px-frame reveal" data-delay="1" data-game="pumpkin-hunt" id="game-pumpkin-hunt"><div class="ax-game-art is-skill"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-hunt"/></svg></span></div><h3>Pumpkin Hunt</h3><p>30 seconds. Spot and smash every pumpkin in the graveyard.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="pumpkin-hunt">Hunt</button></div></article>
-          <article class="ax-game px-frame reveal" data-delay="2" data-game="daily-spin" id="game-daily-spin"><div class="ax-game-art is-daily"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-wheel"/></svg></span></div><h3>Daily Spin</h3><p>One free spin every 24 hours. Jackpot lurks.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="daily-spin">Spin</button></div></article>
-          <article class="ax-game px-frame reveal" data-delay="3" data-game="quiz" id="game-quiz"><div class="ax-game-art is-knowledge"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-quiz"/></svg></span></div><h3>HALLOWINU Quiz</h3><p>Halloween, Solana &amp; HALLOWINU lore. Streaks pay.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="quiz">Play</button></div></article>
-        </div>
+      <div class="lb-ctl">
+        <span class="lb-ctl-label">PERIOD</span>
+        <div class="ax-tabs" role="tablist" aria-label="Period" data-ranges></div>
       </div>
+    </div>
 
-      <!-- Leaderboard -->
-      <div class="ax-board px-frame hud-glass reveal" data-board>
-        <div class="ax-board-head">
-          <h3 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-crown"/></svg></span>LEADERBOARD <span class="ax-top">TOP 100</span></h3>
-          <div class="ax-tabs" role="tablist">
-            <button type="button" role="tab" aria-selected="true" data-scope="season">This season</button>
-            <button type="button" role="tab" aria-selected="false" data-scope="all">All time</button>
-          </div>
-        </div>
-        <div class="ax-table-wrap">
-          <table class="ax-table">
-            <thead><tr><th>#</th><th>Player</th><th class="r">Points</th><th class="r" data-prize-col>Est. prize</th></tr></thead>
-            <tbody data-rows><tr><td colspan="4" class="ax-empty">Loading the graveyard…</td></tr></tbody>
-          </table>
-        </div>
-        <p class="ax-me" data-me hidden></p>
-        <p class="ax-fine">Prizes go to the Top 10 <b>prize-eligible</b> players (wallet + X + Telegram verified), calculated from the verified prize pool. Estimates change until the season ends; payouts are reviewed and approved manually.</p>
+    <div class="lb-me px-frame is-orange hud-glass" data-me aria-live="polite" hidden></div>
+
+    <ol class="lb-podium" data-podium aria-label="Top 3"></ol>
+
+    <div class="lb-list-wrap px-frame hud-glass">
+      <div class="lb-row lb-head" aria-hidden="true" data-head></div>
+      <ol class="lb-list" data-list aria-label="Ranking"><li class="lb-empty">Loading the graveyard…</li></ol>
+      <p class="ax-fine" data-note></p>
+    </div>
+
+    <!-- COMMUNITY REWARD POOL -->
+    <div class="lb-pool px-frame is-orange hud-glass" id="pool" data-pool aria-labelledby="pool-title">
+      <h2 class="panel-title" id="pool-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-chest"/></svg></span>COMMUNITY REWARD POOL</h2>
+      <div data-pool-body><p class="lb-empty">Loading…</p></div>
+      <div class="pool-split" aria-label="80% community pool, 20% outside the pool">
+        <div class="ps-bar"><i style="width:80%"></i></div>
+        <div class="ps-legend"><span><b>80%</b> of verified maker rewards → Season prize pool (Top 10 Arcade)</span><span><b>20%</b> stays outside the pool</span></div>
       </div>
-      <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
+      <p class="ax-fine">Only rewards actually received on-chain count — never estimates. Haunt XP is separate from the SOL pool. Prizes are reviewed by the team before payout; payouts are never automatic.</p>
+    </div>
+
+    <div class="lb-cta reveal">
+      <a class="btn btn-primary" href="/haunt"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-ghost"/></svg>Enter The Haunt</a>
+      <a class="btn btn-purple" href="/arcade"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg>Play the Arcade</a>
     </div>
   </div>
-
-  <!-- Game screen -->
-  <dialog class="ax-modal ax-game-modal" data-game-modal aria-label="Arcade game">
-    <div class="ax-modal-box px-frame hud-glass">
-      <div class="ax-modal-head"><h3 data-game-title>Game</h3><button class="modal-close" type="button" data-close aria-label="Close game">✕</button></div>
-      <div class="ax-screen" data-screen></div>
-    </div>
-  </dialog>
-  <!-- Generic info dialog (profile, prizes, eligibility, rename) -->
-  <dialog class="ax-modal" data-info-modal aria-label="Arcade info">
-    <div class="ax-modal-box px-frame is-orange hud-glass">
-      <div class="ax-modal-head"><h3 data-info-title>Info</h3><button class="modal-close" type="button" data-close aria-label="Close">✕</button></div>
-      <div class="ax-info" data-info></div>
-    </div>
-  </dialog>
-  <div class="ax-toasts" data-toasts aria-live="polite"></div>
 </section>
-
 
 </main>
 
@@ -223,7 +160,7 @@
 <script src="site-config.js?v=47"></script>
 <script src="launch-config.js?v=47"></script>
 <script src="hallowinu.js?v=47" defer></script>
-<script src="arcade.js?v=47" defer></script>
+<script src="leaderboard.js?v=47" defer></script>
 <script src="launch.js?v=47" defer></script>
 </body>
 </html>

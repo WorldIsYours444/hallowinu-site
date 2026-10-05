@@ -161,8 +161,19 @@ export const CONFIG = {
      ========================================================= */
   haunt: {
     currency: 'HAUNT_XP',              // separate from Arcade Points: never counts toward Season SOL prizes
-    sourceType: 'HAUNT_X_REPLY',
+    sourceType: 'HAUNT_X_REPLY',          // legacy ledger source for X replies (per-type below)
     defaultReward: 5,
+    /* Submission types. Rewards are decided HERE (server) — never by the browser.
+       X_REPLY uses the target's reward (default 5). perDay = extra per-type cap inside the global limits. */
+    types: {
+      X_REPLY:     { label: 'X REPLY',  platform: 'X',      reward: null, perDay: 20, needsTarget: true,  ledgerSource: 'HAUNT_X_REPLY' },
+      X_POST:      { label: 'X POST',   platform: 'X',      reward: 10,   perDay: 5,  needsTarget: false, ledgerSource: 'HAUNT_X_POST' },
+      X_MEME:      { label: 'X MEME',   platform: 'X',      reward: 15,   perDay: 5,  needsTarget: false, ledgerSource: 'HAUNT_X_MEME' },
+      TIKTOK_POST: { label: 'TIKTOK',   platform: 'TIKTOK', reward: 20,   perDay: 3,  needsTarget: false, ledgerSource: 'HAUNT_TIKTOK' },
+    },
+    // X_POST / X_MEME / TIKTOK must be about the project: at least one of these (case-insensitive) in the text/caption.
+    projectTerms: ['hallowinu', '$hallowinu', '#hallowinu', '@hionchains', 'hallow inu', 'ghost dog'],
+    tiktok: { maxAgeMs: 7 * 86400_000, oembedTimeoutMs: 8000 },
     maxReward: 100,
     // Reward limits (approved haunts). In-flight verifications count too, so parallel tabs cannot exceed them.
     limits: {
@@ -196,6 +207,17 @@ export const CONFIG = {
       allowlist: [],                           // X user ids of known crypto accounts
       denylist: [],
     },
+  },
+
+  /* =========================================================
+     COMMUNITY REWARD POOL — 80% of VERIFIED, RECEIVED maker/creator rewards.
+     The pool is an accounting ledger (no automatic on-chain transfers, no keys on the server).
+     ========================================================= */
+  communityPool: {
+    communityBps: 8000,                // 80.00% to the community pool, the remaining 20% stays outside
+    asset: 'SOL', decimals: 9,         // the Solana adapter measures the creator wallet's SOL balance delta (lamports)
+    scan: { limit: 40, retryPendingMs: 10 * 60_000, maxAttempts: 12 },
+    commitment: 'finalized',
   },
 
   seasons: {

@@ -12,7 +12,8 @@
 
   // "Chart" buttons scroll to the token terminal
   document.querySelectorAll('[data-chart-scroll]').forEach(b => b.addEventListener('click', () => {
-    document.querySelector('#live-chart')?.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth' });
+    const t = document.querySelector('#live-chart');
+    if (t) t.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth' }); else location.href = '/token';
   }));
 
   // Buy buttons: real link when configured, otherwise the "coming soon" dialog

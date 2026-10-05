@@ -18,6 +18,7 @@ import * as HUNT from './games/pumpkin-hunt.js';
 import * as SPIN from './games/daily-spin.js';
 import * as QUIZ from './games/quiz.js';
 import * as HAUNT from './haunt/engine.js';
+import * as POOL from './pool/ledger.js';
 import { xConfigured } from './haunt/xclient.js';
 
 validateConfig();
@@ -55,6 +56,7 @@ export async function cron(env) {
   for (const s of results) { try { await finalizeSeason(env, s.id, 'cron'); } catch (e) { console.error('auto-finalize', s.id, e.message); } }
   await cleanupRateLimits(env);
   try { await HAUNT.retryPending(env); } catch (e) { console.error('haunt_retry_cron', e.message); }
+  try { await POOL.scan(env); } catch (e) { console.error('pool_scan_cron', e.message); }
 }
 
 /* ---------- request guards ---------- */
@@ -125,7 +127,8 @@ async function route(request, env, url) {
     if (player) await rateLimit(env, `read:${player.id}`, RL.reads);
     const H = CONFIG.haunt;
     return json({ ok: true, serverNow: now(),
-      rules: { window: H.limits.window.count, windowMinutes: H.limits.window.ms / 60_000, minGapMinutes: H.limits.minGapMs / 60_000, perDay: H.limits.perDay, perTarget: H.limits.perTargetPerPlayer, defaultReward: H.defaultReward },
+      rules: { window: H.limits.window.count, windowMinutes: H.limits.window.ms / 60_000, minGapMinutes: H.limits.minGapMs / 60_000, perDay: H.limits.perDay, perTarget: H.limits.perTargetPerPlayer, defaultReward: H.defaultReward, types: HAUNT.typeRules() },
+      tiktokAvailable: true,
       available: xConfigured(env) && socialsConfig(env).x.available,
       access: (await accountView(env, s ? s.player : null)).access,
       targets: await HAUNT.targetsFor(env, player),
@@ -134,7 +137,8 @@ async function route(request, env, url) {
   if (path === '/api/haunt/leaderboard' && m === 'GET') {
     const s = await getSession(env, request);
     const range = ['today', 'week', 'all'].includes(url.searchParams.get('range')) ? url.searchParams.get('range') : 'today';
-    return json({ ok: true, ...(await HAUNT.leaderboard(env, s && s.player, range)) });
+    const size = Math.max(3, Math.min(100, Number(url.searchParams.get('size')) || 100));
+    return json({ ok: true, ...(await HAUNT.leaderboard(env, s && s.player, range, size)) });
   }
   if (path === '/api/haunt/activity' && m === 'GET') return json({ ok: true, serverNow: now(), items: await HAUNT.activity(env) });
   if (path === '/api/haunt/submit' && m === 'POST') {
@@ -153,6 +157,7 @@ async function route(request, env, url) {
     return json({ ok: true, ...(await leaderboard(env, player, url.searchParams.get('scope') === 'all' ? 'all' : 'season')) });
   }
   if (path === '/api/season' && m === 'GET') return json({ ok: true, ...(await seasonDetails(env)) });
+  if (path === '/api/pool' && m === 'GET') return json({ ok: true, ...(await POOL.publicPool(env)) });
 
   // ---- authenticated player routes ----
   if (path === '/api/me' && m === 'GET') {
@@ -381,30 +386,11 @@ async function admin(request, env, url, sub) {
 
   // Funding: add (PENDING) -> verify (onchain|manual) / reject
   if (sub === 'funding' && m === 'POST') {
-    const seasonId = str(body.seasonId, { max: 20 });
-    const season = seasonId && await env.DB.prepare('SELECT * FROM seasons WHERE id=?').bind(seasonId).first();
-    if (!season) throw new ApiError(404, 'NOT_FOUND', 'Season not found.');
-    if (season.status === 'FINALIZING' || season.status === 'FINALIZED') throw new ApiError(409, 'POOL_FROZEN', 'The prize pool of this season is frozen.');
-    const source = body.source;
-    if (!['INITIAL_FUNDING', 'MAKER_REWARD', 'MANUAL_CONTRIBUTION', 'ADJUSTMENT'].includes(source)) throw new ApiError(400, 'BAD_SOURCE', 'Invalid source.');
-    let lamports;
-    try { lamports = body.amountLamports != null ? toLamports(String(body.amountLamports)) : solStringToLamports(String(body.amountSol)); }
-    catch { throw new ApiError(400, 'BAD_AMOUNT', 'Invalid amount.'); }
-    if (source !== 'ADJUSTMENT' && lamports <= 0n) throw new ApiError(400, 'BAD_AMOUNT', 'Amount must be positive.');
-    if (lamports > BigInt(Number.MAX_SAFE_INTEGER) || -lamports > BigInt(Number.MAX_SAFE_INTEGER)) throw new ApiError(400, 'BAD_AMOUNT', 'Amount too large.');
-    const sig = body.txSignature ? String(body.txSignature).trim() : null;
-    if (sig && !isValidSignature(sig)) throw new ApiError(400, 'BAD_SIGNATURE', 'Invalid transaction signature.');
-    try {
-      const row = await env.DB.prepare(
-        "INSERT INTO prize_pool_transactions (season_id, amount_lamports, source, tx_signature, status, notes, created_at, actor) VALUES (?,?,?,?,'PENDING',?,?,?) RETURNING id")
-        .bind(seasonId, Number(lamports), source, sig, str(body.notes, { max: 500 }) || null, now(), actor).first();
-      await auditStmt(env, actor, 'funding.add', String(row.id), { seasonId, lamports: lamports.toString(), source, sig }).run();
-      return json({ ok: true, id: row.id });
-    } catch (e) {
-      if (/UNIQUE/i.test(e.message)) throw new ApiError(409, 'DUPLICATE_SIGNATURE', 'This transaction signature was already recorded.');
-      throw e;
-    }
+    // Retired: the prize pool is funded ONLY by 80% of verified maker rewards (POST pool/verify or the cron scan).
+    // Corrections go through POST pool/adjustments (reason + confirmation, audited).
+    throw new ApiError(410, 'MANUAL_FUNDING_RETIRED', 'Manual pool funding is retired. The pool is funded automatically by 80% of verified maker rewards; use Pool → Adjustment for corrections.');
   }
+  // Legacy PENDING rows (if any) can still be verified/rejected below.
   if (seg[0] === 'funding' && seg[2] && m === 'POST') {
     const id = Number(seg[1]);
     const tx = await env.DB.prepare('SELECT f.*, s.status AS season_status FROM prize_pool_transactions f JOIN seasons s ON s.id=f.season_id WHERE f.id=?').bind(id).first();
@@ -439,6 +425,16 @@ async function admin(request, env, url, sub) {
     }
   }
 
+  // Community reward pool (80% of verified maker rewards)
+  if (sub === 'pool' && m === 'GET') return json({ ok: true, ...(await POOL.reconciliation(env)) });
+  if (sub === 'pool/verify' && m === 'POST') {
+    const event = await POOL.processSignature(env, body.signature, actor);
+    return json({ ok: true, event });
+  }
+  if (sub === 'pool/scan' && m === 'POST') { const r = await POOL.scan(env); await auditStmt(env, actor, 'pool.scan', null, r).run(); return json({ ok: true, ...r }); }
+  if (sub === 'pool/adjustments' && m === 'POST') return json(await POOL.adjust(env, actor, body));
+  if (seg[0] === 'pool' && seg[1] === 'events' && seg[3] === 'void' && m === 'POST') return json(await POOL.voidEvent(env, actor, seg[2], body));
+
   // Seasons
   if (sub === 'seasons' && m === 'POST') {
     const id = str(body.id, { max: 12, pattern: /^s\d{2,4}$/ });
@@ -454,6 +450,7 @@ async function admin(request, env, url, sub) {
         .bind(id, name, startsAt, endsAt, JSON.stringify(bps), JSON.stringify(body.rules || {}), now()),
       auditStmt(env, actor, 'season.create', id, { name, startsAt, endsAt, bps }),
     ]);
+    await POOL.assignUnassigned(env, actor);   // community money received while no season was open
     return json({ ok: true, id });
   }
   if (seg[0] === 'seasons' && seg[1] && !seg[2] && m === 'PATCH') {
@@ -467,11 +464,8 @@ async function admin(request, env, url, sub) {
     if (s.status === 'FINALIZING' || s.status === 'FINALIZED') throw new ApiError(409, 'SEASON_LOCKED', 'Finalized seasons cannot change.');
     if (started && (body.startsAt != null || body.distributionBps != null)) throw new ApiError(409, 'SEASON_STARTED', 'Start time and prize distribution are locked once a season starts.');
     if (started && endsAt < now()) throw new ApiError(400, 'BAD_SEASON', 'End time cannot be in the past.');
-    let announced = s.announced_lamports;
-    if (body.announcedSol !== undefined) {
-      if (body.announcedSol === null || body.announcedSol === '') announced = null;
-      else { try { announced = Number(solStringToLamports(String(body.announcedSol))); } catch { throw new ApiError(400, 'BAD_AMOUNT', 'Invalid announced amount.'); } if (announced < 0) throw new ApiError(400, 'BAD_AMOUNT', 'Invalid announced amount.'); }
-    }
+    if (body.announcedSol !== undefined && body.announcedSol !== null && body.announcedSol !== '') throw new ApiError(410, 'ANNOUNCED_POOL_RETIRED', 'The announced pool is retired: only verified maker rewards are shown.');
+    const announced = null;
     let dist = s.distribution_json;
     if (body.distributionBps != null) { try { validateDistribution(body.distributionBps); } catch (e) { throw new ApiError(400, 'BAD_DISTRIBUTION', e.message); } dist = JSON.stringify(body.distributionBps); }
     await env.DB.batch([
@@ -581,6 +575,7 @@ async function admin(request, env, url, sub) {
     if (!reason) throw new ApiError(400, 'BAD_REQUEST', 'A reason is required.');
     return json({ ok: true, ...(await HAUNT.adminInvalidate(env, actor, seg[2], reason)) });
   }
+  if (seg[0] === 'haunt' && seg[1] === 'submissions' && seg[3] === 'review' && m === 'POST') return json({ ok: true, ...(await HAUNT.adminReview(env, actor, seg[2], body)) });
   if (seg[0] === 'haunt' && seg[1] === 'submissions' && seg[3] === 'retry' && m === 'POST') return json({ ok: true, ...(await HAUNT.adminRetry(env, actor, seg[2])) });
 
   throw new ApiError(404, 'NOT_FOUND', 'Unknown admin endpoint.');

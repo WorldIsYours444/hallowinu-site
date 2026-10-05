@@ -9,7 +9,7 @@ const H = CONFIG.haunt;
 export class XUnavailable extends Error { constructor(code, status) { super(code); this.code = code; this.httpStatus = status; } }
 export class XNotFound extends Error { constructor() { super('NOT_FOUND'); this.code = 'NOT_FOUND'; } }
 
-export const TWEET_FIELDS = 'author_id,conversation_id,created_at,referenced_tweets,in_reply_to_user_id,text,public_metrics';
+export const TWEET_FIELDS = 'author_id,conversation_id,created_at,referenced_tweets,in_reply_to_user_id,text,public_metrics,attachments';
 
 export function xConfigured(env) { return !!env.X_BEARER_TOKEN; }
 
@@ -40,16 +40,19 @@ async function cachePut(env, key, value, ttlMs) {
 }
 
 /* GET /2/tweets/:id — returns { data, includes } or throws XNotFound / XUnavailable. */
-export async function fetchTweet(env, id, { expandAuthor = false, cacheTtlMs = 0, fetchImpl = fetch } = {}) {
+export async function fetchTweet(env, id, { expandAuthor = false, withMedia = false, cacheTtlMs = 0, fetchImpl = fetch } = {}) {
   if (!xConfigured(env)) throw new XUnavailable('X_NOT_CONFIGURED', 503);
-  const endpoint = expandAuthor ? 'tweets.lookup+author' : 'tweets.lookup';
-  const key = `tweet:${id}:${expandAuthor ? 1 : 0}`;
+  const endpoint = 'tweets.lookup' + (expandAuthor ? '+author' : '') + (withMedia ? '+media' : '');
+  const key = `tweet:${id}:${expandAuthor ? 1 : 0}${withMedia ? 'm' : ''}`;
   if (cacheTtlMs) {
     const hit = await cacheGet(env, key);
     if (hit) { await meter(env, endpoint, { cacheHits: 1 }); return hit; }
   }
   const q = new URLSearchParams({ 'tweet.fields': TWEET_FIELDS });
-  if (expandAuthor) { q.set('expansions', 'author_id'); q.set('user.fields', 'username,name,public_metrics,description,verified'); }
+  const expansions = [];
+  if (expandAuthor) { expansions.push('author_id'); q.set('user.fields', 'username,name,public_metrics,description,verified'); }
+  if (withMedia) { expansions.push('attachments.media_keys'); q.set('media.fields', 'type,width,height'); }
+  if (expansions.length) q.set('expansions', expansions.join(','));
   let res;
   try {
     res = await fetchImpl(`https://api.x.com/2/tweets/${encodeURIComponent(id)}?${q}`, { headers: { authorization: `Bearer ${env.X_BEARER_TOKEN}` } });

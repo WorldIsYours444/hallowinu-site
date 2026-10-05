@@ -13,7 +13,7 @@ import json, re, random, html, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 P = lambda *a: os.path.join(ROOT, *a)
-V = '46'
+V = '47'
 
 icons = json.load(open(P('tools/site/icons.json')))
 site = json.load(open(P('tools/site/site.json')))
@@ -96,15 +96,19 @@ PAGES = [
     # (output, content file, url path, title, base for section links, extra)
     ('dist/index.html', 'tools/site/home.html', '/', 'HALLOWINU — The ghost dog of Halloween on Solana', '', HERO_PRELOAD, '', ''),
     ('dist/arcade.html', 'tools/site/arcade.html', '/arcade', 'HALLOWINU Arcade — play, earn points, climb the board', '/', '', ' class="arcade-page"', 'arcade'),
-    ('dist/haunt.html', 'tools/site/haunt.html', '/haunt', 'THE HAUNT — HALLOWINU X raid board', '/', '', ' class="haunt-page"', 'haunt'),
+    ('dist/haunt.html', 'tools/site/haunt.html', '/haunt', 'THE HAUNT — post, meme, raid & earn XP | HALLOWINU', '/', '', ' class="haunt-page"', 'haunt'),
+    ('dist/leaderboard.html', 'tools/site/leaderboard.html', '/leaderboard', 'HALLOWINU Leaderboard — top haunters, players & the community pool', '/', '', ' class="lb-page"', 'leaderboard'),
+    ('dist/token.html', 'tools/site/token.html', '/token', '$HALLOWINU Token — contract, chart & reward model', '/', '', ' class="token-page-main"', 'token'),
 ]
-PAGE_JS = {'arcade': ['arcade.js'], 'haunt': ['wallet.js', 'haunt.js']}
-PAGE_CSS = {'haunt': ['haunt.css']}
+PAGE_JS = {'arcade': ['arcade.js'], 'haunt': ['wallet.js', 'haunt.js'], 'leaderboard': ['leaderboard.js']}
+PAGE_CSS = {'haunt': ['haunt.css'], 'leaderboard': ['leaderboard.css']}
 for out, content, path, title, base, preload, mainclass, cur in PAGES:
     t = layout.replace('{{content}}', open(P(content)).read())
     t = t.replace('{{title}}', title).replace('{{path}}', path).replace('{{base}}', base).replace('{{preload}}', preload)
     t = t.replace('{{mainclass}}', mainclass)
-    t = t.replace('{{arcadeCurrent}}', ' aria-current="true"' if cur == 'arcade' else '').replace('{{hauntCurrent}}', ' aria-current="true"' if cur == 'haunt' else '')
+    t = re.sub(r'\{\{cur:(\w+)\}\}', lambda m: ' aria-current="true"' if m.group(1) == cur else '', t)
+    # NEW badge: only THE HAUNT (nav + its home teaser)
+    assert t.count('nav-new') == (3 if out == 'dist/index.html' else 2), (out, t.count('nav-new'))
     t = t.replace('{{pagescripts}}', ''.join(f'<script src="{js}?v={V}" defer></script>\n' for js in PAGE_JS.get(cur, [])))
     t = t.replace('{{pagestyles}}', ''.join(f'\n<link rel="stylesheet" href="{css}?v={V}">' for css in PAGE_CSS.get(cur, [])))
     t = t.replace('{{symbols}}', symbols).replace('{{tg}}', TG).replace('{{x}}', X).replace('{{v}}', V)

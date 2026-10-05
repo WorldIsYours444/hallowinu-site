@@ -73,9 +73,9 @@ All values live in `worker/config.js` (`CONFIG.games.*`). Current rules:
 ## 5. Seasons, prize pool & payouts
 * `seasons` row: dates, status (`UPCOMING → ACTIVE → FINALIZING → FINALIZED`), distribution in **basis points** (Season 01: 40/20/12/8/6/4/3/3/2/2 %).
 * Season points are credited only while a season is live; lifetime points never reset.
-* **Announced base pool** (`seasons.announced_lamports`, Season 01 = 1 SOL) is a public promise shown separately. Prize math ALWAYS uses the **current verified pool**. Distribution (bps): 3000/1750/1250/900/750/600/500/450/400/400 = 3.00/1.75/1.25/0.90/0.75/0.60/0.50/0.45/0.40/0.40 per 10 SOL; every rank scales proportionally.
+* **The pool is funded automatically by 80% of verified maker rewards** (see `docs/POOL.md`). Manual funding and the "announced base pool" are retired (migration 0005). Distribution (bps): 3000/1750/1250/900/750/600/500/450/400/400 = 3.00/1.75/1.25/0.90/0.75/0.60/0.50/0.45/0.40/0.40 per 10 SOL; every rank scales proportionally.
 * **Prize positions** go to the Top 10 **prize-eligible** players (wallet + X + Telegram verified) in ranking order; ineligible players keep their rank but get no prize. Legacy Phase-1 anonymous test players never rank.
-* **Prize pool = sum of VERIFIED `prize_pool_transactions`** for the season. `PENDING`/`REJECTED` never count. `tx_signature` is UNIQUE (a deposit can never be counted twice). The seed contains Season 01's 10 SOL `INITIAL_FUNDING` as **PENDING** — it only shows publicly after an admin verifies it.
+* **Prize pool = sum of VERIFIED `prize_pool_transactions`** for the season: `MAKER_REWARD` rows written by the pool ledger (linked via `maker_event_id`) + labelled `ADJUSTMENT` rows. `tx_signature` is UNIQUE (a reward can never be counted twice). The old PENDING 10 SOL `INITIAL_FUNDING` seed row was retired (REJECTED with a note) — it never counted.
 * All SOL math is integer lamports (BigInt). Allocation: `floor(pool × bps / 10000)` per rank, rounding dust to #1, so the Top 10 always sum to exactly the pool. If fewer than 10 eligible winners exist, the unfilled shares are reported as `unallocated` (roll-over), never silently assigned.
 * **Finalization** (cron at `ends_at`, or admin): freeze pool + status `FINALIZING` atomically → permanent `season_final_standings` snapshot → Top-10 `prize_entitlements` (`FINALIZING`). Funding is refused once frozen.
 * **Disqualification** (admin, with reason/evidence): removes the player, everyone below moves up, entitlements recomputed; before/after recorded in `audit_log`.
@@ -86,13 +86,12 @@ Open `https://<site>/admin.html` and paste the `ADMIN_TOKEN` (Cloudflare secret)
 
 | Task | How |
 |---|---|
-| Verify the 10 SOL starting pool | Funding → INITIAL_FUNDING row → *Verify manually* (type `I VERIFIED THIS FUNDING`) or *Verify on-chain* (needs `POOL_WALLET` + tx signature) |
-| Add maker rewards | Record funding (source `MAKER_REWARD`, amount, **tx signature**) → *Verify on-chain* (checks: tx exists, finalized, succeeded, pool wallet received ≥ amount) |
+| Maker rewards → pool | Automatic (cron scan every 10 min) or Community reward pool → *Verify & credit* (tx signature). See `docs/POOL.md` |
+| Correct the pool | Community reward pool → Labelled adjustment (lamports, reason ≥ 10 chars, type `I CONFIRM THIS ADJUSTMENT`) |
 | Change season end / create next season | Seasons section (start time + distribution lock once a season starts) |
 | Disable a game / change a daily limit | Games & limits |
 | Disqualify / ban | Entitlements → Disqualify, Players → Ban |
 | Eligibility override (exceptional) | Players → Manual eligibility override (player must already have a signature-verified wallet; evidence required; audited) |
-| Change the announced pool | Seasons → Edit season → Announced base pool |
 | Approve payouts / mark paid | Seasons → Approve payouts; Entitlements → Mark paid (payout tx) |
 
 API equivalent: `curl -H "authorization: Bearer $ADMIN_TOKEN" -H "x-hw-client: 1" -H "content-type: application/json" https://<site>/api/admin/overview`

@@ -9,12 +9,15 @@ import { validateName } from '../worker/lib/auth.js';
 const MID = S01_START + 3 * 86400_000 + 10 * 3600_000; // inside Season 01, 10:00 UTC
 
 async function newPlayer(env, opts) { return walletPlayer(env, opts); }
-async function verifyInitialFunding(env) {
-  const a = adminClient(env);
-  const ov = await a.get('overview');
-  const f = ov.funding.find(x => x.source === 'INITIAL_FUNDING' && x.status === 'PENDING');
-  const r = await a.post(`funding/${f.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' });
-  assert.equal(r.ok, true, JSON.stringify(r));
+let fundSeq = 0;
+/* Credits the season pool the only way that exists now: a verified maker-reward event (80% → pool). */
+async function fundPool(env, communityLamports) {
+  const { recordEvent } = await import('../worker/pool/ledger.js');
+  const gross = (BigInt(communityLamports) * 10000n) / 8000n;
+  const sig = String(++fundSeq).padStart(4, '0') + 'F'.repeat(84);
+  const r = await recordEvent(env, { source: 'solana_transfer', externalId: sig, gross, receiver: 'Creator1111111111111111111111111111111111111' }, 'test');
+  assert.equal(r.created, true);
+  return r.event;
 }
 
 /* ======================= PHANTOM WALLET AUTH / PLAYER ACCOUNT ======================= */
@@ -605,35 +608,32 @@ describe('seasons, funding, finalization', () => {
     assert.equal(sp.points, r.points);
   });
 
-  test('only VERIFIED funding counts; duplicate signatures rejected; frontend cannot add', async () => {
+  test('pool = 80% of verified maker rewards only; manual funding + announced pool retired; frontend cannot add', async () => {
     const env = makeEnv();
     const a = adminClient(env);
     let s = await client(env).get('/api/season');
-    assert.equal(s.current.pool.totalLamports, '0', 'pending initial funding does not count');
-    assert.equal(s.current.announcedLamports, '1000000000', 'announced base pool shown separately');
+    assert.equal(s.current.pool.totalLamports, '0', 'retired pending base funding does not count');
+    assert.equal(s.current.announcedLamports, undefined, 'no announced/promised amount is shown');
     assert.deepEqual(s.current.distributionBps, [3000, 1750, 1250, 900, 750, 600, 500, 450, 400, 400]);
-    await verifyInitialFunding(env);
+    const pool = await client(env).get('/api/pool');
+    assert.equal(pool.state, 'AWAITING_REWARD_SOURCE'); assert.equal(pool.totals, null); assert.deepEqual(pool.recent, []);
+    // manual funding is gone for every source
+    for (const source of ['INITIAL_FUNDING', 'MAKER_REWARD', 'MANUAL_CONTRIBUTION', 'ADJUSTMENT'])
+      assert.equal((await a.post('funding', { seasonId: 's01', amountSol: '2.4', source, txSignature: '5'.repeat(88) })).error, 'MANUAL_FUNDING_RETIRED');
+    assert.equal((await a.patch('seasons/s01', { announcedSol: '2.5' })).error, 'ANNOUNCED_POOL_RETIRED');
+    await fundPool(env, 2_400_000_000n);
     s = await client(env).get('/api/season');
-    assert.equal(s.current.pool.totalSol, '1');
-    assert.equal(s.current.estPrizes[0].sol, '0.3');
-    assert.equal(s.current.pool.verifiedAdditionsLamports, '0');
-    const sig = '5'.repeat(88);
-    const add = await a.post('funding', { seasonId: 's01', amountSol: '2.4', source: 'MAKER_REWARD', txSignature: sig });
-    assert.equal(add.ok, true);
-    assert.equal((await a.post('funding', { seasonId: 's01', amountSol: '2.4', source: 'MAKER_REWARD', txSignature: sig })).error, 'DUPLICATE_SIGNATURE');
-    s = await client(env).get('/api/season');
-    assert.equal(s.current.pool.totalSol, '1', 'pending maker reward not counted');
-    await a.post(`funding/${add.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' });
-    s = await client(env).get('/api/season');
-    assert.equal(s.current.pool.totalSol, '3.4');
+    assert.equal(s.current.pool.totalSol, '2.4');
     assert.equal(s.current.pool.makerLamports, '2400000000');
-    assert.equal(s.current.pool.verifiedAdditionsLamports, '2400000000');
-    assert.equal(s.current.estPrizes[0].sol, '1.02');
-    assert.equal((await a.post(`funding/${add.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' })).error, 'NOT_PENDING');
+    assert.equal(s.current.estPrizes[0].sol, '0.72');
+    assert.equal((await client(env).get('/api/pool')).state, 'LIVE');
     // public endpoints cannot write the pool
     const p = await newPlayer(env);
     assert.equal((await p.c.post('/api/admin/funding', { seasonId: 's01', amountSol: '100', source: 'MAKER_REWARD' })).status, 401);
+    assert.equal((await p.c.post('/api/admin/pool/verify', { signature: '5'.repeat(88) })).status, 401);
+    assert.equal((await p.c.post('/api/admin/pool/adjustments', { seasonId: 's01', amountLamports: '1', reason: 'xxxxxxxxxxxx', confirm: 'I CONFIRM THIS ADJUSTMENT' })).status, 401);
     assert.equal((await p.c.post('/api/season', { pool: 1e12 })).status, 404);
+    assert.equal((await p.c.post('/api/pool', { pool: 1e12 })).status, 404);
   });
 
   test('on-chain verification checks wallet, success and amount', async () => {
@@ -652,10 +652,7 @@ describe('seasons, funding, finalization', () => {
 
   test('full finalization: freeze, top 10, rank shift on disqualification, approval gate, paid', async () => {
     const env = makeEnv();
-    await verifyInitialFunding(env);
-    const a0 = adminClient(env);
-    const top = await a0.post('funding', { seasonId: 's01', amountSol: '9', source: 'MAKER_REWARD', txSignature: '6'.repeat(88) });
-    await a0.post(`funding/${top.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' }); // pool = 10 SOL
+    await fundPool(env, 10_000_000_000n);   // gross 12.5 SOL → 10 SOL community pool
     const players = [];
     for (let i = 0; i < 12; i++) players.push(await newPlayer(env));
     // everyone except #2 completed X + Telegram verification
@@ -686,8 +683,10 @@ describe('seasons, funding, finalization', () => {
     const season = await env.DB.prepare('SELECT * FROM seasons WHERE id=?').bind('s01').first();
     assert.equal(season.status, 'FINALIZING');
     assert.equal(season.frozen_pool_lamports, 10_000_000_000);
-    // pool frozen: funding refused
-    assert.equal((await a.post('funding', { seasonId: 's01', amountSol: '1', source: 'MAKER_REWARD' })).error, 'POOL_FROZEN');
+    // pool frozen: adjustments refused, new maker rewards go to the next season (none open → held unassigned)
+    assert.equal((await a.post('pool/adjustments', { seasonId: 's01', amountLamports: '1', reason: 'late correction test', confirm: 'I CONFIRM THIS ADJUSTMENT' })).error, 'POOL_FROZEN');
+    const lateEv = await fundPool(env, 800n);
+    assert.equal(lateEv.season_id, null, 'frozen season never receives new money');
     let ents = (await env.DB.prepare("SELECT * FROM prize_entitlements WHERE season_id='s01' AND status='FINALIZING' ORDER BY rank").all()).results;
     assert.equal(ents.length, 10);
     assert.equal(ents.reduce((s, e) => s + e.amount_lamports, 0), 10_000_000_000);
@@ -745,7 +744,7 @@ describe('seasons, funding, finalization', () => {
   });
   test('approval is blocked while a winner is not verified (e.g. verification revoked by admin data fix)', async () => {
     const env = makeEnv();
-    await verifyInitialFunding(env);
+    await fundPool(env, 1_000_000_000n);
     const p = await newPlayer(env);
     await grantSocials(env, p.player.id);
     await env.DB.prepare('INSERT INTO season_player_stats (season_id, player_id, points, games_played, updated_at) VALUES (?,?,?,?,?)').bind('s01', p.player.id, 50, 1, MID).run();
@@ -753,14 +752,6 @@ describe('seasons, funding, finalization', () => {
     await env.DB.prepare("DELETE FROM player_identities WHERE player_id=? AND provider='solana_wallet'").bind(p.player.id).run();
     const ap = await adminClient(env).post('seasons/s01/approve');
     assert.equal(ap.error, 'UNVERIFIED_WINNERS'); assert.equal(ap.blockers.length, 1);
-  });
-  test('announced pool is admin-editable and audited', async () => {
-    const env = makeEnv();
-    const a = adminClient(env);
-    assert.equal((await a.patch('seasons/s01', { announcedSol: '2.5' })).ok, true);
-    assert.equal((await client(env).get('/api/season')).current.announcedLamports, '2500000000');
-    assert.equal((await client(env).get('/api/season')).current.pool.totalLamports, '0', 'announcing does not add money');
-    assert.equal((await a.patch('seasons/s01', { announcedSol: '-1' })).error, 'BAD_AMOUNT');
   });
 });
 

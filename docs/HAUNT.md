@@ -1,11 +1,21 @@
-# THE HAUNT — X raid board
+# THE HAUNT — X replies, X posts, X memes, TikTok
 
 Page: `/haunt` (`tools/site/haunt.html`, `dist/haunt.js`, `dist/haunt.css`, shared `dist/wallet.js`).
-Server: `worker/haunt/` (`engine.js` verification + read models, `xclient.js` X API + cache + metering, `content.js` URL/content/relevance).
-Schema: `migrations/0004_haunt.sql`. Config: `CONFIG.haunt` in `worker/config.js` (all numbers live there).
+Server: `worker/haunt/` (`engine.js` type router + shared anti-abuse + ledger + read models, `providers/x-reply.js`, `providers/x-post.js` (X_POST + X_MEME), `providers/tiktok.js`, `xclient.js` X API + cache + metering, `content.js` URL/content/relevance).
+Schema: `migrations/0004_haunt.sql`, `0005_haunt_types_and_pool.sql` (platform, external_id, submission_type; UNIQUE(platform, external_id)).
+Full leaderboard: `/leaderboard` (`tools/site/leaderboard.html`, `dist/leaderboard.js`); /haunt shows a compact rank preview. Config: `CONFIG.haunt` in `worker/config.js` (all numbers live there).
 
 ## Loop
 Phantom sign-in → player name (Arcade) → connect X (OAuth 2.0, immutable X user id) → pick a Haunt → reply on X → paste reply URL → automatic verification → Haunt XP → leaderboard.
+
+## Submission types (one terminal, server-side rewards in `CONFIG.haunt.types`)
+| Type | Proof | Reward | Per day |
+|---|---|---|---|
+| `X_REPLY` | reply under a curated Haunt, author = connected X id (unchanged strict v1 rules) | target reward | 20 |
+| `X_POST` | own original post (no reply/repost), ≥ 16 letters, mentions HALLOWINU/$HALLOWINU/#hallowinu/@HIonchains, < 48 h | 10 XP | 5 |
+| `X_MEME` | own post with photo/GIF/video (`expansions=attachments.media_keys`), mentions the project, < 48 h | 15 XP | 5 |
+| `TIKTOK_POST` | free public oEmbed: video exists, link handle = creator, caption mentions the project → **MANUAL_REVIEW** (ownership can't be proven without TikTok Login Kit) → admin Approve/Reject with a note | 20 XP | 3 |
+The browser never sends a reward; a missing `type` = `X_REPLY` (v1 clients). Wrong-platform links, short `vm.tiktok.com` links and invalid URLs are rejected before any paid call. Statuses add `MANUAL_APPROVED` / `MANUAL_REJECTED`. Ledger `source_type`: `HAUNT_X_REPLY|HAUNT_X_POST|HAUNT_X_MEME|HAUNT_TIKTOK`.
 
 ## Entity boundaries
 * `haunt_targets` = system/admin content. Only admins create them (verified through X on creation).
@@ -45,4 +55,4 @@ Create target (URL, category, reward, expiry, max claims) · enable/disable · c
 `CONFIG.haunt.discovered` + `cryptoRelevance()` (multi-signal score, configurable threshold; a single keyword never passes). Deleted-reply checks: evidence (text excerpt, fingerprint, ids, timestamps) is stored at approval for later sampling.
 
 ## Tests
-`npm test` (64 incl. 16 Haunt tests with a fake X API) · `DEV_FAKE_X=1 node tools/dev-server.mjs 8789 /tmp/h.db` + `node test/e2e-haunt.mjs` (browser, desktop + mobile).
+`npm test` (81 incl. 25 Haunt + 10 pool tests with fake X / TikTok / Solana RPC) · `DEV_FAKE_X=1 node tools/dev-server.mjs 8789 /tmp/h.db` + `node test/e2e-haunt.mjs` (browser, desktop + mobile).

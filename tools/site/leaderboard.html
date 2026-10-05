@@ -1,0 +1,50 @@
+<!-- ============ LEADERBOARD (/leaderboard) ============ -->
+<section class="section lb" id="leaderboard" aria-labelledby="lb-title" data-lb>
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">Graveyard rankings</p>
+      <h1 class="neon-sign" id="lb-title"><span class="o">LEADER</span><span class="p">BOARD</span></h1>
+      <p class="lead">The top haunters and arcade players of the pack. Live data only — every point here was earned and verified.</p>
+    </div>
+
+    <div class="lb-controls px-frame hud-glass reveal">
+      <div class="lb-ctl">
+        <span class="lb-ctl-label">BOARD</span>
+        <div class="ax-tabs" role="tablist" aria-label="Leaderboard">
+          <button type="button" role="tab" aria-selected="true" data-board="haunt">Haunt XP</button>
+          <button type="button" role="tab" aria-selected="false" data-board="arcade">Arcade</button>
+        </div>
+      </div>
+      <div class="lb-ctl">
+        <span class="lb-ctl-label">PERIOD</span>
+        <div class="ax-tabs" role="tablist" aria-label="Period" data-ranges></div>
+      </div>
+    </div>
+
+    <div class="lb-me px-frame is-orange hud-glass" data-me aria-live="polite" hidden></div>
+
+    <ol class="lb-podium" data-podium aria-label="Top 3"></ol>
+
+    <div class="lb-list-wrap px-frame hud-glass">
+      <div class="lb-row lb-head" aria-hidden="true" data-head></div>
+      <ol class="lb-list" data-list aria-label="Ranking"><li class="lb-empty">Loading the graveyard…</li></ol>
+      <p class="ax-fine" data-note></p>
+    </div>
+
+    <!-- COMMUNITY REWARD POOL -->
+    <div class="lb-pool px-frame is-orange hud-glass" id="pool" data-pool aria-labelledby="pool-title">
+      <h2 class="panel-title" id="pool-title"><span class="ico">{{icon:chest}}</span>COMMUNITY REWARD POOL</h2>
+      <div data-pool-body><p class="lb-empty">Loading…</p></div>
+      <div class="pool-split" aria-label="80% community pool, 20% outside the pool">
+        <div class="ps-bar"><i style="width:80%"></i></div>
+        <div class="ps-legend"><span><b>80%</b> of verified maker rewards → Season prize pool (Top 10 Arcade)</span><span><b>20%</b> stays outside the pool</span></div>
+      </div>
+      <p class="ax-fine">Only rewards actually received on-chain count — never estimates. Haunt XP is separate from the SOL pool. Prizes are reviewed by the team before payout; payouts are never automatic.</p>
+    </div>
+
+    <div class="lb-cta reveal">
+      <a class="btn btn-primary" href="/haunt">{{icon:ghost}}Enter The Haunt</a>
+      <a class="btn btn-purple" href="/arcade">{{icon:pumpkin}}Play the Arcade</a>
+    </div>
+  </div>
+</section>

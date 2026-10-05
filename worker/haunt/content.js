@@ -54,3 +54,23 @@ export function parseStatusUrl(raw) {
   if (!m) return null;
   return { id: m[1], normalizedUrl: `https://x.com/i/status/${m[1]}` };
 }
+
+/* TikTok video URL → { id, handle, normalizedUrl } (full links only; short vm.tiktok.com links must be opened first). */
+export function parseTikTokUrl(raw) {
+  if (typeof raw !== 'string' || raw.length > 400) return null;
+  let u;
+  try { u = new URL(raw.trim()); } catch { return null; }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+  const host = u.hostname.toLowerCase().replace(/^(www|m)\./, '');
+  if (host !== 'tiktok.com') return null;
+  const m = u.pathname.match(/^\/@([A-Za-z0-9_.]{2,24})\/(?:video|photo)\/(\d{8,25})\/?$/);
+  if (!m) return null;
+  return { id: m[2], handle: m[1].toLowerCase(), normalizedUrl: `https://www.tiktok.com/@${m[1]}/video/${m[2]}` };
+}
+export function isShortTikTok(raw) { try { return /^(vm|vt)\.tiktok\.com$/i.test(new URL(String(raw).trim()).hostname); } catch { return false; } }
+
+/* Does the text clearly reference the project? (HALLOWINU, $HALLOWINU, #hallowinu, @HIonchains …) */
+export function mentionsProject(text, terms = H.projectTerms) {
+  const t = String(text || '').toLowerCase();
+  return terms.some(term => t.includes(term));
+}

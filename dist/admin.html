@@ -41,16 +41,24 @@
     <section class="card px-frame hud-glass"><h2>OVERVIEW</h2><div class="stats" id="stats"></div><p class="ax-fine" id="socialsCfg"></p></section>
     <section class="card px-frame hud-glass"><h2>SEASONS</h2><div class="scroll"><table id="seasons"></table></div>
       <h2 style="margin-top:18px">EDIT SEASON</h2>
-      <form class="row" id="seasonEdit"><label>Season id<input name="id" placeholder="s01" required></label><label>Name (optional)<input name="name"></label><label>Starts (UTC, only before start)<input name="startsAt" type="datetime-local"></label><label>Ends (UTC)<input name="endsAt" type="datetime-local"></label><label>Announced base pool (SOL, public)<input name="announcedSol" placeholder="1"></label><button class="btn btn-purple btn-sm">Save</button></form>
-      <p class="ax-fine">The announced base pool is only a public promise. Prizes are always calculated from the VERIFIED pool below — only announce what you will really deposit.</p>
+      <form class="row" id="seasonEdit"><label>Season id<input name="id" placeholder="s01" required></label><label>Name (optional)<input name="name"></label><label>Starts (UTC, only before start)<input name="startsAt" type="datetime-local"></label><label>Ends (UTC)<input name="endsAt" type="datetime-local"></label><button class="btn btn-purple btn-sm">Save</button></form>
       <h2 style="margin-top:18px">CREATE SEASON</h2>
       <form class="row" id="seasonNew"><label>Id<input name="id" placeholder="s02" required></label><label>Name<input name="name" placeholder="SEASON 02" required></label><label>Starts (UTC)<input name="startsAt" type="datetime-local" required></label><label>Ends (UTC)<input name="endsAt" type="datetime-local" required></label><button class="btn btn-purple btn-sm">Create</button></form>
     </section>
-    <section class="card px-frame hud-glass"><h2>PRIZE POOL FUNDING</h2><p class="ax-fine" id="wallet"></p><div class="scroll"><table id="funding"></table></div>
-      <h2 style="margin-top:18px">RECORD FUNDING (STARTS AS PENDING)</h2>
-      <form class="row" id="fundNew"><label>Season<input name="seasonId" value="s01" required></label><label>Amount (SOL)<input name="amountSol" placeholder="0.42" required></label>
-        <label>Source<select name="source"><option>MAKER_REWARD</option><option>INITIAL_FUNDING</option><option>MANUAL_CONTRIBUTION</option><option>ADJUSTMENT</option></select></label>
-        <label>Tx signature (recommended)<input name="txSignature"></label><label>Notes<input name="notes"></label><button class="btn btn-purple btn-sm">Record</button></form>
+    <section class="card px-frame is-orange hud-glass" id="poolCard"><h2>COMMUNITY REWARD POOL (80% OF VERIFIED MAKER REWARDS)</h2>
+      <p class="ax-fine" id="poolCfg"></p>
+      <div class="stats" id="poolStats"></div>
+      <p class="ax-fine" id="poolIssues"></p>
+      <h2 style="margin-top:18px">VERIFY A REWARD TRANSACTION NOW</h2>
+      <p class="ax-fine">Paste the Solana signature of a transaction in which the creator wallet RECEIVED maker/creator rewards. The server checks it on-chain (finalized, succeeded, creator wallet balance up, recognized reward source) and credits 80% exactly once. The cron does the same automatically every 10 minutes.</p>
+      <form class="row" id="poolVerify"><label>Transaction signature<input name="signature" required></label><button class="btn btn-primary btn-sm">Verify &amp; credit</button><button class="btn btn-purple btn-sm" type="button" data-poolscan="1">Scan wallet now</button></form>
+      <h2 style="margin-top:18px">REWARD EVENTS</h2><div class="scroll"><table id="poolEvents"></table></div>
+      <h2 style="margin-top:18px">SEASON POOL LEDGER (VERIFIED ROWS)</h2><div class="scroll"><table id="funding"></table></div>
+      <h2 style="margin-top:18px">LABELLED ADJUSTMENT (EXCEPTIONAL)</h2>
+      <p class="ax-fine">Only for corrections. Shown as "admin adjustment", never as maker revenue. Amount in lamports (1 SOL = 1000000000; negative to reduce). Reason is required and audited.</p>
+      <form class="row" id="poolAdj"><label>Season<input name="seasonId" value="s01" required></label><label>Amount (lamports)<input name="amountLamports" placeholder="-100000000" required></label><label>Reason (min 10 chars)<input name="reason" required></label><button class="btn btn-orange btn-sm">Record adjustment</button></form>
+      <h2 style="margin-top:18px">ADJUSTMENTS</h2><div class="scroll"><table id="poolAdjs"></table></div>
+      <h2 style="margin-top:18px">SCANNER (LATEST)</h2><div class="scroll"><table id="poolScan"></table></div>
     </section>
     <section class="card px-frame hud-glass"><h2>PRIZE ENTITLEMENTS</h2><div id="ents"></div>
       <h2 style="margin-top:18px">DISQUALIFY PLAYER</h2>
@@ -78,7 +86,7 @@
         <label>Max claims (optional)<input name="maxSubmissions" type="number" min="1"></label><button class="btn btn-purple btn-sm">Create target</button></form>
       <h2 style="margin-top:18px">TARGETS</h2><div class="scroll"><table id="hauntTargets"></table></div>
       <h2 style="margin-top:18px">SUBMISSIONS</h2>
-      <form class="row" id="hauntFilter"><label>Status<select name="status"><option value="">all</option><option>AUTO_APPROVED</option><option>AUTO_REJECTED</option><option>VERIFICATION_PENDING</option><option>MANUAL_REVIEW</option><option>INVALIDATED</option></select></label><label>Player / name / status id<input name="q"></label><button class="btn btn-purple btn-sm">Filter</button></form>
+      <form class="row" id="hauntFilter"><label>Status<select name="status"><option value="">all</option><option>AUTO_APPROVED</option><option>AUTO_REJECTED</option><option>VERIFICATION_PENDING</option><option>MANUAL_REVIEW</option><option>MANUAL_APPROVED</option><option>MANUAL_REJECTED</option><option>INVALIDATED</option></select></label><label>Player / name / status id<input name="q"></label><button class="btn btn-purple btn-sm">Filter</button></form>
       <div class="scroll"><table id="hauntSubs"></table></div>
       <h2 style="margin-top:18px">SUSPICIOUS (≥3 SUSPICIOUS REJECTIONS IN 24H)</h2><div class="scroll"><table id="hauntSus"></table></div>
       <h2 style="margin-top:18px">X API USAGE</h2><div class="scroll"><table id="hauntUsage"></table></div>
