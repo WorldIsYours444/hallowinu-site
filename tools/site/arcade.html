@@ -1,0 +1,111 @@
+<!-- ============ ARCADE ============ -->
+<section class="section arcade" id="arcade" aria-labelledby="arcade-title">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">Play · Earn points · Climb the board</p>
+      <h1 class="neon-sign" id="arcade-title"><span class="o">HALLOWINU</span> <span class="p">ARCADE</span></h1>
+      <p class="lead">Four haunted cabinets. Connect Phantom, pick a player name and earn Arcade Points, XP and achievements. The Top 10 verified players of each season share the SOL prize pool.</p>
+    </div>
+
+    <div class="ax" data-arcade aria-live="polite">
+      <!-- Season / prize pool bar -->
+      <div class="ax-season px-frame is-orange hud-glass reveal">
+        <div class="ax-season-left">
+          <span class="tag" data-season-phase><span class="dot blink"></span>Loading…</span>
+          <h3 class="ax-season-name" data-season-name>SEASON 01</h3>
+          <p class="ax-countdown"><span data-season-countdown-label>ENDS IN</span> <b data-season-countdown>--:--:--:--</b></p>
+        </div>
+        <div class="ax-pool">
+          <span class="ax-pool-label">PRIZE POOL</span>
+          <span class="ax-pool-value"><span class="sol">◎</span> <b data-pool>—</b> <small>SOL</small></span>
+          <span class="ax-pool-sub" data-pool-sub>Verified funding only</span>
+          <span class="ax-pool-announced" data-pool-announced hidden></span>
+          <span class="ax-pool-bump" data-pool-bump hidden></span>
+        </div>
+        <div class="ax-season-actions">
+          <button class="btn btn-orange btn-sm" type="button" data-open="prizes">{{icon:chest}}Prizes &amp; rules</button>
+          <button class="btn btn-purple btn-sm icon-btn ax-sound" type="button" data-sound aria-pressed="true" aria-label="Sound on">♪</button>
+        </div>
+      </div>
+
+      <div class="ax-main">
+        <!-- Player card -->
+        <aside class="ax-player px-frame hud-glass reveal" data-player>
+          <div class="ax-enter" data-enter>
+            <img src="img/head.webp" alt="" width="72" height="72">
+            <h3>Welcome to the Arcade</h3>
+            <p>Connect your Phantom wallet and sign a message to get your player card. Signing is free and is never a transaction.</p>
+            <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
+          </div>
+          <div class="ax-card" data-card hidden>
+            <div class="ax-id">
+              <img src="img/head.webp" alt="" width="56" height="56">
+              <div>
+                <button class="ax-name" type="button" data-rename title="Change name"><span data-name>—</span> <span class="ax-pen" aria-hidden="true">✎</span></button>
+                <span class="ax-pid"><span data-wallet>—</span></span>
+              </div>
+            </div>
+            <div class="ax-level">
+              <span class="ax-lvl">LVL <b data-level>1</b></span><span class="ax-title" data-title>Lost Soul</span>
+              <span class="ax-xp"><b data-xp>0</b> XP · <span data-xpnext>100</span> to next</span>
+              <span class="ax-xpbar" aria-hidden="true"><i data-xpbar></i></span>
+            </div>
+            <dl class="ax-stats">
+              <div><dt>Season pts</dt><dd data-stat="seasonPoints">0</dd></div>
+              <div><dt>Total pts</dt><dd data-stat="totalPoints">0</dd></div>
+              <div><dt>Season rank</dt><dd data-stat="seasonRank">—</dd></div>
+              <div><dt>All-time rank</dt><dd data-stat="allTimeRank">—</dd></div>
+              <div><dt>Games</dt><dd data-stat="gamesPlayed">0</dd></div>
+              <div><dt>Streak / best</dt><dd data-stat="streak">0 / 0</dd></div>
+            </dl>
+            <div class="ax-elig" data-elig></div>
+            <button class="btn btn-purple btn-sm ax-profile-btn" type="button" data-open="profile">{{icon:trophy}}Achievements &amp; history</button>
+            <div class="ax-session"><button class="ax-link" type="button" data-logout>Log out</button><button class="ax-link" type="button" data-disconnect>Disconnect wallet</button></div>
+          </div>
+        </aside>
+
+        <!-- Game cabinets -->
+        <div class="ax-games" data-games>
+          {{games}}
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="ax-board px-frame hud-glass reveal" data-board>
+        <div class="ax-board-head">
+          <h3 class="panel-title"><span class="ico">{{icon:crown}}</span>LEADERBOARD <span class="ax-top">TOP 100</span></h3>
+          <div class="ax-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected="true" data-scope="season">This season</button>
+            <button type="button" role="tab" aria-selected="false" data-scope="all">All time</button>
+          </div>
+        </div>
+        <div class="ax-table-wrap">
+          <table class="ax-table">
+            <thead><tr><th>#</th><th>Player</th><th class="r">Points</th><th class="r" data-prize-col>Est. prize</th></tr></thead>
+            <tbody data-rows><tr><td colspan="4" class="ax-empty">Loading the graveyard…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="ax-me" data-me hidden></p>
+        <p class="ax-fine">Prizes go to the Top 10 <b>prize-eligible</b> players (wallet + X + Telegram verified), calculated from the verified prize pool. Estimates change until the season ends; payouts are reviewed and approved manually.</p>
+      </div>
+      <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
+    </div>
+  </div>
+
+  <!-- Game screen -->
+  <dialog class="ax-modal ax-game-modal" data-game-modal aria-label="Arcade game">
+    <div class="ax-modal-box px-frame hud-glass">
+      <div class="ax-modal-head"><h3 data-game-title>Game</h3><button class="modal-close" type="button" data-close aria-label="Close game">✕</button></div>
+      <div class="ax-screen" data-screen></div>
+    </div>
+  </dialog>
+  <!-- Generic info dialog (profile, prizes, eligibility, rename) -->
+  <dialog class="ax-modal" data-info-modal aria-label="Arcade info">
+    <div class="ax-modal-box px-frame is-orange hud-glass">
+      <div class="ax-modal-head"><h3 data-info-title>Info</h3><button class="modal-close" type="button" data-close aria-label="Close">✕</button></div>
+      <div class="ax-info" data-info></div>
+    </div>
+  </dialog>
+  <div class="ax-toasts" data-toasts aria-live="polite"></div>
+</section>
+

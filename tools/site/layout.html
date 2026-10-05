@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>{{title}}</title>
+<meta name="description" content="HALLOWINU is the ghost dog of Halloween on Solana. A pixel-art Halloween memecoin universe built by its community. Coming soon.">
+<meta name="theme-color" content="#06030c">
+<link rel="canonical" href="https://hallowinu.xyz{{path}}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hallowinu.xyz{{path}}">
+<meta property="og:title" content="HALLOWINU — The ghost dog of Halloween on Solana">
+<meta property="og:description" content="No tricks. Just treats. Join the pack before spooky season peaks.">
+<meta property="og:image" content="https://hallowinu.xyz/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://hallowinu.xyz/img/og.jpg">
+<link rel="icon" href="favicon.ico?v=40" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="hallowinu-head.png?v=40">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=40">
+{{preload}}
+<link rel="preload" href="fonts/creepster.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="fonts/press-start.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="hallowinu.css?v={{v}}">
+<link rel="stylesheet" href="arcade.css?v={{v}}">
+<script>document.documentElement.classList.replace('no-js','js')</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">{{symbols}}</svg>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ NAV HUD ============ -->
+<header class="hud" id="hud">
+  <nav class="hud-bar" aria-label="Main">
+    <a class="brand" href="{{base}}#top" aria-label="HALLOWINU home">
+      <img src="img/head.webp" alt="" width="40" height="40">
+      <span class="wordmark" aria-hidden="true"><span class="o">HALLOW</span><span class="p">INU</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="{{base}}#about">About</a></li>
+      <li><a href="{{base}}#dream">Dream</a></li>
+      <li><a href="/arcade"{{arcadeCurrent}}>Arcade</a></li>
+      <li><a href="{{base}}#roadmap">Roadmap</a></li>
+      <li><a href="{{base}}#live-chart">Token</a></li>
+      <li><a href="{{base}}#community">Community</a></li>
+    </ul>
+    <div class="hud-actions">
+      {{socials:hud}}
+      <button class="btn btn-primary btn-sm buy-top" type="button" data-buy>{{icon:pumpkin}}<span class="label">Buy</span><span class="soon">SOON</span><span class="sr"> — Buy $HALLOWINU, coming soon</span></button>
+      <button class="btn btn-purple btn-sm icon-btn menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu"><i></i><i></i><i></i></button>
+    </div>
+  </nav>
+</header>
+<div class="mobile-menu" id="mobile-menu">
+  <ul>
+    <li><a href="{{base}}#about">About</a></li>
+    <li><a href="{{base}}#dream">Dream</a></li>
+    <li><a href="/arcade"{{arcadeCurrent}}>Arcade</a></li>
+    <li><a href="{{base}}#roadmap">Roadmap</a></li>
+    <li><a href="{{base}}#live-chart">Token</a></li>
+    <li><a href="{{base}}#community">Community</a></li>
+  </ul>
+  <div class="menu-actions">{{socials:pair}}</div>
+</div>
+
+<main id="main"{{mainclass}}>
+{{content}}
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="ground" aria-hidden="true">
+    <div class="fence"></div>
+    <span class="tomb" style="left:8%"></span><span class="tomb" style="left:61%;transform:scale(.8);transform-origin:bottom"></span><span class="tomb" style="left:88%"></span>
+    <span class="p-pump" style="left:22%">{{icon:pumpkin}}</span><span class="p-pump" style="left:47%;animation-delay:-1s">{{icon:pumpkin}}</span><span class="p-pump" style="left:76%;animation-delay:-2s">{{icon:pumpkin}}</span>
+    <canvas class="runner" width="128" height="128" data-runner hidden></canvas>
+  </div>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <span class="wordmark"><span class="o">HALLOW</span><span class="p">INU</span></span>
+        <p>Spooky season belongs to the Inu. One ghost dog. One pack. $HALLOWINU.</p>
+      </div>
+      <div class="foot-col">
+        <h4>EXPLORE</h4>
+        <ul><li><a href="{{base}}#about">About</a></li><li><a href="/arcade">Arcade</a></li><li><a href="{{base}}#roadmap">Roadmap</a></li><li><a href="{{base}}#live-chart">Token</a></li></ul>
+      </div>
+      <div class="foot-col">
+        <h4>OFFICIAL</h4>
+        <ul>{{socials:footer}}</ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <p class="disclaimer">$HALLOWINU is a community memecoin made for fun, with no intrinsic value or expectation of financial return. Nothing on this site is financial advice. Always do your own research.</p>
+      <button class="motion-toggle" type="button" data-motion aria-pressed="true">PAUSE ANIMATIONS</button>
+    </div>
+  </div>
+</footer>
+
+<dialog class="modal" id="launch-modal" aria-labelledby="launch-title">
+  <div class="modal-box px-frame is-orange hud-glass">
+    <form method="dialog"><button class="modal-close" aria-label="Close">✕</button></form>
+    <div class="ico">{{icon:pumpkin}}</div>
+    <h2 id="launch-title">$HALLOWINU — Coming soon</h2>
+    <p>The contract address and official buy link will be announced here. Follow our official X and Telegram so you don’t miss the launch.</p>
+    <div class="modal-actions">{{socials:pair}}</div>
+  </div>
+</dialog>
+
+<script src="site-config.js?v={{v}}"></script>
+<script src="launch-config.js?v={{v}}"></script>
+<script src="hallowinu.js?v={{v}}" defer></script>
+{{pagescripts}}<script src="launch.js?v={{v}}" defer></script>
+</body>
+</html>

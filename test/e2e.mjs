@@ -55,20 +55,19 @@ const NAME = 'GHOST' + Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 await withPhantom(ctx, w1);
 let page = await ctx.newPage(); watch(page, 'new');
-await page.goto(BASE + '/#arcade'); await page.waitForSelector('[data-connect]');
+await page.goto(BASE + '/arcade'); await page.waitForSelector('[data-connect]');
 check(await page.locator('.ob-steps li').count() === 5, 'onboarding shows 5 steps');
 // play before sign-in -> prompt, no modal
 await page.click('[data-play="trick-or-treat"]');
 check(!(await page.locator('[data-game-modal][open]').count()), 'games locked before sign-in');
 await page.click('[data-connect]');
-await page.waitForSelector('text=VERIFY HALLOWINU SOCIALS', { timeout: 10000 });
+await page.waitForSelector('#ax-newname', { timeout: 10000 });
 const msgs = await page.evaluate(() => window.__signedMessages);
-check(msgs && /wants you to sign in with your Solana account/.test(msgs[0]) && /not a transaction/.test(msgs[0]), 'human-readable sign-in message');
+check(msgs && /HALLOWINU ARCADE - SIGN IN/.test(msgs[0]) && /NOT a transaction/.test(msgs[0]), 'human-readable sign-in message');
 check(!(await page.evaluate(() => window.__txRequested)), 'no transaction requested');
 check(await page.locator('.ob-steps li.ok').count() === 2, 'wallet connected + verified checked');
-check((await page.locator('[data-sv-state]').allTextContents()).every(t => t === 'COMING SOON'), 'X/Telegram not faked when not configured');
-check(await page.locator('[data-verify="x"]').isDisabled() && await page.locator('[data-verify="tg"]').isDisabled(), 'verify buttons disabled without config');
-await page.click('[data-step="name"]');
+check(await page.locator('.ob-steps li.soon').count() === 2, 'X/Telegram shown as SOON (never faked) when not configured');
+check(!(await page.locator('[data-verify]').count()), 'no verify buttons while socials are not live');
 await page.fill('#ax-newname', 'admin');
 await page.click('[data-name-form] button[type=submit]');
 await page.waitForSelector('[data-name-msg].bad');
@@ -131,7 +130,7 @@ out('RETURNING PLAYER');
 const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 await withPhantom(ctx2, w1);
 const p2 = await ctx2.newPage(); watch(p2, 'return');
-await p2.goto(BASE + '/#arcade'); await p2.click('[data-connect]');
+await p2.goto(BASE + '/arcade'); await p2.click('[data-connect]');
 await p2.waitForSelector('[data-card]:not([hidden])', { timeout: 10000 });
 check((await p2.textContent('[data-name]')) === NAME, 'same account restored');
 check((await p2.textContent('[data-stat="totalPoints"]')) === pts1 || Number((await p2.textContent('[data-stat="totalPoints"]')).replace(/,/g, '')) >= Number(pts1.replace(/,/g, '')), 'points persisted');
@@ -142,17 +141,17 @@ out('SIGNATURE REJECTED');
 const ctx3 = await browser.newContext();
 await withPhantom(ctx3, await wallet(), { reject: true });
 const p3 = await ctx3.newPage(); watch(p3, 'reject');
-await p3.goto(BASE + '/#arcade'); await p3.click('[data-connect]');
+await p3.goto(BASE + '/arcade'); await p3.click('[data-connect]');
 await p3.waitForSelector('[data-sign]');
 check(await p3.locator('[data-card][hidden]').count() === 1, 'no access without signature');
 
 /* ---------- 4. no Phantom (desktop + mobile) ---------- */
 out('NO PHANTOM');
 const p4 = await (await browser.newContext()).newPage(); watch(p4, 'nophantom');
-await p4.goto(BASE + '/#arcade'); await p4.waitForSelector('text=Install Phantom');
+await p4.goto(BASE + '/arcade'); await p4.waitForSelector('text=Install Phantom');
 check(true, 'desktop: install link');
 const p5 = await (await browser.newContext({ ...{ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148' } })).newPage(); watch(p5, 'mobile');
-await p5.goto(BASE + '/#arcade'); await p5.waitForSelector('text=Open in Phantom');
+await p5.goto(BASE + '/arcade'); await p5.waitForSelector('text=Open in Phantom');
 check((await p5.getAttribute('a:has-text("Open in Phantom")', 'href')).startsWith('https://phantom.app/ul/browse/'), 'mobile: Phantom deep link');
 
 await browser.close();

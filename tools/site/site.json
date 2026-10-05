@@ -7,13 +7,13 @@
     "telegram": "https://t.me/+wjFL-iW_1tpkYmM0"
   },
   "games": [
-    { "id": "trick-or-treat", "name": "Trick or Treat", "icon": "bag",   "type": "chance",   "cta": "Play", "route": "#arcade/trick-or-treat",
+    { "id": "trick-or-treat", "name": "Trick or Treat", "icon": "bag",   "type": "chance",   "cta": "Play", "route": "/arcade#game-trick-or-treat",
       "tagline": "Pick TRICK or TREAT. The crypt decides the reward." },
-    { "id": "pumpkin-hunt",   "name": "Pumpkin Hunt",   "icon": "hunt",  "type": "skill",    "cta": "Hunt", "route": "#arcade/pumpkin-hunt",
+    { "id": "pumpkin-hunt",   "name": "Pumpkin Hunt",   "icon": "hunt",  "type": "skill",    "cta": "Hunt", "route": "/arcade#game-pumpkin-hunt",
       "tagline": "30 seconds. Spot and smash every pumpkin in the graveyard." },
-    { "id": "daily-spin",     "name": "Daily Spin",     "icon": "wheel", "type": "daily",    "cta": "Spin", "route": "#arcade/daily-spin",
+    { "id": "daily-spin",     "name": "Daily Spin",     "icon": "wheel", "type": "daily",    "cta": "Spin", "route": "/arcade#game-daily-spin",
       "tagline": "One free spin every 24 hours. Jackpot lurks." },
-    { "id": "quiz",           "name": "HALLOWINU Quiz", "icon": "quiz",  "type": "knowledge", "cta": "Play", "route": "#arcade/quiz",
+    { "id": "quiz",           "name": "HALLOWINU Quiz", "icon": "quiz",  "type": "knowledge", "cta": "Play", "route": "/arcade#game-quiz",
       "tagline": "Halloween, Solana & HALLOWINU lore. Streaks pay." }
   ]
 }

@@ -26,8 +26,8 @@ describe('wallet sign-in & player account', () => {
     const w = await newWallet();
     assert.equal((await c.get('/api/me')).access.state, 'WALLET_NOT_CONNECTED');
     const n = await c.post('/api/auth/nonce', { wallet: w.address });
-    assert.match(n.message, /hallowinu\.xyz wants you to sign in with your Solana account:/);
-    assert.match(n.message, /not a transaction/);
+    assert.match(n.message, /^HALLOWINU ARCADE - SIGN IN/); assert.match(n.message, /Website: hallowinu\.xyz/);
+    assert.match(n.message, /NOT a transaction/);
     assert.ok(n.message.includes(w.address) && n.message.includes(n.nonce));
     const v = await c.post('/api/auth/verify', { wallet: w.address, nonce: n.nonce, signature: b64(await w.sign(n.message)) });
     assert.equal(v.ok, true, JSON.stringify(v));

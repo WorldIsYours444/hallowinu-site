@@ -63,21 +63,22 @@ export async function verifyEd25519(publicKey, message, signature) {
   } catch { return false; }
 }
 
+/* Plain-text message (deliberately NOT the strict Sign-In-With-Solana format: Phantom parses SIWS
+   messages strictly and rejects/flags non-conforming ones). Everything security-relevant is in it. */
 export function buildMessage({ host, uri, wallet, nonce, issuedAt, expiresAt }) {
   return [
-    `${host} wants you to sign in with your Solana account:`,
-    wallet,
+    'HALLOWINU ARCADE - SIGN IN',
     '',
     A.statement,
-    'This signature proves you own this wallet. It is not a transaction and costs no fees.',
+    'This only proves you own this wallet.',
+    'It is NOT a transaction and costs no fees.',
     'HALLOWINU will never ask for your seed phrase or private key.',
     '',
-    `URI: ${uri}`,
-    'Version: 1',
-    'Chain ID: mainnet',
+    `Website: ${host}`,
+    `Wallet: ${wallet}`,
     `Nonce: ${nonce}`,
-    `Issued At: ${new Date(issuedAt).toISOString()}`,
-    `Expiration Time: ${new Date(expiresAt).toISOString()}`,
+    `Issued: ${new Date(issuedAt).toISOString()}`,
+    `Expires: ${new Date(expiresAt).toISOString()}`,
   ].join('\n');
 }
 

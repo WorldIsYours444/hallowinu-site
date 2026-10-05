@@ -110,7 +110,7 @@
     if (window.solana && window.solana.isPhantom) return window.solana;
     return null;
   }
-  const phantomBrowseUrl = () => `https://phantom.app/ul/browse/${encodeURIComponent(location.origin + location.pathname + '#arcade')}?ref=${encodeURIComponent(location.origin)}`;
+  const phantomBrowseUrl = () => `https://phantom.app/ul/browse/${encodeURIComponent(location.origin + '/arcade')}?ref=${encodeURIComponent(location.origin)}`;
   const b64 = u8 => { let s = ''; for (const b of u8) s += String.fromCharCode(b); return btoa(s); };
   const short = w => (w ? `${w.slice(0, 4)}…${w.slice(-4)}` : '');
   let providerHooked = false;
@@ -154,7 +154,10 @@
       signature = b64(out.signature || out);
     } catch (e) {
       setBusy(false);
-      toast('SIGNATURE CANCELLED', 'No problem — sign the message to verify your wallet.', 'ghost', true);
+      console.warn('phantom signMessage failed', e);
+      const cancelled = e && (e.code === 4001 || /reject|cancel|denied/i.test(String(e.message || '')));
+      if (cancelled) toast('SIGNATURE CANCELLED', 'No problem — click Verify wallet and approve the message in Phantom.', 'ghost', true);
+      else toast('PHANTOM COULD NOT SIGN', (e && e.message ? String(e.message).slice(0, 120) : 'Unlock Phantom and try again.'), 'skull', true);
       return renderAccess();
     }
     const r = await api('POST', '/api/auth/verify', { wallet: S.wallet, nonce: n.nonce, signature });
@@ -239,7 +242,13 @@
   let busyText = null;
   function setBusy(on, text) { busyText = on ? text : null; S.busy = on; renderAccess(); }
 
+  const socialsLive = () => !!(S.socials && ((S.socials.x && S.socials.x.available) || (S.socials.telegram && S.socials.telegram.available)));
+  function socialsSoon() {
+    return `<div class="soc-soon"><span class="soc-pill">${sicon('x')}X <b>SOON</b></span><span class="soc-pill">${sicon('tg')}TELEGRAM <b>SOON</b></span></div>
+      <p class="ax-fine">X + Telegram verification opens soon — needed for prizes, not for playing.</p>`;
+  }
   function socialsBlock(compact = false) {
+    if (!socialsLive()) return socialsSoon();
     const a = S.access, cfg = S.socials || { x: {}, telegram: {} };
     const item = (key, label, link, linkText, verified, available, username) => {
       const state = verified ? 'VERIFIED' : available ? 'NOT VERIFIED' : 'COMING SOON';
@@ -266,11 +275,11 @@
     const rows = [
       ['WALLET CONNECTED', signed || !!S.wallet],
       ['WALLET VERIFIED', signed],
-      ['X VERIFIED', !!(a.x && a.x.verified)],
-      ['TELEGRAM VERIFIED', !!(a.telegram && a.telegram.verified)],
+      ['X VERIFIED', !!(a.x && a.x.verified), !(S.socials && S.socials.x && S.socials.x.available)],
+      ['TELEGRAM VERIFIED', !!(a.telegram && a.telegram.verified), !(S.socials && S.socials.telegram && S.socials.telegram.available)],
       ['PLAYER NAME CREATED', !!a.profileComplete],
     ];
-    return `<ol class="ob-steps">${rows.map(([t, ok]) => `<li class="${ok ? 'ok' : ''}"><span class="ob-box" aria-hidden="true">${ok ? '✓' : ''}</span>${t}<span class="sr">${ok ? ' — done' : ' — not yet'}</span></li>`).join('')}</ol>`;
+    return `<ol class="ob-steps">${rows.map(([t, ok, soon]) => `<li class="${ok ? 'ok' : soon ? 'soon' : ''}"><span class="ob-box" aria-hidden="true">${ok ? '✓' : ''}</span>${t}${soon && !ok ? '<span class="tag is-dim ob-soon">SOON</span>' : ''}<span class="sr">${ok ? ' — done' : soon ? ' — coming soon' : ' — not yet'}</span></li>`).join('')}</ol>`;
   }
 
   /* Never wipe a form the player is typing in or a Telegram login widget that is open. */
@@ -300,7 +309,7 @@
           <button class="btn btn-primary" type="button" data-connect>${icon('ghost')}Connect Phantom</button>`;
       }
       body += '<p class="ax-fine">HALLOWINU will never ask for your seed phrase, recovery phrase or private key.</p>';
-    } else if (!a.profileComplete && S.step !== 'name') {
+    } else if (!a.profileComplete && S.step !== 'name' && socialsLive()) {
       body = `<h4 class="ob-h">VERIFY HALLOWINU SOCIALS</h4>${socialsBlock()}
         <button class="btn btn-primary" type="button" data-step="name">Continue</button>`;
     } else if (!a.profileComplete) {
@@ -309,7 +318,7 @@
         <input id="ax-newname" maxlength="16" minlength="3" required autocomplete="off" spellcheck="false" placeholder="e.g. GHOSTKING">
         <p class="ax-fine" data-name-msg>Letters, numbers, spaces, - _ and . · must be unique</p>
         <button class="btn btn-primary" type="submit">Create player</button></form>
-        <button class="ax-link" type="button" data-step="socials">← Back to socials</button>`;
+        ${socialsLive() ? '<button class="ax-link" type="button" data-step="socials">← Back to socials</button>' : ''}`;
     } else {
       // just completed onboarding
       body = `<h4 class="ob-h granted">ACCESS GRANTED</h4><button class="btn btn-primary" type="button" data-enter-arcade>${icon('trophy')}Enter Arcade</button>`;
@@ -347,7 +356,7 @@
     for (const [k, v] of Object.entries(st)) $(`[data-stat="${k}"]`, root).textContent = v;
     $('[data-elig]', root).innerHTML = a.prizeEligible
       ? '<span class="tag is-green">✓ Prize eligible</span>'
-      : `<div class="elig-head"><span class="tag is-dim">Prize eligibility: verify X + Telegram</span><button class="ax-link" type="button" data-open="eligibility">Why?</button></div>${socialsBlock(true)}`;
+      : `<div class="elig-head"><span class="tag is-dim">Prize eligibility: X + Telegram ${socialsLive() ? 'needed' : 'soon'}</span><button class="ax-link" type="button" data-open="eligibility">Why?</button></div>${socialsBlock(true)}`;
   }
 
   function renderGames() {
@@ -417,7 +426,7 @@
     if (q.get('social') !== 'x') return;
     const [t, m, bad] = SOCIAL_STATUS[q.get('status')] || ['X NOT VERIFIED', 'Something went wrong. Try again.', true];
     setTimeout(() => { toast(t, m, bad ? 'skull' : 'ghost', bad); sfx(bad ? 'lose' : 'achieve'); }, 600);
-    history.replaceState(null, '', location.pathname + '#arcade');
+    history.replaceState(null, '', location.pathname);
   })();
 
   /* ---------- leaderboard ---------- */

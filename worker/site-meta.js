@@ -13,7 +13,7 @@ export const SITE = {
       "icon": "bag",
       "type": "chance",
       "cta": "Play",
-      "route": "#arcade/trick-or-treat",
+      "route": "/arcade#game-trick-or-treat",
       "tagline": "Pick TRICK or TREAT. The crypt decides the reward."
     },
     {
@@ -22,7 +22,7 @@ export const SITE = {
       "icon": "hunt",
       "type": "skill",
       "cta": "Hunt",
-      "route": "#arcade/pumpkin-hunt",
+      "route": "/arcade#game-pumpkin-hunt",
       "tagline": "30 seconds. Spot and smash every pumpkin in the graveyard."
     },
     {
@@ -31,7 +31,7 @@ export const SITE = {
       "icon": "wheel",
       "type": "daily",
       "cta": "Spin",
-      "route": "#arcade/daily-spin",
+      "route": "/arcade#game-daily-spin",
       "tagline": "One free spin every 24 hours. Jackpot lurks."
     },
     {
@@ -40,7 +40,7 @@ export const SITE = {
       "icon": "quiz",
       "type": "knowledge",
       "cta": "Play",
-      "route": "#arcade/quiz",
+      "route": "/arcade#game-quiz",
       "tagline": "Halloween, Solana & HALLOWINU lore. Streaks pay."
     }
   ]

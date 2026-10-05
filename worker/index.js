@@ -157,7 +157,7 @@ async function route(request, env, url) {
 
 function redirect(url, provider, status) {
   const safe = String(status || 'error').replace(/[^a-z_]/g, '').slice(0, 40) || 'error';
-  return new Response(null, { status: 302, headers: { location: `${url.origin}/?social=${provider}&status=${safe}#arcade`, 'cache-control': 'no-store' } });
+  return new Response(null, { status: 302, headers: { location: `${url.origin}/arcade?social=${provider}&status=${safe}`, 'cache-control': 'no-store' } });
 }
 
 /* Access-state model (server-authoritative). The client only adds WALLET_CONNECTED (Phantom connected, not signed). */

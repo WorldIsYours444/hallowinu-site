@@ -1,4 +1,4 @@
-"""Builds dist/index.html from tools/site/index.template.html.
+"""Builds dist/index.html (home) and dist/arcade.html (/arcade) from tools/site/layout.html + home.html / arcade.html.
 
 Single sources of truth:
   tools/site/site.json   official links (website / X / Telegram) + Arcade game metadata
@@ -13,7 +13,7 @@ import json, re, random, html, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 P = lambda *a: os.path.join(ROOT, *a)
-V = '43'
+V = '45'
 
 icons = json.load(open(P('tools/site/icons.json')))
 site = json.load(open(P('tools/site/site.json')))
@@ -41,23 +41,25 @@ e = lambda s: html.escape(s, quote=True)
 x_url, tg_url, web_url = e(L['x']), e(L['telegram']), e(L['website'])
 
 # ---- shared social components: X and Telegram are ALWAYS rendered together ----
+BUY_SOON = '<span class="soon">SOON</span><span class="sr"> — coming soon</span>'
 def socials(variant):
+    # Shared look everywhere: X / TWITTER = orange, TELEGRAM = purple, always together.
+    xl, tl = 'X / Twitter', 'Telegram'
     if variant == 'hud':      # compact icon pair in the header
         return (f'<span class="socials socials-hud">'
-                f'<a class="btn btn-purple btn-sm icon-btn" href="{x_url}" {EXT} aria-label="HALLOWINU on X">{X}</a>'
-                f'<a class="btn btn-purple btn-sm icon-btn" href="{tg_url}" {EXT} aria-label="HALLOWINU on Telegram">{TG}</a></span>')
+                f'<a class="btn btn-orange btn-sm icon-btn soc-x" href="{x_url}" {EXT} aria-label="HALLOWINU on X / Twitter">{X}</a>'
+                f'<a class="btn btn-purple btn-sm icon-btn soc-tg" href="{tg_url}" {EXT} aria-label="HALLOWINU on Telegram">{TG}</a></span>')
     if variant == 'pair':     # full buttons (hero CTA, mobile menu, launch modal)
-        return (f'<a class="btn btn-orange soc-btn" href="{x_url}" {EXT}>{X}Follow X</a>'
-                f'<a class="btn btn-purple soc-btn" href="{tg_url}" {EXT}>{TG}Telegram</a>')
-    if variant == 'terminal': # website + X + Telegram
+        return (f'<a class="btn btn-orange soc-btn soc-x" href="{x_url}" {EXT}>{X}{xl}</a>'
+                f'<a class="btn btn-purple soc-btn soc-tg" href="{tg_url}" {EXT}>{TG}{tl}</a>')
+    if variant == 'terminal': # buy + X + Telegram
         return (f'<nav class="official-links" aria-label="Official HALLOWINU links">'
-                f'<a class="btn btn-purple btn-sm" href="{web_url}" {EXT}>{WEB}Website</a>'
-                f'<a class="btn btn-purple btn-sm" href="{x_url}" {EXT}>{X}X</a>'
-                f'<a class="btn btn-purple btn-sm" href="{tg_url}" {EXT}>{TG}Telegram</a></nav>')
+                f'<button class="btn btn-primary btn-sm" type="button" data-buy>{icon("pumpkin")}Buy{BUY_SOON}</button>'
+                f'<a class="btn btn-orange btn-sm soc-x" href="{x_url}" {EXT}>{X}{xl}</a>'
+                f'<a class="btn btn-purple btn-sm soc-tg" href="{tg_url}" {EXT}>{TG}{tl}</a></nav>')
     if variant == 'footer':
-        return (f'<li><a href="{web_url}" {EXT}>hallowinu.xyz</a></li>'
-                f'<li><a href="{x_url}" {EXT}>X</a></li>'
-                f'<li><a href="{tg_url}" {EXT}>Telegram</a></li>')
+        return (f'<li><a href="{x_url}" {EXT}>{xl}</a></li>'
+                f'<li><a href="{tg_url}" {EXT}>{tl}</a></li>')
     if variant == 'portals':
         return (f'<a class="portal is-x" href="{x_url}" {EXT}><span class="portal-ico">{X}</span>'
                 f'<div><h3>X / TWITTER</h3><p>Memes, artwork &amp; updates</p></div><span class="go" aria-hidden="true">›</span></a>'
@@ -88,17 +90,29 @@ def spark(seed, trend):
         pts.append(f'{x},{y:.1f}')
     return f'<svg class="dc-chart" viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"><g opacity=".55">{cand}</g><polyline class="line" style="--len:260" points="{" ".join(pts)}"/></svg>'
 
-t = open(P('tools/site/index.template.html')).read()
-t = t.replace('{{symbols}}', symbols).replace('{{tg}}', TG).replace('{{x}}', X).replace('{{v}}', V)
-t = t.replace('{{spark1}}', spark(3, 1.1)).replace('{{spark2}}', spark(7, 1.4)).replace('{{spark3}}', spark(11, 1.7))
-t = t.replace('{{games}}', game_cards())
-t = re.sub(r'\{\{socials:(\w+)\}\}', lambda m: socials(m.group(1)), t)
-t = re.sub(r'\{\{link:(\w+)\}\}', lambda m: e(L[m.group(1)]), t)
-t = re.sub(r'\{\{icon:(\w+)\}\}', lambda m: icon(m.group(1)), t)
-assert '{{' not in t, re.findall(r'\{\{[^}]+\}\}', t)
-# Guard: every project X link must be accompanied by a Telegram link in the same component and vice versa.
-assert t.count(L['x']) == t.count(L['telegram']), (t.count(L['x']), t.count(L['telegram']))
-open(P('dist/index.html'), 'w').write(t)
+layout = open(P('tools/site/layout.html')).read()
+HERO_PRELOAD = '<link rel="preload" href="img/hero-world.webp" as="image" type="image/webp" imagesrcset="img/hero-world-1200.webp 1200w, img/hero-world.webp 2042w" imagesizes="(max-width:700px) 148vw, 100vw">'
+PAGES = [
+    # (output, content file, url path, title, base for section links, extra)
+    ('dist/index.html', 'tools/site/home.html', '/', 'HALLOWINU — The ghost dog of Halloween on Solana', '', HERO_PRELOAD, '', ''),
+    ('dist/arcade.html', 'tools/site/arcade.html', '/arcade', 'HALLOWINU Arcade — play, earn points, climb the board', '/', '', ' class="arcade-page"', ' aria-current="true"'),
+]
+for out, content, path, title, base, preload, mainclass, cur in PAGES:
+    t = layout.replace('{{content}}', open(P(content)).read())
+    t = t.replace('{{title}}', title).replace('{{path}}', path).replace('{{base}}', base).replace('{{preload}}', preload)
+    t = t.replace('{{mainclass}}', mainclass).replace('{{arcadeCurrent}}', cur)
+    t = t.replace('{{pagescripts}}', f'<script src="arcade.js?v={V}" defer></script>\n' if 'arcade' in out else '')
+    t = t.replace('{{symbols}}', symbols).replace('{{tg}}', TG).replace('{{x}}', X).replace('{{v}}', V)
+    t = t.replace('{{spark1}}', spark(3, 1.1)).replace('{{spark2}}', spark(7, 1.4)).replace('{{spark3}}', spark(11, 1.7))
+    t = t.replace('{{games}}', game_cards())
+    t = re.sub(r'\{\{socials:(\w+)\}\}', lambda m: socials(m.group(1)), t)
+    t = re.sub(r'\{\{link:(\w+)\}\}', lambda m: e(L[m.group(1)]), t)
+    t = re.sub(r'\{\{icon:(\w+)\}\}', lambda m: icon(m.group(1)), t)
+    assert '{{' not in t, (out, re.findall(r'\{\{[^}]+\}\}', t))
+    # Guard: every project X link is accompanied by a Telegram link and vice versa.
+    assert t.count(L['x']) == t.count(L['telegram']), (out, t.count(L['x']), t.count(L['telegram']))
+    open(P(out), 'w').write(t)
+    print(out, len(t), 'bytes; x links', t.count(L['x']), 'telegram links', t.count(L['telegram']))
 
 public = {'links': L, 'games': site['games']}
 open(P('dist/site-config.js'), 'w').write(
@@ -107,4 +121,3 @@ open(P('dist/site-config.js'), 'w').write(
 open(P('worker/site-meta.js'), 'w').write(
     '/* GENERATED by tools/site/build.py from tools/site/site.json — do not edit by hand. */\n'
     f'export const SITE = {json.dumps(public, ensure_ascii=False, indent=2)};\n')
-print(len(t), 'bytes; x links', t.count(L['x']), 'telegram links', t.count(L['telegram']))

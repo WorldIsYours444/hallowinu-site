@@ -26,6 +26,11 @@
   reduce.addEventListener?.('change', e => { paused = e.matches; applyMotion(); });
   const onMotion = fn => { listeners.add(fn); fn(paused); };
 
+  /* old shared links (hallowinu.xyz/#arcade) now live on their own page */
+  const toArcade = () => { if (/^#arcade/.test(location.hash) && !document.querySelector('[data-arcade]')) { location.replace('/arcade'); return true; } return false; };
+  if (toArcade()) return;
+  addEventListener('hashchange', toArcade);
+
   /* ---------- nav ---------- */
   const hud = $('#hud');
   const onScroll = () => hud.classList.toggle('is-scrolled', scrollY > 24);
@@ -45,7 +50,7 @@
 
   // active section highlight
   const navLinks = $$('.nav-links a');
-  const sections = [$('#top'), ...navLinks.map(a => $(a.getAttribute('href')))].filter(Boolean);
+  const sections = [$('#top'), ...navLinks.filter(a => /^#[\w-]+$/.test(a.getAttribute('href'))).map(a => $(a.getAttribute('href')))].filter(Boolean);
   if ('IntersectionObserver' in window) {
     const spy = new IntersectionObserver(entries => {
       entries.forEach(en => {

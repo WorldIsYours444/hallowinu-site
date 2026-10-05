@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>HALLOWINU — The ghost dog of Halloween on Solana</title>
+<title>HALLOWINU Arcade — play, earn points, climb the board</title>
 <meta name="description" content="HALLOWINU is the ghost dog of Halloween on Solana. A pixel-art Halloween memecoin universe built by its community. Coming soon.">
 <meta name="theme-color" content="#06030c">
-<link rel="canonical" href="https://hallowinu.xyz/">
+<link rel="canonical" href="https://hallowinu.xyz/arcade">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://hallowinu.xyz/">
+<meta property="og:url" content="https://hallowinu.xyz/arcade">
 <meta property="og:title" content="HALLOWINU — The ghost dog of Halloween on Solana">
 <meta property="og:description" content="No tricks. Just treats. Join the pack before spooky season peaks.">
 <meta property="og:image" content="https://hallowinu.xyz/img/og.jpg">
@@ -17,7 +17,7 @@
 <link rel="icon" href="favicon.ico?v=40" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="hallowinu-head.png?v=40">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=40">
-<link rel="preload" href="img/hero-world.webp" as="image" type="image/webp" imagesrcset="img/hero-world-1200.webp 1200w, img/hero-world.webp 2042w" imagesizes="(max-width:700px) 148vw, 100vw">
+
 <link rel="preload" href="fonts/creepster.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="fonts/press-start.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="hallowinu.css?v=45">
@@ -31,17 +31,17 @@
 <!-- ============ NAV HUD ============ -->
 <header class="hud" id="hud">
   <nav class="hud-bar" aria-label="Main">
-    <a class="brand" href="#top" aria-label="HALLOWINU home">
+    <a class="brand" href="/#top" aria-label="HALLOWINU home">
       <img src="img/head.webp" alt="" width="40" height="40">
       <span class="wordmark" aria-hidden="true"><span class="o">HALLOW</span><span class="p">INU</span></span>
     </a>
     <ul class="nav-links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#dream">Dream</a></li>
-      <li><a href="/arcade">Arcade</a></li>
-      <li><a href="#roadmap">Roadmap</a></li>
-      <li><a href="#live-chart">Token</a></li>
-      <li><a href="#community">Community</a></li>
+      <li><a href="/#about">About</a></li>
+      <li><a href="/#dream">Dream</a></li>
+      <li><a href="/arcade" aria-current="true">Arcade</a></li>
+      <li><a href="/#roadmap">Roadmap</a></li>
+      <li><a href="/#live-chart">Token</a></li>
+      <li><a href="/#community">Community</a></li>
     </ul>
     <div class="hud-actions">
       <span class="socials socials-hud"><a class="btn btn-orange btn-sm icon-btn soc-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer" aria-label="HALLOWINU on X / Twitter"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.8 2.5h3.3l-7.2 8.2 8.5 10.8h-6.6l-5.2-6.8-6 6.8H1.3l7.7-8.8L.9 2.5h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.1h1.8L6.6 4.3H4.6l12 15.3Z"/></svg></a><a class="btn btn-purple btn-sm icon-btn soc-tg" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer" aria-label="HALLOWINU on Telegram"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13 1.2 11.5c-1.1-.3-1.1-1.1.2-1.6L20.6 2.5c.9-.3 1.7.2 1.3 1.8Z"/></svg></a></span>
@@ -52,260 +52,132 @@
 </header>
 <div class="mobile-menu" id="mobile-menu">
   <ul>
-    <li><a href="#about">About</a></li>
-    <li><a href="#dream">Dream</a></li>
-    <li><a href="/arcade">Arcade</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#live-chart">Token</a></li>
-    <li><a href="#community">Community</a></li>
+    <li><a href="/#about">About</a></li>
+    <li><a href="/#dream">Dream</a></li>
+    <li><a href="/arcade" aria-current="true">Arcade</a></li>
+    <li><a href="/#roadmap">Roadmap</a></li>
+    <li><a href="/#live-chart">Token</a></li>
+    <li><a href="/#community">Community</a></li>
   </ul>
   <div class="menu-actions"><a class="btn btn-orange soc-btn soc-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.8 2.5h3.3l-7.2 8.2 8.5 10.8h-6.6l-5.2-6.8-6 6.8H1.3l7.7-8.8L.9 2.5h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.1h1.8L6.6 4.3H4.6l12 15.3Z"/></svg>X / Twitter</a><a class="btn btn-purple soc-btn soc-tg" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13 1.2 11.5c-1.1-.3-1.1-1.1.2-1.6L20.6 2.5c.9-.3 1.7.2 1.3 1.8Z"/></svg>Telegram</a></div>
 </div>
 
-<main id="main">
-<!-- ============ HERO ============ -->
-<section class="hero" id="top" aria-labelledby="hero-title">
-  <div class="sky" data-stars aria-hidden="true"></div>
-  <div class="hero-frame" data-hero>
-    <div class="hero-stage" data-stage>
-      <img src="img/hero-world.webp" srcset="img/hero-world-1200.webp 1200w, img/hero-world.webp 2042w" sizes="(max-width:700px) 148vw, 100vw" width="2042" height="770" fetchpriority="high"
-           alt="HALLOWINU wordmark above a pixel-art Halloween graveyard: the ghost-hooded Shiba peeks over a hill beside glowing jack-o'-lanterns, a giant orange moon and a haunted mansion.">
-      <div class="fx glow moon-glow" aria-hidden="true"></div>
-      <div class="fx glow hallow-warm" aria-hidden="true"></div>
-      <div class="fx glow inu-neon" aria-hidden="true"></div>
-      <div class="fx glow windows" aria-hidden="true"></div>
-      <div class="fx glow lantern l1" aria-hidden="true"></div>
-      <div class="fx glow lantern l2" aria-hidden="true"></div>
-      <div class="fx glow pump p1" aria-hidden="true"></div><div class="fx glow pump p2" aria-hidden="true"></div><div class="fx glow pump p3" aria-hidden="true"></div><div class="fx glow pump p4" aria-hidden="true"></div>
-      <div class="fx glow pump p5" aria-hidden="true"></div><div class="fx glow pump p6" aria-hidden="true"></div><div class="fx glow pump p7" aria-hidden="true"></div><div class="fx glow pump p8" aria-hidden="true"></div>
-      <div class="fx sparkle s1" aria-hidden="true"></div><div class="fx sparkle s2" aria-hidden="true"></div><div class="fx sparkle s3" aria-hidden="true"></div><div class="fx sparkle s4" aria-hidden="true"></div><div class="fx sparkle s5" aria-hidden="true"></div>
-      <div class="fx fog" aria-hidden="true"></div><div class="fx fog f2" aria-hidden="true"></div>
-      <div class="fx vignette" aria-hidden="true"></div>
-    </div>
-    <div class="fx embers" data-embers aria-hidden="true"></div>
-  </div>
-
-  <div class="hero-hud wrap">
-    <div class="hero-grid">
-      <div class="dialog px-frame hud-glass reveal">
-        <span class="nameplate" aria-hidden="true">HALLOWINU</span>
-        <div class="portrait" aria-hidden="true"><canvas width="160" height="160" data-talk></canvas></div>
-        <div>
-          <h1 id="hero-title"><span class="sr">HALLOWINU — </span>The <em>ghost dog</em> of Halloween on <strong>Solana</strong>.</h1>
-          <p class="say" aria-live="off"><span data-say>No tricks. Just treats &amp; bags.</span><span class="cursor" aria-hidden="true"></span></p>
-          <div class="status-row">
-          <span class="tag"><span class="dot blink"></span>Pre-launch</span>
-          <span class="tag is-purple">Solana</span>
-          <span class="tag is-dim">$HALLOWINU</span>
-        </div>
-        </div>
-        <span class="next" aria-hidden="true"></span>
-      </div>
-
-      <div class="cta-panel px-frame is-orange hud-glass reveal" data-delay="1">
-        <div class="cta-row">
-          <button class="btn btn-primary" type="button" data-buy><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg>Buy $HALLOWINU<span class="soon" data-buy-soon>SOON</span></button>
-          <a class="btn btn-orange soc-btn soc-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.8 2.5h3.3l-7.2 8.2 8.5 10.8h-6.6l-5.2-6.8-6 6.8H1.3l7.7-8.8L.9 2.5h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.1h1.8L6.6 4.3H4.6l12 15.3Z"/></svg>X / Twitter</a><a class="btn btn-purple soc-btn soc-tg" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13 1.2 11.5c-1.1-.3-1.1-1.1.2-1.6L20.6 2.5c.9-.3 1.7.2 1.3 1.8Z"/></svg>Telegram</a>
-          <button class="btn btn-purple cta-chart" type="button" data-chart-scroll><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-bars"/></svg>Chart<span class="soon" data-chart-soon>SOON</span></button>
-        </div>
-        <div class="ca" aria-label="Contract address">
-          <span class="ca-label">CA:</span>
-          <code class="ca-value">COMING SOON</code>
-          <button class="btn btn-orange btn-sm ca-copy" type="button" hidden>Copy</button>
-          <span class="sr ca-feedback" role="status" aria-live="polite"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider" aria-hidden="true"></div>
-
-<!-- ============ ABOUT ============ -->
-<section class="section lore" id="about" aria-labelledby="about-title">
-  <div class="wrap lore-grid">
-    <div class="section-head reveal">
-      <p class="eyebrow">Character file · Lore</p>
-      <h2 class="section-title" id="about-title">Meet <span class="o">HALLOW</span><span class="p">INU</span></h2>
-    </div>
-    <article class="char-card px-frame reveal" aria-label="HALLOWINU character card">
-      <div class="card-top"><span>PLAYER 01</span><span class="tag is-purple">Ghost dog</span></div>
-      <div class="char-art"><img src="img/portrait.webp" width="510" height="478" loading="lazy" alt="HALLOWINU, the orange Shiba Inu in a white ghost hood, grinning with his tongue out."></div>
-      <h3 class="char-name"><span class="wordmark"><span class="o">HALLOW</span><span class="p">INU</span></span></h3>
-      <p class="char-class">CLASS: GHOST DOG · REALM: SOLANA<br>ALIGNMENT: CHAOTIC CUTE</p>
-      <ul class="stats" aria-label="Character stats (just for fun)">
-        <li class="stat"><span>SPOOKINESS</span><span class="bar"><i style="--v:92"></i></span><b>92</b></li>
-        <li class="stat"><span>CUTENESS</span><span class="bar"><i style="--v:100;--c:var(--neon)"></i></span><b>100</b></li>
-        <li class="stat"><span>PACK SPIRIT</span><span class="bar"><i style="--v:96"></i></span><b>96</b></li>
-        <li class="stat"><span>TRICKS</span><span class="bar"><i style="--v:0"></i></span><b>0</b></li>
-      </ul>
-    </article>
-
-    <div class="lore-copy">
-      <div class="reveal" data-delay="1">
-        <p><strong>HALLOWINU is a Halloween-themed memecoin project on Solana</strong>, led by a Shiba Inu who traded his usual look for a ghost costume. Cute, a little spooky and always ready for trick or treat — he is the ghost dog of Halloween.</p>
-        <p>The idea is simple: bring the familiar Inu spirit into spooky season and give the community a world of its own. Haunted forests, pixel ghosts, flying bats and a pack that shows up together. The little scenes and hidden details on this site are part of that world.</p>
-        <p>The community is where the project comes to life. <strong>Telegram</strong> is our home for conversations, launch announcements and community raids. <strong>X</strong> is where we share HALLOWINU artwork, memes and updates. Whether you create a meme, join a raid or bring a friend into the pack, you help shape the season.</p>
-        <p>$HALLOWINU is preparing for its next chapter on Solana. The contract address, buy link and chart are <strong>coming soon</strong> — follow the official community for announcements.</p>
-      </div>
-      <div class="traits">
-        <div class="trait px-frame is-dim reveal" data-delay="1"><div class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-ghost"/></svg></div><h3>One ghost dog</h3><p>Same Shiba, same hood, every chapter of the story.</p></div>
-        <div class="trait px-frame is-dim reveal" data-delay="2"><div class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-candy"/></svg></div><h3>No tricks</h3><p>Just treats, memes and a pack that shows up.</p></div>
-        <div class="trait px-frame is-dim reveal" data-delay="3"><div class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg></div><h3>Spooky season</h3><p>Built for October. Haunting all year.</p></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ DREAM ============ -->
-<section class="section dream" id="dream" aria-labelledby="dream-title">
-  <div class="wrap dream-grid">
-    <div class="dream-visual reveal">
-      <div class="dream-shot"><img src="img/dream-720.webp" srcset="img/dream-720.webp 720w, img/dream.webp 1206w" sizes="(max-width:1020px) 92vw, 560px" width="1206" height="1198" loading="lazy" alt="HALLOWINU sits at his laptop late at night, chin in his paws, daydreaming about rising charts."></div>
-      <span class="dream-badge tag is-purple" aria-hidden="true">✦ Thought bubbles = dreams</span>
-    </div>
-    <div>
-      <div class="section-head reveal">
-        <p class="eyebrow">Late-night thoughts</p>
-        <h2 class="section-title" id="dream-title">Every ghost dog <span class="o">has a</span> <span class="p">dream</span></h2>
-        <p class="lead">Candles flickering. Laptop glowing. HALLOWINU doing what every degen does at 3 a.m. — staring at charts and dreaming big.</p>
-      </div>
-      <div class="dream-board px-frame hud-glass reveal" data-delay="1" aria-label="Dream board — fictional goals, not real statistics">
-        <div class="db-head"><span>DREAM BOARD</span><span class="tag is-dim">Not live data</span></div>
-        <ul class="db-rows">
-          <li class="db-row"><img src="img/head.webp" alt="" width="34" height="34"><div class="db-meta"><span class="dc-label">DREAM #1 · MC</span><span class="dc-value">$5,000,000</span></div><svg class="dc-chart" viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"><g opacity=".55"><rect class="candle" x="2" y="32.0" width="4" height="4.0"/><rect class="candle" x="3.5" y="29.4" width="1" height="8.7"/><rect class="candle" x="12" y="31.4" width="4" height="1.5"/><rect class="candle" x="13.5" y="28.5" width="1" height="4.7"/><rect class="candle" x="22" y="25.4" width="4" height="6.0"/><rect class="candle" x="23.5" y="21.9" width="1" height="11.3"/><rect class="candle" x="32" y="21.4" width="4" height="4.0"/><rect class="candle" x="33.5" y="17.4" width="1" height="10.4"/><rect class="candle r" x="42" y="21.4" width="4" height="1.5"/><rect class="candle r" x="43.5" y="19.0" width="1" height="6.8"/><rect class="candle" x="52" y="18.1" width="4" height="4.7"/><rect class="candle" x="53.5" y="15.2" width="1" height="11.3"/><rect class="candle" x="62" y="16.7" width="4" height="1.5"/><rect class="candle" x="63.5" y="13.5" width="1" height="7.6"/><rect class="candle" x="72" y="11.2" width="4" height="5.5"/><rect class="candle" x="73.5" y="7.9" width="1" height="11.6"/><rect class="candle" x="82" y="7.8" width="4" height="3.4"/><rect class="candle" x="83.5" y="6.7" width="1" height="8.1"/><rect class="candle" x="92" y="5.9" width="4" height="1.8"/><rect class="candle" x="93.5" y="2.8" width="1" height="8.6"/><rect class="candle r" x="102" y="5.9" width="4" height="1.5"/><rect class="candle r" x="103.5" y="2.2" width="1" height="6.3"/><rect class="candle r" x="112" y="6.3" width="4" height="1.5"/><rect class="candle r" x="113.5" y="3.9" width="1" height="7.2"/><rect class="candle r" x="122" y="7.4" width="4" height="1.8"/><rect class="candle r" x="123.5" y="6.1" width="1" height="4.5"/><rect class="candle" x="132" y="5.0" width="4" height="4.1"/><rect class="candle" x="133.5" y="1.1" width="1" height="10.4"/><rect class="candle" x="142" y="4.6" width="4" height="1.5"/><rect class="candle" x="143.5" y="2.7" width="1" height="4.9"/><rect class="candle" x="152" y="4.0" width="4" height="1.5"/><rect class="candle" x="153.5" y="1.9" width="1" height="5.4"/><rect class="candle" x="162" y="4.0" width="4" height="1.5"/><rect class="candle" x="163.5" y="0.3" width="1" height="6.8"/><rect class="candle r" x="172" y="4.0" width="4" height="2.3"/><rect class="candle r" x="173.5" y="0.4" width="1" height="9.8"/><rect class="candle" x="182" y="6.2" width="4" height="1.5"/><rect class="candle" x="183.5" y="4.7" width="1" height="5.1"/><rect class="candle r" x="192" y="6.2" width="4" height="2.6"/><rect class="candle r" x="193.5" y="2.5" width="1" height="9.0"/></g><polyline class="line" style="--len:260" points="4,32.0 14,31.4 24,25.4 34,21.4 44,22.8 54,18.1 64,16.7 74,11.2 84,7.8 94,5.9 104,6.3 114,7.4 124,9.2 134,5.0 144,4.6 154,4.0 164,4.0 174,6.3 184,6.2 194,8.8"/></svg></li>
-          <li class="db-row"><img src="img/head.webp" alt="" width="34" height="34"><div class="db-meta"><span class="dc-label">DREAM #2 · MC</span><span class="dc-value">$10,000,000</span></div><svg class="dc-chart" viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"><g opacity=".55"><rect class="candle" x="2" y="32.5" width="4" height="3.5"/><rect class="candle" x="3.5" y="31.1" width="1" height="7.9"/><rect class="candle" x="12" y="26.8" width="4" height="5.7"/><rect class="candle" x="13.5" y="24.2" width="1" height="10.5"/><rect class="candle" x="22" y="20.9" width="4" height="5.9"/><rect class="candle" x="23.5" y="18.4" width="1" height="9.5"/><rect class="candle" x="32" y="18.4" width="4" height="2.5"/><rect class="candle" x="33.5" y="17.2" width="1" height="5.0"/><rect class="candle" x="42" y="15.8" width="4" height="2.6"/><rect class="candle" x="43.5" y="12.3" width="1" height="7.4"/><rect class="candle" x="52" y="11.4" width="4" height="4.4"/><rect class="candle" x="53.5" y="8.5" width="1" height="11.1"/><rect class="candle" x="62" y="10.2" width="4" height="1.5"/><rect class="candle" x="63.5" y="8.0" width="1" height="7.3"/><rect class="candle" x="72" y="4.2" width="4" height="6.0"/><rect class="candle" x="73.5" y="0.7" width="1" height="11.4"/><rect class="candle" x="82" y="4.0" width="4" height="1.5"/><rect class="candle" x="83.5" y="2.6" width="1" height="3.5"/><rect class="candle r" x="92" y="4.0" width="4" height="1.5"/><rect class="candle r" x="93.5" y="2.5" width="1" height="5.2"/><rect class="candle" x="102" y="4.3" width="4" height="1.5"/><rect class="candle" x="103.5" y="2.2" width="1" height="5.4"/><rect class="candle" x="112" y="4.0" width="4" height="1.5"/><rect class="candle" x="113.5" y="2.8" width="1" height="3.1"/><rect class="candle" x="122" y="4.0" width="4" height="1.5"/><rect class="candle" x="123.5" y="1.7" width="1" height="4.2"/><rect class="candle" x="132" y="4.0" width="4" height="1.5"/><rect class="candle" x="133.5" y="1.6" width="1" height="4.3"/><rect class="candle r" x="142" y="4.0" width="4" height="1.5"/><rect class="candle r" x="143.5" y="0.9" width="1" height="5.6"/><rect class="candle" x="152" y="4.0" width="4" height="1.5"/><rect class="candle" x="153.5" y="1.4" width="1" height="7.0"/><rect class="candle r" x="162" y="4.0" width="4" height="1.5"/><rect class="candle r" x="163.5" y="2.1" width="1" height="6.0"/><rect class="candle" x="172" y="4.0" width="4" height="1.5"/><rect class="candle" x="173.5" y="1.7" width="1" height="5.7"/><rect class="candle" x="182" y="4.0" width="4" height="1.5"/><rect class="candle" x="183.5" y="1.5" width="1" height="3.6"/><rect class="candle" x="192" y="4.0" width="4" height="1.5"/><rect class="candle" x="193.5" y="0.7" width="1" height="6.0"/></g><polyline class="line" style="--len:260" points="4,32.5 14,26.8 24,20.9 34,18.4 44,15.8 54,11.4 64,10.2 74,4.2 84,4.0 94,4.9 104,4.3 114,4.0 124,4.0 134,4.0 144,4.7 154,4.0 164,4.2 174,4.0 184,4.0 194,4.0"/></svg></li>
-          <li class="db-row"><img src="img/head.webp" alt="" width="34" height="34"><div class="db-meta"><span class="dc-label">DREAM #3 · MC</span><span class="dc-value">$20,000,000</span></div><svg class="dc-chart" viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"><g opacity=".55"><rect class="candle" x="2" y="33.4" width="4" height="2.6"/><rect class="candle" x="3.5" y="30.7" width="1" height="9.1"/><rect class="candle" x="12" y="30.9" width="4" height="2.5"/><rect class="candle" x="13.5" y="28.3" width="1" height="7.8"/><rect class="candle" x="22" y="25.8" width="4" height="5.0"/><rect class="candle" x="23.5" y="23.3" width="1" height="10.5"/><rect class="candle r" x="32" y="25.8" width="4" height="1.5"/><rect class="candle r" x="33.5" y="24.5" width="1" height="3.6"/><rect class="candle" x="42" y="20.4" width="4" height="5.9"/><rect class="candle" x="43.5" y="16.9" width="1" height="12.4"/><rect class="candle" x="52" y="14.1" width="4" height="6.3"/><rect class="candle" x="53.5" y="10.1" width="1" height="14.2"/><rect class="candle" x="62" y="13.2" width="4" height="1.5"/><rect class="candle" x="63.5" y="10.4" width="1" height="5.1"/><rect class="candle" x="72" y="6.7" width="4" height="6.6"/><rect class="candle" x="73.5" y="4.1" width="1" height="10.3"/><rect class="candle" x="82" y="4.0" width="4" height="2.7"/><rect class="candle" x="83.5" y="2.3" width="1" height="5.5"/><rect class="candle" x="92" y="4.0" width="4" height="1.5"/><rect class="candle" x="93.5" y="1.7" width="1" height="5.8"/><rect class="candle" x="102" y="4.0" width="4" height="1.5"/><rect class="candle" x="103.5" y="1.1" width="1" height="5.4"/><rect class="candle" x="112" y="4.0" width="4" height="1.5"/><rect class="candle" x="113.5" y="1.6" width="1" height="4.2"/><rect class="candle r" x="122" y="4.0" width="4" height="2.3"/><rect class="candle r" x="123.5" y="0.0" width="1" height="9.8"/><rect class="candle" x="132" y="5.9" width="4" height="1.5"/><rect class="candle" x="133.5" y="4.0" width="1" height="4.0"/><rect class="candle" x="142" y="4.0" width="4" height="1.9"/><rect class="candle" x="143.5" y="2.8" width="1" height="6.5"/><rect class="candle" x="152" y="4.0" width="4" height="1.5"/><rect class="candle" x="153.5" y="0.5" width="1" height="5.7"/><rect class="candle r" x="162" y="4.0" width="4" height="1.9"/><rect class="candle r" x="163.5" y="0.5" width="1" height="6.5"/><rect class="candle" x="172" y="4.0" width="4" height="1.9"/><rect class="candle" x="173.5" y="0.3" width="1" height="8.1"/><rect class="candle r" x="182" y="4.0" width="4" height="2.1"/><rect class="candle r" x="183.5" y="1.8" width="1" height="5.5"/><rect class="candle" x="192" y="5.1" width="4" height="1.5"/><rect class="candle" x="193.5" y="1.8" width="1" height="6.2"/></g><polyline class="line" style="--len:260" points="4,33.4 14,30.9 24,25.8 34,26.3 44,20.4 54,14.1 64,13.2 74,6.7 84,4.0 94,4.0 104,4.0 114,4.0 124,6.3 134,5.9 144,4.0 154,4.0 164,5.9 174,4.0 184,6.1 194,5.1"/></svg></li>
-        </ul>
-      </div>
-      <div class="dream-note px-frame is-orange reveal" data-delay="2">
-        <div class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></div>
-        <p><strong>Dream board, not a dashboard.</strong> These market caps are daydreams and goals — artwork, not live data, predictions or promises. $HALLOWINU has not launched yet.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ ROADMAP ============ -->
-<section class="section roadmap" id="roadmap" aria-labelledby="roadmap-title">
+<main id="main" class="arcade-page">
+<!-- ============ ARCADE ============ -->
+<section class="section arcade" id="arcade" aria-labelledby="arcade-title">
   <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">Quest map</p>
-      <h2 class="section-title" id="roadmap-title">Building the <span class="o">haunting</span> <span class="p">together</span></h2>
-      <p class="lead">Four levels through the HALLOWINU universe. Clear one, unlock the next.</p>
+    <div class="section-head center reveal">
+      <p class="eyebrow">Play · Earn points · Climb the board</p>
+      <h1 class="neon-sign" id="arcade-title"><span class="o">HALLOWINU</span> <span class="p">ARCADE</span></h1>
+      <p class="lead">Four haunted cabinets. Connect Phantom, pick a player name and earn Arcade Points, XP and achievements. The Top 10 verified players of each season share the SOL prize pool.</p>
     </div>
-    <ol class="quest-bar reveal" style="--progress:50" aria-hidden="true">
-      <li class="node done"><i>✓</i><span>LVL 01</span></li>
-      <li class="node done"><i>✓</i><span>LVL 02</span></li>
-      <li class="node now"><i>03</i><span>LVL 03</span></li>
-      <li class="node"><i>04</i><span>LVL 04</span></li>
-    </ol>
-    <ol class="levels">
-      <li class="level px-frame is-done reveal">
-        <div class="lv-top"><span class="lv-num">LEVEL 01</span><span class="tag">✓ Cleared</span></div>
-        <h3>The Graveyard Awakens</h3>
-        <ul>
-          <li>HALLOWINU concept &amp; branding</li>
-          <li>Official X community</li>
-          <li>Official Telegram community</li>
-          <li>hallowinu.xyz website</li>
-          <li>Community infrastructure</li>
-          <li>RAID / contribution system</li>
-          <li class="todo">Official $HALLOWINU launch <span class="tag is-dim">Soon</span></li>
-        </ul>
-      </li>
-      <li class="level px-frame is-done reveal" data-delay="1">
-        <div class="lv-top"><span class="lv-num">LEVEL 02</span><span class="tag">✓ Cleared</span></div>
-        <h3>The Haunting Begins</h3>
-        <ul>
-          <li class="milestone">HALLOWINU Arcade completed</li>
-          <li>Grow the HALLOWINU community</li>
-          <li>Daily Halloween-themed content</li>
-          <li>Community raids &amp; engagement</li>
-          <li>Reward active community members</li>
-          <li>Expand visibility across X and Telegram</li>
-          <li>Improve and expand the website/community systems</li>
-        </ul>
-      </li>
-      <li class="level px-frame is-now hud-glass reveal" data-delay="2">
-        <div class="lv-top"><span class="lv-num">LEVEL 03</span><span class="tag is-purple"><span class="dot blink"></span>Up next</span></div>
-        <h3>October Takeover</h3>
-        <ul>
-          <li>Push HALLOWINU throughout spooky season</li>
-          <li>Community-driven campaigns</li>
-          <li>Collaborations and promotional opportunities</li>
-          <li>Expand the HALLOWINU ecosystem</li>
-          <li>Additional community features and rewards</li>
-          <li>Bigger Halloween events/campaigns as the community grows</li>
-        </ul>
-      </li>
-      <li class="level px-frame is-locked reveal" data-delay="3">
-        <div class="lv-top"><span class="lv-num">LEVEL 04</span><span class="tag is-dim">Locked</span></div>
-        <h3>Beyond the Grave</h3>
-        <ul>
-          <li>Continue developing HALLOWINU based on community growth</li>
-          <li>Introduce new community utilities and experiences</li>
-          <li>Keep expanding the HALLOWINU brand beyond the initial launch</li>
-        </ul>
-      </li>
-    </ol>
-  </div>
-</section>
 
-<!-- ============ TOKEN TERMINAL ============ -->
-<section class="section token" id="live-chart" aria-labelledby="live-chart-heading">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">$HALLOWINU terminal</p>
-      <h2 class="section-title" id="live-chart-heading">Token <span class="o">&amp;</span> <span class="p">chart</span></h2>
-      <p class="lead launch-status">Contract, tokenomics and chart go live here at launch. Until then: nothing to buy, nothing to ape. Just the pack.</p>
-    </div>
-    <div class="terminal px-frame reveal">
-      <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>hallowinu://terminal</span></div>
-      <div class="term-body">
-        <dl class="term-lines">
-          <div class="tl"><dt class="k">TOKEN</dt><dd class="v">$HALLOWINU</dd></div>
-          <div class="tl"><dt class="k">NETWORK</dt><dd class="v">SOLANA</dd></div>
-          <div class="tl"><dt class="k">STATUS</dt><dd class="v o" data-status>PRE-LAUNCH<span class="blink" aria-hidden="true">_</span></dd></div>
-          <div class="tl ca-line"><dt class="k">CONTRACT</dt>
-            <dd class="ca" aria-label="Contract address">
-              <code class="ca-value">COMING SOON</code>
-              <button class="btn btn-orange btn-sm ca-copy" type="button" hidden>Copy</button>
-              <span class="sr ca-feedback" role="status" aria-live="polite"></span>
-            </dd>
+    <div class="ax" data-arcade aria-live="polite">
+      <!-- Season / prize pool bar -->
+      <div class="ax-season px-frame is-orange hud-glass reveal">
+        <div class="ax-season-left">
+          <span class="tag" data-season-phase><span class="dot blink"></span>Loading…</span>
+          <h3 class="ax-season-name" data-season-name>SEASON 01</h3>
+          <p class="ax-countdown"><span data-season-countdown-label>ENDS IN</span> <b data-season-countdown>--:--:--:--</b></p>
+        </div>
+        <div class="ax-pool">
+          <span class="ax-pool-label">PRIZE POOL</span>
+          <span class="ax-pool-value"><span class="sol">◎</span> <b data-pool>—</b> <small>SOL</small></span>
+          <span class="ax-pool-sub" data-pool-sub>Verified funding only</span>
+          <span class="ax-pool-announced" data-pool-announced hidden></span>
+          <span class="ax-pool-bump" data-pool-bump hidden></span>
+        </div>
+        <div class="ax-season-actions">
+          <button class="btn btn-orange btn-sm" type="button" data-open="prizes"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-chest"/></svg>Prizes &amp; rules</button>
+          <button class="btn btn-purple btn-sm icon-btn ax-sound" type="button" data-sound aria-pressed="true" aria-label="Sound on">♪</button>
+        </div>
+      </div>
+
+      <div class="ax-main">
+        <!-- Player card -->
+        <aside class="ax-player px-frame hud-glass reveal" data-player>
+          <div class="ax-enter" data-enter>
+            <img src="img/head.webp" alt="" width="72" height="72">
+            <h3>Welcome to the Arcade</h3>
+            <p>Connect your Phantom wallet and sign a message to get your player card. Signing is free and is never a transaction.</p>
+            <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
           </div>
-          <div class="tl"><dt class="k">CHART</dt><dd class="v o" data-chart-status>COMING SOON</dd></div>
-          <p class="term-warn">Only trust the contract address published on this site and in our official X and Telegram. Token details will be announced through the official community.</p>
-        </dl>
-        <div class="term-chart">
-          <div class="chart-frame">
-            <svg class="chart-ghost" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,100 40,92 80,96 120,80 160,84 200,66 240,70 280,50 320,56 360,34 400,28" fill="none" stroke="#a43bff" stroke-width="2" stroke-dasharray="6 6"/></svg>
-            <div class="chart-state" role="status">
-              <span class="chart-badge">PRE-LAUNCH</span>
-              <span class="chart-title">CHART COMING SOON</span>
-              <span class="chart-note">The live chart appears here once $HALLOWINU launches. The dashed line is decoration, not price data.</span>
+          <div class="ax-card" data-card hidden>
+            <div class="ax-id">
+              <img src="img/head.webp" alt="" width="56" height="56">
+              <div>
+                <button class="ax-name" type="button" data-rename title="Change name"><span data-name>—</span> <span class="ax-pen" aria-hidden="true">✎</span></button>
+                <span class="ax-pid"><span data-wallet>—</span></span>
+              </div>
             </div>
+            <div class="ax-level">
+              <span class="ax-lvl">LVL <b data-level>1</b></span><span class="ax-title" data-title>Lost Soul</span>
+              <span class="ax-xp"><b data-xp>0</b> XP · <span data-xpnext>100</span> to next</span>
+              <span class="ax-xpbar" aria-hidden="true"><i data-xpbar></i></span>
+            </div>
+            <dl class="ax-stats">
+              <div><dt>Season pts</dt><dd data-stat="seasonPoints">0</dd></div>
+              <div><dt>Total pts</dt><dd data-stat="totalPoints">0</dd></div>
+              <div><dt>Season rank</dt><dd data-stat="seasonRank">—</dd></div>
+              <div><dt>All-time rank</dt><dd data-stat="allTimeRank">—</dd></div>
+              <div><dt>Games</dt><dd data-stat="gamesPlayed">0</dd></div>
+              <div><dt>Streak / best</dt><dd data-stat="streak">0 / 0</dd></div>
+            </dl>
+            <div class="ax-elig" data-elig></div>
+            <button class="btn btn-purple btn-sm ax-profile-btn" type="button" data-open="profile"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-trophy"/></svg>Achievements &amp; history</button>
+            <div class="ax-session"><button class="ax-link" type="button" data-logout>Log out</button><button class="ax-link" type="button" data-disconnect>Disconnect wallet</button></div>
           </div>
-          <nav class="official-links" aria-label="Official HALLOWINU links"><button class="btn btn-primary btn-sm" type="button" data-buy><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg>Buy<span class="soon">SOON</span><span class="sr"> — coming soon</span></button><a class="btn btn-orange btn-sm soc-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.8 2.5h3.3l-7.2 8.2 8.5 10.8h-6.6l-5.2-6.8-6 6.8H1.3l7.7-8.8L.9 2.5h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.1h1.8L6.6 4.3H4.6l12 15.3Z"/></svg>X / Twitter</a><a class="btn btn-purple btn-sm soc-tg" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13 1.2 11.5c-1.1-.3-1.1-1.1.2-1.6L20.6 2.5c.9-.3 1.7.2 1.3 1.8Z"/></svg>Telegram</a></nav>
+        </aside>
+
+        <!-- Game cabinets -->
+        <div class="ax-games" data-games>
+          <article class="ax-game px-frame reveal" data-game="trick-or-treat" id="game-trick-or-treat"><div class="ax-game-art is-chance"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-bag"/></svg></span></div><h3>Trick or Treat</h3><p>Pick TRICK or TREAT. The crypt decides the reward.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="trick-or-treat">Play</button></div></article>
+          <article class="ax-game px-frame reveal" data-delay="1" data-game="pumpkin-hunt" id="game-pumpkin-hunt"><div class="ax-game-art is-skill"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-hunt"/></svg></span></div><h3>Pumpkin Hunt</h3><p>30 seconds. Spot and smash every pumpkin in the graveyard.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="pumpkin-hunt">Hunt</button></div></article>
+          <article class="ax-game px-frame reveal" data-delay="2" data-game="daily-spin" id="game-daily-spin"><div class="ax-game-art is-daily"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-wheel"/></svg></span></div><h3>Daily Spin</h3><p>One free spin every 24 hours. Jackpot lurks.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="daily-spin">Spin</button></div></article>
+          <article class="ax-game px-frame reveal" data-delay="3" data-game="quiz" id="game-quiz"><div class="ax-game-art is-knowledge"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-quiz"/></svg></span></div><h3>HALLOWINU Quiz</h3><p>Halloween, Solana &amp; HALLOWINU lore. Streaks pay.</p><div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="quiz">Play</button></div></article>
         </div>
       </div>
+
+      <!-- Leaderboard -->
+      <div class="ax-board px-frame hud-glass reveal" data-board>
+        <div class="ax-board-head">
+          <h3 class="panel-title"><span class="ico"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-crown"/></svg></span>LEADERBOARD <span class="ax-top">TOP 100</span></h3>
+          <div class="ax-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected="true" data-scope="season">This season</button>
+            <button type="button" role="tab" aria-selected="false" data-scope="all">All time</button>
+          </div>
+        </div>
+        <div class="ax-table-wrap">
+          <table class="ax-table">
+            <thead><tr><th>#</th><th>Player</th><th class="r">Points</th><th class="r" data-prize-col>Est. prize</th></tr></thead>
+            <tbody data-rows><tr><td colspan="4" class="ax-empty">Loading the graveyard…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="ax-me" data-me hidden></p>
+        <p class="ax-fine">Prizes go to the Top 10 <b>prize-eligible</b> players (wallet + X + Telegram verified), calculated from the verified prize pool. Estimates change until the season ends; payouts are reviewed and approved manually.</p>
+      </div>
+      <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
     </div>
   </div>
+
+  <!-- Game screen -->
+  <dialog class="ax-modal ax-game-modal" data-game-modal aria-label="Arcade game">
+    <div class="ax-modal-box px-frame hud-glass">
+      <div class="ax-modal-head"><h3 data-game-title>Game</h3><button class="modal-close" type="button" data-close aria-label="Close game">✕</button></div>
+      <div class="ax-screen" data-screen></div>
+    </div>
+  </dialog>
+  <!-- Generic info dialog (profile, prizes, eligibility, rename) -->
+  <dialog class="ax-modal" data-info-modal aria-label="Arcade info">
+    <div class="ax-modal-box px-frame is-orange hud-glass">
+      <div class="ax-modal-head"><h3 data-info-title>Info</h3><button class="modal-close" type="button" data-close aria-label="Close">✕</button></div>
+      <div class="ax-info" data-info></div>
+    </div>
+  </dialog>
+  <div class="ax-toasts" data-toasts aria-live="polite"></div>
 </section>
 
-<!-- ============ COMMUNITY ============ -->
-<section class="section lobby" id="community" aria-labelledby="community-title">
-  <div class="lobby-bg" aria-hidden="true"></div>
-  <div class="wrap">
-    <div class="lobby-box px-frame hud-glass reveal">
-      <p class="eyebrow" style="justify-content:center">The lobby</p>
-      <h2 class="section-title" id="community-title">Join the <span class="o">pack</span></h2>
-      <p class="lead" style="margin-inline:auto">Choose your portal. Telegram is home base for chat, raids and launch announcements. X is where the memes and art haunt the timeline.</p>
-      <div class="portals"><a class="portal is-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer"><span class="portal-ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.8 2.5h3.3l-7.2 8.2 8.5 10.8h-6.6l-5.2-6.8-6 6.8H1.3l7.7-8.8L.9 2.5h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.1h1.8L6.6 4.3H4.6l12 15.3Z"/></svg></span><div><h3>X / TWITTER</h3><p>Memes, artwork &amp; updates</p></div><span class="go" aria-hidden="true">›</span></a><a class="portal" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer"><span class="portal-ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13 1.2 11.5c-1.1-.3-1.1-1.1.2-1.6L20.6 2.5c.9-.3 1.7.2 1.3 1.8Z"/></svg></span><div><h3>TELEGRAM</h3><p>Main lobby · announcements, raids &amp; chat</p></div><span class="go" aria-hidden="true">›</span></a></div>
-      <div class="pack-row" aria-hidden="true"><span class="tag is-dim">Make memes</span><span class="tag is-dim">Join raids</span><span class="tag is-dim">Bring a friend</span></div>
-    </div>
-  </div>
-</section>
+
 </main>
 
 <!-- ============ FOOTER ============ -->
@@ -324,7 +196,7 @@
       </div>
       <div class="foot-col">
         <h4>EXPLORE</h4>
-        <ul><li><a href="#about">About</a></li><li><a href="/arcade">Arcade</a></li><li><a href="#roadmap">Roadmap</a></li><li><a href="#live-chart">Token</a></li></ul>
+        <ul><li><a href="/#about">About</a></li><li><a href="/arcade">Arcade</a></li><li><a href="/#roadmap">Roadmap</a></li><li><a href="/#live-chart">Token</a></li></ul>
       </div>
       <div class="foot-col">
         <h4>OFFICIAL</h4>
@@ -351,6 +223,7 @@
 <script src="site-config.js?v=45"></script>
 <script src="launch-config.js?v=45"></script>
 <script src="hallowinu.js?v=45" defer></script>
+<script src="arcade.js?v=45" defer></script>
 <script src="launch.js?v=45" defer></script>
 </body>
 </html>

@@ -33,7 +33,7 @@ Browser (dist/arcade.js)  ──fetch /api/*──►  Cloudflare Worker (worker
 | `dist/admin.html/.js` | Admin console (token protected) |
 | `test/` | `npm test` — 47 automated tests on a D1-compatible SQLite shim; `test/e2e.mjs` (browser, mock Phantom with real keys); `test/responsive.mjs` (8 widths) |
 | `tools/dev-server.mjs` | Local server: `node tools/dev-server.mjs 8788 /tmp/dev.db` |
-| `tools/site/` | Builds `dist/index.html` from the template (`python3 tools/site/build.py`) |
+| `tools/site/` | `python3 tools/site/build.py` builds `dist/index.html` (home) and `dist/arcade.html` (the Arcade page at `/arcade`) from `layout.html` + `home.html` / `arcade.html` |
 
 ## 2. Security model (never trust the client)
 * The browser only sends **intent** (choice, target id, answer index). The server decides outcomes with `crypto.getRandomValues` (unbiased), computes points, enforces limits and timestamps.

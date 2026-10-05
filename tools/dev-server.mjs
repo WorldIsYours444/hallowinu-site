@@ -31,6 +31,7 @@ http.createServer(async (req, res) => {
   }
   let file = path.join(root, 'dist', decodeURIComponent(url.pathname));
   if (file.endsWith('/')) file += 'index.html';
+  else if (!path.extname(file) && fs.existsSync(file + '.html')) file += '.html';   // like Cloudflare: /arcade -> arcade.html
   if (!file.startsWith(path.join(root, 'dist')) || !fs.existsSync(file)) { res.writeHead(404); res.end('Not found'); return; }
   res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
