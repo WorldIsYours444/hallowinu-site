@@ -44,7 +44,7 @@
       <li><a href="#community">Community</a></li>
     </ul>
     <div class="hud-actions">
-      <a class="btn btn-purple btn-sm icon-btn x-btn" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer" aria-label="HALLOWINU on X">{{x}}</a>
+      {{socials:hud}}
       <button class="btn btn-primary btn-sm buy-top" type="button" data-buy>{{icon:pumpkin}}<span class="label">Buy</span><span class="soon">SOON</span><span class="sr"> — Buy $HALLOWINU, coming soon</span></button>
       <button class="btn btn-purple btn-sm icon-btn menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu"><i></i><i></i><i></i></button>
     </div>
@@ -59,10 +59,7 @@
     <li><a href="#live-chart">Token</a></li>
     <li><a href="#community">Community</a></li>
   </ul>
-  <div class="menu-actions">
-    <a class="btn btn-purple" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer">{{tg}}Telegram</a>
-    <a class="btn btn-orange" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer">{{x}}Follow X</a>
-  </div>
+  <div class="menu-actions">{{socials:pair}}</div>
 </div>
 
 <main id="main">
@@ -108,8 +105,8 @@
       <div class="cta-panel px-frame is-orange hud-glass reveal" data-delay="1">
         <div class="cta-row">
           <button class="btn btn-primary" type="button" data-buy>{{icon:pumpkin}}Buy $HALLOWINU<span class="soon" data-buy-soon>SOON</span></button>
-          <a class="btn btn-purple" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer">{{tg}}Telegram</a>
-          <button class="btn btn-orange" type="button" data-chart-scroll>{{icon:bars}}Chart</button>
+          {{socials:pair}}
+          <button class="btn btn-purple cta-chart" type="button" data-chart-scroll>{{icon:bars}}Chart<span class="soon" data-chart-soon>SOON</span></button>
         </div>
         <div class="ca" aria-label="Contract address">
           <span class="ca-label">CA:</span>
@@ -195,7 +192,7 @@
     <div class="section-head center reveal">
       <p class="eyebrow">Play · Earn points · Climb the board</p>
       <h2 class="neon-sign" id="arcade-title"><span class="o">HALLOWINU</span> <span class="p">ARCADE</span></h2>
-      <p class="lead">Four haunted cabinets. Every play earns Arcade Points, XP and achievements. The Top 10 of each season share the verified SOL prize pool.</p>
+      <p class="lead">Four haunted cabinets. Connect Phantom, pick a player name and earn Arcade Points, XP and achievements. The Top 10 verified players of each season share the SOL prize pool.</p>
     </div>
 
     <div class="ax" data-arcade aria-live="polite">
@@ -209,7 +206,8 @@
         <div class="ax-pool">
           <span class="ax-pool-label">PRIZE POOL</span>
           <span class="ax-pool-value"><span class="sol">◎</span> <b data-pool>—</b> <small>SOL</small></span>
-          <span class="ax-pool-sub" data-pool-sub>Funded by HALLOWINU maker rewards</span>
+          <span class="ax-pool-sub" data-pool-sub>Verified funding only</span>
+          <span class="ax-pool-announced" data-pool-announced hidden></span>
           <span class="ax-pool-bump" data-pool-bump hidden></span>
         </div>
         <div class="ax-season-actions">
@@ -223,17 +221,16 @@
         <aside class="ax-player px-frame hud-glass reveal" data-player>
           <div class="ax-enter" data-enter>
             <img src="img/head.webp" alt="" width="72" height="72">
-            <h3>Enter the Arcade</h3>
-            <p>Get your player card and start earning points. No wallet or sign-up needed to play.</p>
-            <button class="btn btn-primary" type="button" data-enter-btn>{{icon:ghost}}Enter the Arcade</button>
-            <p class="ax-fine">Playing creates an anonymous player saved in a secure cookie on this device.</p>
+            <h3>Welcome to the Arcade</h3>
+            <p>Connect your Phantom wallet and sign a message to get your player card. Signing is free and is never a transaction.</p>
+            <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
           </div>
           <div class="ax-card" data-card hidden>
             <div class="ax-id">
               <img src="img/head.webp" alt="" width="56" height="56">
               <div>
-                <button class="ax-name" type="button" data-rename title="Rename"><span data-name>—</span> <span class="ax-pen" aria-hidden="true">✎</span></button>
-                <span class="ax-pid">ID <b data-pid>—</b></span>
+                <button class="ax-name" type="button" data-rename title="Change name"><span data-name>—</span> <span class="ax-pen" aria-hidden="true">✎</span></button>
+                <span class="ax-pid"><span data-wallet>—</span></span>
               </div>
             </div>
             <div class="ax-level">
@@ -249,33 +246,15 @@
               <div><dt>Games</dt><dd data-stat="gamesPlayed">0</dd></div>
               <div><dt>Streak / best</dt><dd data-stat="streak">0 / 0</dd></div>
             </dl>
-            <div class="ax-elig" data-elig><span class="tag is-dim">Prize eligibility: not verified</span><button class="ax-link" type="button" data-open="eligibility">Why?</button></div>
+            <div class="ax-elig" data-elig></div>
             <button class="btn btn-purple btn-sm ax-profile-btn" type="button" data-open="profile">{{icon:trophy}}Achievements &amp; history</button>
+            <div class="ax-session"><button class="ax-link" type="button" data-logout>Log out</button><button class="ax-link" type="button" data-disconnect>Disconnect wallet</button></div>
           </div>
         </aside>
 
         <!-- Game cabinets -->
         <div class="ax-games" data-games>
-          <article class="ax-game px-frame reveal" data-game="trick-or-treat">
-            <div class="ax-game-art is-tot"><span class="ico">{{icon:pumpkin}}</span><span class="ico b">{{icon:candy}}</span></div>
-            <h3>Trick or Treat</h3><p>Pick your fate. The crypt decides the reward.</p>
-            <div class="ax-game-foot"><span class="tag" data-limit>— / day</span><button class="btn btn-primary btn-sm" type="button" data-play="trick-or-treat">Play</button></div>
-          </article>
-          <article class="ax-game px-frame reveal" data-delay="1" data-game="pumpkin-hunt">
-            <div class="ax-game-art is-hunt"><span class="ico">{{icon:pumpkin}}</span><span class="ico b gold">{{icon:pumpkin}}</span><span class="ico c rare">{{icon:pumpkin}}</span></div>
-            <h3>Pumpkin Hunt</h3><p>30 seconds. Smash every pumpkin you can find.</p>
-            <div class="ax-game-foot"><span class="tag" data-limit>— / day</span><button class="btn btn-primary btn-sm" type="button" data-play="pumpkin-hunt">Play</button></div>
-          </article>
-          <article class="ax-game px-frame reveal" data-delay="2" data-game="daily-spin">
-            <div class="ax-game-art is-spin"><span class="ax-mini-wheel" aria-hidden="true"></span></div>
-            <h3>Daily Spin</h3><p>One free spin every 24 hours. Jackpot lurks.</p>
-            <div class="ax-game-foot"><span class="tag" data-limit>—</span><button class="btn btn-primary btn-sm" type="button" data-play="daily-spin">Spin</button></div>
-          </article>
-          <article class="ax-game px-frame reveal" data-delay="3" data-game="quiz">
-            <div class="ax-game-art is-quiz"><span class="ico">{{icon:skull}}</span><span class="ax-q" aria-hidden="true">?</span></div>
-            <h3>HALLOWINU Quiz</h3><p>Halloween, Solana & memecoin lore. Streaks pay.</p>
-            <div class="ax-game-foot"><span class="tag" data-limit>— / day</span><button class="btn btn-primary btn-sm" type="button" data-play="quiz">Play</button></div>
-          </article>
+          {{games}}
         </div>
       </div>
 
@@ -295,7 +274,7 @@
           </table>
         </div>
         <p class="ax-me" data-me hidden></p>
-        <p class="ax-fine">Est. prizes are calculated from the verified prize pool and can change until the season ends. Payouts require a verified identity and wallet.</p>
+        <p class="ax-fine">Prizes go to the Top 10 <b>prize-eligible</b> players (wallet + X + Telegram verified), calculated from the verified prize pool. Estimates change until the season ends; payouts are reviewed and approved manually.</p>
       </div>
       <noscript><p class="ax-fine">Enable JavaScript to play the HALLOWINU Arcade.</p></noscript>
     </div>
@@ -326,10 +305,10 @@
       <h2 class="section-title" id="roadmap-title">Building the <span class="o">haunting</span> <span class="p">together</span></h2>
       <p class="lead">Four levels through the HALLOWINU universe. Clear one, unlock the next.</p>
     </div>
-    <ol class="quest-bar reveal" style="--progress:37.5" aria-hidden="true">
+    <ol class="quest-bar reveal" style="--progress:50" aria-hidden="true">
       <li class="node done"><i>✓</i><span>LVL 01</span></li>
-      <li class="node now"><i>02</i><span>LVL 02</span></li>
-      <li class="node"><i>03</i><span>LVL 03</span></li>
+      <li class="node done"><i>✓</i><span>LVL 02</span></li>
+      <li class="node now"><i>03</i><span>LVL 03</span></li>
       <li class="node"><i>04</i><span>LVL 04</span></li>
     </ol>
     <ol class="levels">
@@ -343,13 +322,14 @@
           <li>hallowinu.xyz website</li>
           <li>Community infrastructure</li>
           <li>RAID / contribution system</li>
-          <li>Official $HALLOWINU launch</li>
+          <li class="todo">Official $HALLOWINU launch <span class="tag is-dim">Soon</span></li>
         </ul>
       </li>
-      <li class="level px-frame is-now hud-glass reveal" data-delay="1">
-        <div class="lv-top"><span class="lv-num">LEVEL 02</span><span class="tag is-purple"><span class="dot blink"></span>In progress</span></div>
+      <li class="level px-frame is-done reveal" data-delay="1">
+        <div class="lv-top"><span class="lv-num">LEVEL 02</span><span class="tag">✓ Cleared</span></div>
         <h3>The Haunting Begins</h3>
         <ul>
+          <li class="milestone">HALLOWINU Arcade completed</li>
           <li>Grow the HALLOWINU community</li>
           <li>Daily Halloween-themed content</li>
           <li>Community raids &amp; engagement</li>
@@ -358,8 +338,8 @@
           <li>Improve and expand the website/community systems</li>
         </ul>
       </li>
-      <li class="level px-frame is-locked reveal" data-delay="2">
-        <div class="lv-top"><span class="lv-num">LEVEL 03</span><span class="tag is-dim">Locked</span></div>
+      <li class="level px-frame is-now hud-glass reveal" data-delay="2">
+        <div class="lv-top"><span class="lv-num">LEVEL 03</span><span class="tag is-purple"><span class="dot blink"></span>Up next</span></div>
         <h3>October Takeover</h3>
         <ul>
           <li>Push HALLOWINU throughout spooky season</li>
@@ -394,30 +374,30 @@
     <div class="terminal px-frame reveal">
       <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>hallowinu://terminal</span></div>
       <div class="term-body">
-        <div class="term-lines">
-          <div class="tl"><span class="k">TICKER</span><span class="v">$HALLOWINU</span></div>
-          <div class="tl"><span class="k">NETWORK</span><span class="v">SOLANA</span></div>
-          <div class="tl"><span class="k">STATUS</span><span class="v o" data-status>PRE-LAUNCH<span class="blink">_</span></span></div>
-          <div class="tl"><span class="k">TOKENOMICS</span><span class="v o">ANNOUNCED SOON</span></div>
-          <div class="tl ca-line"><span class="k">CONTRACT</span>
-            <div class="ca" aria-label="Contract address">
+        <dl class="term-lines">
+          <div class="tl"><dt class="k">TOKEN</dt><dd class="v">$HALLOWINU</dd></div>
+          <div class="tl"><dt class="k">NETWORK</dt><dd class="v">SOLANA</dd></div>
+          <div class="tl"><dt class="k">STATUS</dt><dd class="v o" data-status>PRE-LAUNCH<span class="blink" aria-hidden="true">_</span></dd></div>
+          <div class="tl ca-line"><dt class="k">CONTRACT</dt>
+            <dd class="ca" aria-label="Contract address">
               <code class="ca-value">COMING SOON</code>
               <button class="btn btn-orange btn-sm ca-copy" type="button" hidden>Copy</button>
               <span class="sr ca-feedback" role="status" aria-live="polite"></span>
-            </div>
+            </dd>
           </div>
+          <div class="tl"><dt class="k">CHART</dt><dd class="v o" data-chart-status>COMING SOON</dd></div>
           <p class="term-warn">Only trust the contract address published on this site and in our official X and Telegram. Token details will be announced through the official community.</p>
-        </div>
+        </dl>
         <div class="term-chart">
           <div class="chart-frame">
             <svg class="chart-ghost" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,100 40,92 80,96 120,80 160,84 200,66 240,70 280,50 320,56 360,34 400,28" fill="none" stroke="#a43bff" stroke-width="2" stroke-dasharray="6 6"/></svg>
-            <p class="chart-state" role="status">CHART COMING SOON</p>
+            <div class="chart-state" role="status">
+              <span class="chart-badge">PRE-LAUNCH</span>
+              <span class="chart-title">CHART COMING SOON</span>
+              <span class="chart-note">The live chart appears here once $HALLOWINU launches. The dashed line is decoration, not price data.</span>
+            </div>
           </div>
-          <nav class="official-links" aria-label="Official HALLOWINU links">
-            <a class="btn btn-purple btn-sm" href="https://hallowinu.xyz" target="_blank" rel="noopener noreferrer">Website</a>
-            <a class="btn btn-purple btn-sm" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer">{{x}}X</a>
-            <a class="btn btn-purple btn-sm" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer">{{tg}}Telegram</a>
-          </nav>
+          {{socials:terminal}}
         </div>
       </div>
     </div>
@@ -432,18 +412,7 @@
       <p class="eyebrow" style="justify-content:center">The lobby</p>
       <h2 class="section-title" id="community-title">Join the <span class="o">pack</span></h2>
       <p class="lead" style="margin-inline:auto">Choose your portal. Telegram is home base for chat, raids and launch announcements. X is where the memes and art haunt the timeline.</p>
-      <div class="portals">
-        <a class="portal" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer">
-          <span class="portal-ico">{{tg}}</span>
-          <div><h3>TELEGRAM</h3><p>Main lobby · announcements, raids &amp; chat</p></div>
-          <span class="go" aria-hidden="true">›</span>
-        </a>
-        <a class="portal is-x" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer">
-          <span class="portal-ico">{{x}}</span>
-          <div><h3>X / TWITTER</h3><p>Memes, artwork &amp; updates</p></div>
-          <span class="go" aria-hidden="true">›</span>
-        </a>
-      </div>
+      <div class="portals">{{socials:portals}}</div>
       <div class="pack-row" aria-hidden="true"><span class="tag is-dim">Make memes</span><span class="tag is-dim">Join raids</span><span class="tag is-dim">Bring a friend</span></div>
     </div>
   </div>
@@ -470,7 +439,7 @@
       </div>
       <div class="foot-col">
         <h4>OFFICIAL</h4>
-        <ul><li><a href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer">X</a></li><li><a href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer">Telegram</a></li><li><a href="https://hallowinu.xyz" target="_blank" rel="noopener noreferrer">hallowinu.xyz</a></li></ul>
+        <ul>{{socials:footer}}</ul>
       </div>
     </div>
     <div class="foot-bottom">
@@ -486,13 +455,11 @@
     <div class="ico">{{icon:pumpkin}}</div>
     <h2 id="launch-title">$HALLOWINU — Coming soon</h2>
     <p>The contract address and official buy link will be announced here. Follow our official X and Telegram so you don’t miss the launch.</p>
-    <div class="modal-actions">
-      <a class="btn btn-purple" href="https://t.me/+wjFL-iW_1tpkYmM0" target="_blank" rel="noopener noreferrer">{{tg}}Telegram</a>
-      <a class="btn btn-orange" href="https://x.com/hionchains?s=11" target="_blank" rel="noopener noreferrer">{{x}}Follow X</a>
-    </div>
+    <div class="modal-actions">{{socials:pair}}</div>
   </div>
 </dialog>
 
+<script src="site-config.js?v={{v}}"></script>
 <script src="launch-config.js?v={{v}}"></script>
 <script src="hallowinu.js?v={{v}}" defer></script>
 <script src="arcade.js?v={{v}}" defer></script>

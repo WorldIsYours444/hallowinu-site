@@ -83,7 +83,7 @@ export async function answer(env, player, cfg, body) {
   const result = { ...base, points, bonus, streak, difficulty: q.difficulty };
   const settled = await settle(env, player, {
     gameId: id, attemptId: attempt.id, reference: `quiz:${a.id}`, points,
-    reason: `Quiz (${q.difficulty}${bonus ? `, streak ${streak}` : ''})`, xp: cfg.xpPerPlay + points, win: correct,
+    reason: `${cfg.name} (${q.difficulty}${bonus ? `, streak ${streak}` : ''})`, xp: cfg.xpPerPlay + points, win: correct,
     counters: correct ? { quiz_correct: 1 } : {}, result,
     extraStatements: [
       env.DB.prepare('UPDATE quiz_attempts SET points=? WHERE id=?').bind(points, a.id),

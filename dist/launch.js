@@ -62,7 +62,11 @@
     url.search = '?embed=1&theme=dark&trades=0&info=0'; frame.src = url.href;
     const fail = () => { clearTimeout(timeout); state.textContent = 'CHART UNAVAILABLE — TRY AGAIN LATER'; frame.remove(); };
     const timeout = setTimeout(fail, 20000);
-    frame.addEventListener('load', () => { clearTimeout(timeout); state.hidden = true; holder.querySelector('.chart-ghost')?.remove(); frame.hidden = false; });
+    frame.addEventListener('load', () => {
+      clearTimeout(timeout); state.hidden = true; holder.querySelector('.chart-ghost')?.remove(); frame.hidden = false;
+      const cs = document.querySelector('[data-chart-status]'); if (cs) cs.textContent = 'LIVE';
+      document.querySelectorAll('[data-chart-soon]').forEach(x => x.remove());
+    });
     frame.addEventListener('error', fail);
     holder.append(frame);
   })(config.dexscreenerUrl);

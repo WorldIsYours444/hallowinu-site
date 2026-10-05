@@ -15,6 +15,7 @@ const fresh = dbFile === ':memory:' || !fs.existsSync(dbFile);
 const DB = new D1Shim(dbFile);
 if (fresh) DB.migrate(path.join(root, 'migrations'));
 const env = { DB, ADMIN_TOKEN: process.env.ADMIN_TOKEN || 'dev-admin-token-please-change-0000', POOL_WALLET: process.env.POOL_WALLET || '', IP_SALT: 'dev' };
+for (const k of ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_USERNAME', 'TELEGRAM_CHAT_ID', 'X_CLIENT_ID', 'X_CLIENT_SECRET', 'X_OFFICIAL_USER_ID']) if (process.env[k]) env[k] = process.env[k];
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.woff': 'font/woff', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
 http.createServer(async (req, res) => {

@@ -63,12 +63,15 @@ export function distributionOf(season) {
   return bps;
 }
 
-/* Live ranking for a season (excludes banned + disqualified). */
+/* Ranked players = wallet-verified accounts with a chosen name (legacy anonymous test players never rank). */
+export const RANKED = "p.status = 'active' AND p.kind = 'wallet' AND p.name_set_at IS NOT NULL";
+
+/* Live ranking for a season (excludes banned + disqualified + legacy). */
 export async function seasonRanking(env, seasonId, limit) {
   const { results } = await env.DB.prepare(
     `SELECT s.player_id, p.display_name, s.points, s.updated_at, p.payout_verified
      FROM season_player_stats s JOIN players p ON p.id = s.player_id
-     WHERE s.season_id = ? AND s.points > 0 AND p.status = 'active'
+     WHERE s.season_id = ? AND s.points > 0 AND ${RANKED}
        AND NOT EXISTS (SELECT 1 FROM season_disqualifications d WHERE d.season_id = s.season_id AND d.player_id = s.player_id)
      ORDER BY s.points DESC, s.updated_at ASC, s.player_id ASC
      LIMIT ?`).bind(seasonId, limit).all();
@@ -99,14 +102,15 @@ export async function finalizeSeason(env, seasonId, actor) {
   return { seasonId, poolLamports: pool.toString(), players: ranking.length };
 }
 
-/* Entitlements = top-N eligible (not disqualified/banned) from the frozen snapshot. */
+/* Entitlements = the top-N PRIZE-ELIGIBLE players (wallet + X + Telegram verified, not disqualified/banned)
+   from the frozen snapshot, in snapshot order. Ineligible players keep their rank but receive no prize. */
 export async function recomputeEntitlements(env, seasonId, actor, why) {
   const season = await env.DB.prepare('SELECT * FROM seasons WHERE id = ?').bind(seasonId).first();
   if (season.status !== 'FINALIZING') throw new ApiError(409, 'NOT_FINALIZING', 'Entitlements can only change while the season is FINALIZING.');
   const bps = distributionOf(season);
   const { results: eligible } = await env.DB.prepare(
     `SELECT f.player_id, f.points FROM season_final_standings f JOIN players p ON p.id = f.player_id
-     WHERE f.season_id = ? AND p.status = 'active'
+     WHERE f.season_id = ? AND p.status = 'active' AND p.payout_verified = 1
        AND NOT EXISTS (SELECT 1 FROM season_disqualifications d WHERE d.season_id = f.season_id AND d.player_id = f.player_id)
      ORDER BY f.rank ASC LIMIT ?`).bind(seasonId, bps.length).all();
   const pool = toLamports(season.frozen_pool_lamports ?? 0);
@@ -157,7 +161,7 @@ export async function approveSeason(env, seasonId, actor) {
   if (!season || season.status !== 'FINALIZING') throw new ApiError(409, 'NOT_FINALIZING', 'Season must be FINALIZING to approve.');
   const { results } = await env.DB.prepare(
     `SELECT e.id, e.rank, e.player_id, p.payout_verified,
-       (SELECT external_id FROM identity_links l WHERE l.player_id = e.player_id AND l.provider='solana_wallet' AND l.verified_at IS NOT NULL) AS wallet
+       (SELECT provider_user_id FROM player_identities l WHERE l.player_id = e.player_id AND l.provider='solana_wallet') AS wallet
      FROM prize_entitlements e JOIN players p ON p.id = e.player_id
      WHERE e.season_id = ? AND e.status = 'FINALIZING' ORDER BY e.rank`).bind(seasonId).all();
   const blockers = results.filter(r => !r.payout_verified || !r.wallet).map(r => ({ rank: r.rank, playerId: r.player_id, issue: 'NOT_VERIFIED' }));
@@ -175,12 +179,17 @@ export function publicSeason(season, pool, phase) {
   return {
     id: season.id, name: season.name, startsAt: season.starts_at, endsAt: season.ends_at,
     status: season.status, phase,
+    displayStatus: ({ UPCOMING: 'UPCOMING', ACTIVE: 'ACTIVE', ENDED: 'LOCKED', FINALIZING: 'UNDER_REVIEW', FINALIZED: 'FINALIZED' })[phase] || phase,
     distributionBps: distributionOf(season),
+    announcedLamports: season.announced_lamports != null ? String(season.announced_lamports) : null,
     rules: JSON.parse(season.rules_json || '{}'),
     pool: pool && {
       totalLamports: pool.totalLamports.toString(), totalSol: lamportsToSolString(pool.totalLamports),
       initialLamports: pool.initialLamports.toString(), makerLamports: pool.makerLamports.toString(),
       manualLamports: pool.manualLamports.toString(), adjustmentLamports: pool.adjustmentLamports.toString(),
+      // verified money on top of the verified base funding
+      verifiedAdditionsLamports: (pool.totalLamports - pool.initialLamports > 0n ? pool.totalLamports - pool.initialLamports : 0n).toString(),
+      pendingCount: pool.pendingCount,
       frozen: season.frozen_pool_lamports != null,
       latestMaker: pool.latestMaker ? { id: pool.latestMaker.id, amountLamports: String(pool.latestMaker.amount_lamports), verifiedAt: pool.latestMaker.verified_at } : null,
     },

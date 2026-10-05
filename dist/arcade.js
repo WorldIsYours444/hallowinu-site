@@ -1,18 +1,23 @@
-/* HALLOWINU ARCADE — client (presentation only; the server is authoritative for everything). */
+/* HALLOWINU ARCADE — client (presentation only; the server is authoritative for everything).
+   Identity: Phantom wallet -> signed message -> HttpOnly session cookie (never readable by JS).
+   Game metadata + official links come from window.HALLOWINU_SITE (generated from tools/site/site.json). */
 (() => {
   const root = document.querySelector('[data-arcade]');
   if (!root) return;
+  const SITE = window.HALLOWINU_SITE || { links: {}, games: [] };
+  const GAME = Object.fromEntries(SITE.games.map(g => [g.id, g]));
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const icon = n => `<svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+  const sicon = n => `<svg class="soc-ico" aria-hidden="true"><use href="#i-${n}"/></svg>`;
   const fmt = n => (n == null ? '—' : Number(n).toLocaleString('en-US'));
   const idem = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g, '');
-  const GAME_NAMES = { 'trick-or-treat': 'Trick or Treat', 'pumpkin-hunt': 'Pumpkin Hunt', 'daily-spin': 'Daily Spin', quiz: 'HALLOWINU Quiz' };
+  const gameName = id => (GAME[id] && GAME[id].name) || id;
 
-  const S = { offset: 0, season: null, games: {}, player: null, scope: 'season', busy: false };
+  const S = { offset: 0, season: null, games: {}, player: null, access: { state: 'WALLET_NOT_CONNECTED', canPlay: false }, socials: null, scope: 'season', busy: false, wallet: null, step: null };
   const serverNow = () => Date.now() + S.offset;
 
   /* ---------- SOL formatting from integer lamports (no float math on amounts) ---------- */
@@ -37,20 +42,22 @@
     let data; try { data = await res.json(); } catch { data = { ok: false, error: res.status >= 500 ? 'INTERNAL' : 'NETWORK' }; }
     if (data.serverNow) S.offset = data.serverNow - Date.now();
     data.status = res.status;
+    if (data.access) applyAccount(data);
     return data;
   }
   function errorText(r) {
     const left = t => (t ? ` COME BACK IN ${clockText(t - serverNow())}.` : '');
     switch (r.error) {
       case 'NETWORK': return ['THE GHOSTS ATE THE CONNECTION.', 'TRY AGAIN.'];
-      case 'NO_SESSION': return ['YOUR SESSION FADED INTO THE FOG.', 'RE-ENTER THE ARCADE TO CONTINUE.'];
-      case 'DAILY_LIMIT': return ['NO PLAYS LEFT TODAY.', 'RESETS AT 00:00 UTC.' + left(r.resetsAt)];
+      case 'NO_SESSION': return ['YOUR SESSION FADED INTO THE FOG.', 'CONNECT PHANTOM AND SIGN IN AGAIN.'];
+      case 'PROFILE_REQUIRED': return ['ALMOST THERE.', 'CHOOSE YOUR PLAYER NAME FIRST.'];
+      case 'SUSPENDED': return ['THE GATE STAYS SHUT.', 'THIS PLAYER IS SUSPENDED FROM THE ARCADE.'];
+      case 'DAILY_LIMIT': return ['DAILY LIMIT REACHED.', 'RESETS AT 00:00 UTC.' + left(r.resetsAt)];
       case 'COOLDOWN': return ['NO SPINS LEFT.', left(r.nextAt).trim() || 'COME BACK LATER.'];
       case 'RATE_LIMITED': return ['EASY THERE, SPEEDY SPIRIT.', 'TRY AGAIN IN A MOMENT.'];
       case 'GAME_DISABLED': return ['THIS CABINET IS CLOSED FOR REPAIRS.', 'TRY ANOTHER GAME.'];
       case 'ARCADE_OFFLINE': return ['THE ARCADE IS STILL WAKING UP.', 'CHECK BACK SOON.'];
       case 'NO_QUESTIONS': return ['YOU EMPTIED THE CRYPT.', 'NEW QUESTIONS ARE COMING.'];
-      case 'BANNED': return ['THE GATE STAYS SHUT.', 'THIS PLAYER CANNOT ENTER THE ARCADE.'];
       default: return ['SOMETHING SPOOKY HAPPENED.', r.message ? String(r.message).toUpperCase() : 'TRY AGAIN.'];
     }
   }
@@ -86,20 +93,98 @@
     const el = document.createElement('div');
     el.className = 'ax-toast' + (purple ? ' p' : '');
     el.innerHTML = `<span class="ico">${icon(ico)}</span><div><b>${esc(title)}</b><span>${esc(text)}</span></div>`;
-    toasts.append(el); setTimeout(() => el.remove(), 4300);
+    toasts.append(el); setTimeout(() => el.remove(), 4800);
   }
   function celebrate(r) {
     (r.achievementsUnlocked || []).forEach((a, i) => setTimeout(() => { toast('ACHIEVEMENT UNLOCKED', a.name, a.icon || 'trophy'); sfx('achieve'); }, 600 + i * 900));
     if (r.levelUp) setTimeout(() => { toast('LEVEL UP!', `You reached level ${r.levelUp}`, 'crown', true); sfx('level'); }, 300);
   }
 
+  /* =========================================================
+     PHANTOM WALLET (non-custodial: connect + sign a message; never a transaction, never a seed phrase)
+     ========================================================= */
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  function phantom() {
+    const p = window.phantom && window.phantom.solana;
+    if (p && p.isPhantom) return p;
+    if (window.solana && window.solana.isPhantom) return window.solana;
+    return null;
+  }
+  const phantomBrowseUrl = () => `https://phantom.app/ul/browse/${encodeURIComponent(location.origin + location.pathname + '#arcade')}?ref=${encodeURIComponent(location.origin)}`;
+  const b64 = u8 => { let s = ''; for (const b of u8) s += String.fromCharCode(b); return btoa(s); };
+  const short = w => (w ? `${w.slice(0, 4)}…${w.slice(-4)}` : '');
+  let providerHooked = false;
+  function hookProvider(p) {
+    if (providerHooked || !p || !p.on) return; providerHooked = true;
+    p.on('accountChanged', pk => {
+      const next = pk ? pk.toString() : null;
+      if (S.access.walletVerified && (!next || short(next) !== S.access.wallet)) {
+        // Different wallet in Phantom: end this HALLOWINU session so actions never mix accounts.
+        logout(false).then(() => { S.wallet = next; S.step = next ? 'sign' : null; renderAccess(); toast('WALLET CHANGED', 'Sign in again with the new wallet.', 'ghost', true); });
+      } else if (!S.access.walletVerified) { S.wallet = next; renderAccess(); }
+    });
+    p.on('disconnect', () => { S.wallet = null; if (!S.access.walletVerified) renderAccess(); });
+  }
+  async function connectWallet() {
+    const p = phantom();
+    if (!p) { renderAccess(); return; }
+    hookProvider(p);
+    setBusy(true, 'CONNECTING…');
+    try {
+      const resp = await p.connect();
+      S.wallet = resp.publicKey.toString(); S.step = 'sign';
+      sfx('click');
+      setBusy(false); renderAccess();
+      await signInWallet();
+    } catch (e) {
+      setBusy(false);
+      toast('NOT CONNECTED', e && e.code === 4001 ? 'Connection request was cancelled in Phantom.' : 'Phantom could not connect. Try again.', 'skull', true);
+      renderAccess();
+    }
+  }
+  async function signInWallet() {
+    const p = phantom();
+    if (!p || !S.wallet) return renderAccess();
+    setBusy(true, 'CHECK PHANTOM TO SIGN…');
+    const n = await api('POST', '/api/auth/nonce', { wallet: S.wallet });
+    if (!n.ok) { setBusy(false); toast(...errorText(n), 'skull', true); return renderAccess(); }
+    let signature;
+    try {
+      const out = await p.signMessage(new TextEncoder().encode(n.message), 'utf8');
+      signature = b64(out.signature || out);
+    } catch (e) {
+      setBusy(false);
+      toast('SIGNATURE CANCELLED', 'No problem — sign the message to verify your wallet.', 'ghost', true);
+      return renderAccess();
+    }
+    const r = await api('POST', '/api/auth/verify', { wallet: S.wallet, nonce: n.nonce, signature });
+    setBusy(false);
+    if (!r.ok) { toast('VERIFICATION FAILED', r.message || 'Try again.', 'skull', true); return renderAccess(); }
+    sfx('win');
+    S.step = r.access.profileComplete ? null : 'socials';
+    toast(r.created ? 'WALLET VERIFIED' : 'WELCOME BACK', r.created ? 'Your HALLOWINU player account was created.' : `Signed in as ${r.player ? r.player.displayName : 'your player'}.`, 'ghost');
+    await refresh(); loadBoard();
+  }
+  async function logout(alsoDisconnect) {
+    await api('POST', '/api/auth/logout');
+    S.player = null; S.access = { state: 'WALLET_NOT_CONNECTED', canPlay: false }; S.step = null;
+    if (alsoDisconnect) { try { await phantom()?.disconnect(); } catch {} S.wallet = null; }
+    renderAccess(); renderGames(); loadBoard();
+  }
+
+  /* ---------- account state from the server ---------- */
+  function applyAccount(d) {
+    S.access = d.access; S.socials = d.socials || S.socials;
+    if ('player' in d) S.player = d.player;
+  }
+
   /* ---------- state + rendering ---------- */
   async function refresh() {
     const r = await api('GET', '/api/arcade');
     if (!r.ok) { renderOffline(r); return r; }
-    S.season = r.season; S.player = r.player;
+    S.season = r.season;
     S.games = Object.fromEntries(r.games.map(g => [g.id, g]));
-    renderSeason(); renderPlayer(); renderGames();
+    renderSeason(); if (canRerender()) renderAccess(); renderGames();
     return r;
   }
   function renderOffline(r) {
@@ -111,7 +196,7 @@
   let shownPool = null;
   function renderSeason() {
     const s = S.season; if (!s) { $('[data-season-name]', root).textContent = 'NO ACTIVE SEASON'; return; }
-    const labels = { ACTIVE: 'Season live', UPCOMING: 'Starts soon', ENDED: 'Season ended', FINALIZING: 'Finalizing results', FINALIZED: 'Season finalized' };
+    const labels = { ACTIVE: 'Season live', UPCOMING: 'Starts soon', ENDED: 'Season locked', FINALIZING: 'Under review', FINALIZED: 'Season finalized' };
     $('[data-season-phase]', root).innerHTML = `<span class="dot ${s.phase === 'ACTIVE' ? 'blink' : ''}"></span>${labels[s.phase] || s.phase}`;
     $('[data-season-name]', root).textContent = s.name;
     const poolL = s.pool ? s.pool.totalLamports : '0';
@@ -120,17 +205,20 @@
     if (shownPool == null || reduce) el.textContent = sol(poolL);
     else if (shownPool !== target) countUp(el, shownPool, target, poolL);
     shownPool = target;
-    const sub = $('[data-pool-sub]', root);
-    if (BigInt(poolL) === 0n) sub.textContent = 'Awaiting verified funding';
-    else sub.textContent = BigInt(s.pool.makerLamports) > 0n ? `Includes ◎ ${sol(s.pool.makerLamports)} verified maker rewards` : 'Funded by HALLOWINU maker rewards';
-    if (s.pool && s.pool.frozen) sub.textContent = 'Pool frozen for final payouts';
+    const sub = $('[data-pool-sub]', root), ann = $('[data-pool-announced]', root);
+    sub.textContent = s.pool && s.pool.frozen ? 'Frozen for final review' : 'Current verified pool';
+    if (s.announcedLamports != null) {
+      ann.hidden = false;
+      const pending = BigInt(poolL) < BigInt(s.announcedLamports);
+      ann.textContent = `Announced base ◎ ${sol(s.announcedLamports)}${pending ? ' · awaiting verification' : ''}`;
+    } else ann.hidden = true;
     // "pool increased" banner: only for real, verified maker-reward records
     const lm = s.pool && s.pool.latestMaker;
     if (!lm && store.get('hw-seen-maker') == null) store.set('hw-seen-maker', '0');
     if (lm) {
       const seen = store.get('hw-seen-maker');
       if (seen && seen !== String(lm.id)) {
-        const b = $('[data-pool-bump]', root); b.hidden = false; b.textContent = `+ ◎ ${sol(lm.amountLamports)} MAKER REWARDS · POOL INCREASED`;
+        const b = $('[data-pool-bump]', root); b.hidden = false; b.textContent = `+ ◎ ${sol(lm.amountLamports)} VERIFIED MAKER REWARDS · POOL INCREASED`;
         setTimeout(() => { b.hidden = true; }, 9000);
       }
       store.set('hw-seen-maker', String(lm.id));
@@ -146,13 +234,109 @@
     })(t0);
   }
 
+  /* ---------- onboarding / access ---------- */
+  const enterEl = $('[data-enter]', root), cardEl = $('[data-card]', root);
+  let busyText = null;
+  function setBusy(on, text) { busyText = on ? text : null; S.busy = on; renderAccess(); }
+
+  function socialsBlock(compact = false) {
+    const a = S.access, cfg = S.socials || { x: {}, telegram: {} };
+    const item = (key, label, link, linkText, verified, available, username) => {
+      const state = verified ? 'VERIFIED' : available ? 'NOT VERIFIED' : 'COMING SOON';
+      return `<div class="sv-item ${verified ? 'is-ok' : ''}" data-sv="${key}">
+        <span class="sv-ico">${sicon(key === 'x' ? 'x' : 'tg')}</span>
+        <div class="sv-txt"><b>${label}</b><small>${verified && username ? '@' + esc(username) : esc(linkText)}</small></div>
+        <span class="tag ${verified ? 'is-green' : available ? '' : 'is-dim'} sv-state" data-sv-state>${state}</span>
+        ${verified ? '' : `<div class="sv-acts">
+          <a class="btn btn-sm ${key === 'x' ? 'btn-orange' : 'btn-purple'}" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${key === 'x' ? 'Follow' : 'Join'}</a>
+          <button class="btn btn-sm btn-primary" type="button" data-verify="${key}" ${available ? '' : 'disabled'}>Verify</button>
+        </div><div class="sv-widget" data-tg-widget></div>`}
+      </div>`;
+    };
+    return `<div class="soc-verify ${compact ? 'compact' : ''}">
+      ${item('x', 'X', SITE.links.x, `Follow @${SITE.links.xHandle}`, a.x && a.x.verified, cfg.x && cfg.x.available, a.x && a.x.username)}
+      ${item('tg', 'TELEGRAM', SITE.links.telegram, 'Join the HALLOWINU group', a.telegram && a.telegram.verified, cfg.telegram && cfg.telegram.available, a.telegram && a.telegram.username)}
+      ${(cfg.x && cfg.x.available) && (cfg.telegram && cfg.telegram.available) ? '' : '<p class="ax-fine">Social verification switches on soon. Until then you can play and earn points, but you are not prize-eligible yet.</p>'}
+    </div>`;
+  }
+
+  function stepsList() {
+    const a = S.access;
+    const signed = !!a.walletVerified;
+    const rows = [
+      ['WALLET CONNECTED', signed || !!S.wallet],
+      ['WALLET VERIFIED', signed],
+      ['X VERIFIED', !!(a.x && a.x.verified)],
+      ['TELEGRAM VERIFIED', !!(a.telegram && a.telegram.verified)],
+      ['PLAYER NAME CREATED', !!a.profileComplete],
+    ];
+    return `<ol class="ob-steps">${rows.map(([t, ok]) => `<li class="${ok ? 'ok' : ''}"><span class="ob-box" aria-hidden="true">${ok ? '✓' : ''}</span>${t}<span class="sr">${ok ? ' — done' : ' — not yet'}</span></li>`).join('')}</ol>`;
+  }
+
+  /* Never wipe a form the player is typing in or a Telegram login widget that is open. */
+  function canRerender() {
+    if (root.querySelector('[data-tg-widget] iframe, [data-tg-widget] script')) return false;
+    const f = document.activeElement; return !(f && f.closest && f.closest('[data-player] form'));
+  }
+  function renderAccess() {
+    const a = S.access;
+    const ready = a.canPlay && S.player && S.step !== 'granted';
+    enterEl.hidden = !!ready; cardEl.hidden = !ready;
+    if (ready) { renderPlayer(); return; }
+    const p = phantom();
+    let body = '';
+    if (busyText) body = `<p class="ax-loading">${esc(busyText)}</p>`;
+    else if (a.state === 'SUSPENDED') body = `<p>This player is suspended from the Arcade.</p><button class="btn btn-purple btn-sm" type="button" data-logout>Log out</button>`;
+    else if (!a.walletVerified) {
+      if (!p) {
+        body = isMobile
+          ? `<p>Open hallowinu.xyz inside the Phantom app to connect your wallet.</p><a class="btn btn-primary" href="${esc(phantomBrowseUrl())}">${icon('ghost')}Open in Phantom</a>`
+          : `<p>Phantom wallet was not detected in this browser.</p><a class="btn btn-primary" href="https://phantom.app/download" target="_blank" rel="noopener noreferrer">${icon('ghost')}Install Phantom</a><button class="ax-link" type="button" data-recheck>I installed it — check again</button>`;
+      } else if (S.wallet && S.step === 'sign') {
+        body = `<p>Connected: <b class="mono">${esc(short(S.wallet))}</b>. Sign the message in Phantom to prove you own this wallet. It is free and not a transaction.</p>
+          <button class="btn btn-primary" type="button" data-sign>${icon('ghost')}Verify wallet</button>`;
+      } else {
+        body = `<p>Connect your Phantom wallet, then sign one message to prove it is yours. No transaction, no fees.</p>
+          <button class="btn btn-primary" type="button" data-connect>${icon('ghost')}Connect Phantom</button>`;
+      }
+      body += '<p class="ax-fine">HALLOWINU will never ask for your seed phrase, recovery phrase or private key.</p>';
+    } else if (!a.profileComplete && S.step !== 'name') {
+      body = `<h4 class="ob-h">VERIFY HALLOWINU SOCIALS</h4>${socialsBlock()}
+        <button class="btn btn-primary" type="button" data-step="name">Continue</button>`;
+    } else if (!a.profileComplete) {
+      body = `<h4 class="ob-h">CHOOSE YOUR PLAYER NAME</h4>
+        <form class="rename" data-name-form><label for="ax-newname">Shown on the leaderboard (3–16 characters)</label>
+        <input id="ax-newname" maxlength="16" minlength="3" required autocomplete="off" spellcheck="false" placeholder="e.g. GHOSTKING">
+        <p class="ax-fine" data-name-msg>Letters, numbers, spaces, - _ and . · must be unique</p>
+        <button class="btn btn-primary" type="submit">Create player</button></form>
+        <button class="ax-link" type="button" data-step="socials">← Back to socials</button>`;
+    } else {
+      // just completed onboarding
+      body = `<h4 class="ob-h granted">ACCESS GRANTED</h4><button class="btn btn-primary" type="button" data-enter-arcade>${icon('trophy')}Enter Arcade</button>`;
+    }
+    enterEl.innerHTML = `<div class="ob">
+      <img src="img/head.webp" alt="" width="64" height="64">
+      <h3>Welcome to the Arcade</h3>
+      ${stepsList()}
+      <div class="ob-action" aria-live="polite">${body}</div>
+      ${a.walletVerified ? `<div class="ax-session"><span class="mono">${esc(a.wallet || '')}</span><button class="ax-link" type="button" data-logout>Log out</button><button class="ax-link" type="button" data-disconnect>Disconnect wallet</button></div>` : ''}
+    </div>`;
+    const nf = $('[data-name-form]', enterEl);
+    if (nf) nf.addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = $('button[type=submit]', nf); btn.disabled = true;
+      const r = await api('PATCH', '/api/me', { displayName: $('#ax-newname', nf).value });
+      btn.disabled = false;
+      if (!r.ok) { $('[data-name-msg]', nf).textContent = r.message || 'Could not save this name.'; $('[data-name-msg]', nf).classList.add('bad'); sfx('lose'); return; }
+      S.step = 'granted'; sfx('level'); renderAccess(); loadBoard();
+    });
+  }
+
   function renderPlayer() {
-    const p = S.player;
-    $('[data-enter]', root).hidden = !!p;
-    $('[data-card]', root).hidden = !p;
+    const p = S.player, a = S.access;
     if (!p) return;
     $('[data-name]', root).textContent = p.displayName;
-    $('[data-pid]', root).textContent = p.shortId;
+    $('[data-wallet]', root).textContent = a.wallet ? `WALLET ${a.wallet}` : '';
     $('[data-level]', root).textContent = p.level;
     $('[data-title]', root).textContent = p.title;
     $('[data-xp]', root).textContent = fmt(p.xp);
@@ -161,9 +345,9 @@
     $('[data-xpbar]', root).style.width = `calc((100% - 4px) * ${Math.max(0, Math.min(1, span)).toFixed(3)})`;
     const st = { seasonPoints: fmt(p.seasonPoints), totalPoints: fmt(p.totalPoints), seasonRank: p.seasonRank ? '#' + fmt(p.seasonRank) : '—', allTimeRank: p.allTimeRank ? '#' + fmt(p.allTimeRank) : '—', gamesPlayed: fmt(p.gamesPlayed), streak: `${p.currentStreak} / ${p.bestStreak}` };
     for (const [k, v] of Object.entries(st)) $(`[data-stat="${k}"]`, root).textContent = v;
-    $('[data-elig]', root).innerHTML = p.payoutEligibility === 'VERIFIED'
-      ? '<span class="tag is-green">Prize eligibility: verified</span>'
-      : '<span class="tag is-dim">Prize eligibility: not verified</span><button class="ax-link" type="button" data-open="eligibility">Why?</button>';
+    $('[data-elig]', root).innerHTML = a.prizeEligible
+      ? '<span class="tag is-green">✓ Prize eligible</span>'
+      : `<div class="elig-head"><span class="tag is-dim">Prize eligibility: verify X + Telegram</span><button class="ax-link" type="button" data-open="eligibility">Why?</button></div>${socialsBlock(true)}`;
   }
 
   function renderGames() {
@@ -173,8 +357,8 @@
       card.classList.toggle('is-locked', !g.enabled);
       if (!g.enabled) { tag.textContent = 'Closed'; btn.disabled = true; continue; }
       btn.disabled = false;
-      if (!S.player) { tag.textContent = g.limit.type === 'daily' ? `${g.limit.limit} / day` : '1 / 24h'; continue; }
-      if (g.limit.type === 'daily') tag.textContent = `${g.limit.remaining} / ${g.limit.limit} left`;
+      if (!S.access.canPlay) { tag.textContent = g.limit.type === 'daily' ? `${g.limit.limit} / day` : '1 / 24h'; delete tag.dataset.next; continue; }
+      if (g.limit.type === 'daily') tag.textContent = g.limit.remaining > 0 ? `${g.limit.remaining} / ${g.limit.limit} left` : 'Daily limit reached';
       else tag.dataset.next = g.limit.nextAt || '';
     }
     tick();
@@ -190,7 +374,7 @@
       else { lbl.textContent = 'ENDED'; cd.textContent = new Date(s.endsAt).toISOString().slice(0, 10); }
     }
     const spin = $('[data-game="daily-spin"] [data-limit]', root);
-    if (spin && S.player && S.games['daily-spin']?.enabled) {
+    if (spin && S.access.canPlay && S.games['daily-spin']?.enabled) {
       const n = Number(spin.dataset.next || 0);
       spin.textContent = n && n > t ? `Next ${clockText(n - t)}` : 'Ready!';
     }
@@ -199,17 +383,42 @@
   }
   setInterval(tick, 1000);
 
-  /* ---------- enter / session ---------- */
-  async function enter() {
-    const btn = $('[data-enter-btn]', root); btn.disabled = true;
-    const r = await api('POST', '/api/session');
-    btn.disabled = false;
-    if (!r.ok) { toast(...errorText(r), 'skull', true); return false; }
-    store.set('hw-entered', '1'); sfx('win');
-    await refresh(); loadBoard();
-    return true;
+  /* ---------- social verification actions ---------- */
+  window.HALLOWINU_onTelegramAuth = async user => {
+    const r = await api('POST', '/api/socials/telegram', { auth: user });
+    if (r.ok) { toast('TELEGRAM VERIFIED', 'Membership of the HALLOWINU group confirmed.', 'ghost'); sfx('achieve'); }
+    else toast('TELEGRAM NOT VERIFIED', r.message || 'Try again.', 'skull', true);
+    renderAccess(); loadBoard();
+  };
+  function verifySocial(key, btn) {
+    if (key === 'x') { location.href = '/api/socials/x/start'; return; }
+    const box = btn.closest('[data-sv]'); const holder = $('[data-tg-widget]', box);
+    const bot = S.socials && S.socials.telegram && S.socials.telegram.botUsername;
+    if (!bot || !holder) return;
+    holder.innerHTML = '<p class="ax-fine">Log in with Telegram below to confirm your membership:</p>';
+    const sc = document.createElement('script');
+    sc.async = true; sc.src = 'https://telegram.org/js/telegram-widget.js?22';
+    sc.setAttribute('data-telegram-login', bot); sc.setAttribute('data-size', 'medium'); sc.setAttribute('data-userpic', 'false');
+    sc.setAttribute('data-onauth', 'HALLOWINU_onTelegramAuth(user)');
+    holder.append(sc);
   }
-  $('[data-enter-btn]', root).addEventListener('click', enter);
+  const SOCIAL_STATUS = {
+    verified: ['X VERIFIED', 'You follow @' + SITE.links.xHandle + '. Nice.', false],
+    not_following: ['NOT FOLLOWING YET', 'Follow @' + SITE.links.xHandle + ' on X, then verify again.', true],
+    denied: ['X LOGIN CANCELLED', 'Verification needs your permission on X.', true],
+    expired: ['X CHECK EXPIRED', 'Please start the X verification again.', true],
+    session: ['SIGN IN FIRST', 'Your Arcade session ended. Sign in with Phantom and retry.', true],
+    identity_in_use: ['ACCOUNT ALREADY LINKED', 'This X account belongs to another player.', true],
+    x_not_configured: ['X VERIFICATION SOON', 'X verification is not switched on yet.', true],
+    x_api_access: ['X CHECK UNAVAILABLE', 'X refused the check right now. Try again later.', true],
+  };
+  (function handleReturn() {
+    const q = new URLSearchParams(location.search);
+    if (q.get('social') !== 'x') return;
+    const [t, m, bad] = SOCIAL_STATUS[q.get('status')] || ['X NOT VERIFIED', 'Something went wrong. Try again.', true];
+    setTimeout(() => { toast(t, m, bad ? 'skull' : 'ghost', bad); sfx(bad ? 'lose' : 'achieve'); }, 600);
+    history.replaceState(null, '', location.pathname + '#arcade');
+  })();
 
   /* ---------- leaderboard ---------- */
   async function loadBoard() {
@@ -219,9 +428,13 @@
     if (!r.ok) { rowsEl.innerHTML = `<tr><td colspan="4" class="ax-empty">${esc(errorText(r).join(' '))}</td></tr>`; return; }
     if (!r.rows.length) rowsEl.innerHTML = `<tr><td colspan="4" class="ax-empty">No scores yet. The graveyard is quiet… be the first.</td></tr>`;
     else rowsEl.innerHTML = r.rows.map(x => {
-      const prize = S.scope === 'season'
-        ? `<td class="r pz">${x.prize ? `◎ ${esc(sol(x.prize.lamports))}<small>${esc(x.prize.status === 'ESTIMATED' ? 'EST.' : x.prize.status)}</small>` : '<span style="color:var(--muted)">—</span>'}</td>` : '';
-      return `<tr class="${x.me ? 'me ' : ''}${x.rank <= 10 ? 'top ' : ''}${x.rank === 1 ? 'top1' : ''}"><td class="rk">#${x.rank}</td><td class="nm">${esc(x.name)}</td><td class="r pts">${fmt(x.points)}</td>${prize}</tr>`;
+      let prize = '';
+      if (S.scope === 'season') {
+        prize = x.prize
+          ? `<td class="r pz">◎ ${esc(sol(x.prize.lamports))}<small>${esc(x.prize.status === 'ESTIMATED' ? `EST. · PRIZE #${x.prize.prizeRank || x.rank}` : x.prize.status)}</small></td>`
+          : `<td class="r pz">${x.eligible === false && x.rank <= 25 ? '<small class="ne">NOT ELIGIBLE</small>' : '<span style="color:var(--muted)">—</span>'}</td>`;
+      }
+      return `<tr class="${x.me ? 'me ' : ''}${x.prize ? 'top ' : ''}${x.rank === 1 ? 'top1' : ''}"><td class="rk">#${x.rank}</td><td class="nm">${esc(x.name)}</td><td class="r pts">${fmt(x.points)}</td>${prize}</tr>`;
     }).join('');
     if (r.me) { meEl.hidden = false; meEl.textContent = `YOUR RANK #${fmt(r.me.rank)} · ${fmt(r.me.points)} PTS`; } else meEl.hidden = true;
   }
@@ -240,25 +453,39 @@
 
   function showError(r, retry) {
     const [a, b] = errorText(r);
-    screen.innerHTML = `<div class="ax-err"><span class="ico" style="width:64px;height:64px">${icon('skull')}</span><h4 class="ax-big o">${esc(a)}</h4><p>${esc(b)}</p><div class="ax-row">${retry ? '<button class="btn btn-primary" data-retry>Try again</button>' : ''}<button class="btn btn-purple" data-back>Back to arcade</button></div></div>`;
+    const needsAuth = r.error === 'NO_SESSION' || r.error === 'PROFILE_REQUIRED';
+    screen.innerHTML = `<div class="ax-err"><span class="ico" style="width:64px;height:64px">${icon('skull')}</span><h4 class="ax-big o">${esc(a)}</h4><p>${esc(b)}</p><div class="ax-row">${retry && !needsAuth ? '<button class="btn btn-primary" data-retry>Try again</button>' : ''}<button class="btn btn-purple" data-back>Back to arcade</button></div></div>`;
     $('[data-retry]', screen)?.addEventListener('click', retry);
     $('[data-back]', screen).addEventListener('click', closeGame);
-    if (r.error === 'NO_SESSION') { S.player = null; renderPlayer(); }
+    if (needsAuth) refresh();
     sfx('lose');
   }
 
   async function openGame(id) {
     sfx('click');
-    if (!S.player) { const ok = await enter(); if (!ok) return; }
-    $('[data-game-title]', gameModal).textContent = GAME_NAMES[id];
+    if (!S.access.canPlay) {
+      $('[data-player]', root).scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      toast('CONNECT TO PLAY', S.access.walletVerified ? 'Finish your player setup first.' : 'Connect Phantom and sign in to play.', 'ghost', true);
+      return;
+    }
+    $('[data-game-title]', gameModal).textContent = gameName(id);
     screen.innerHTML = '';
     if (!gameModal.open) gameModal.showModal();
     ({ 'trick-or-treat': gameTOT, 'pumpkin-hunt': gameHunt, 'daily-spin': gameSpin, quiz: gameQuiz })[id]();
   }
   root.addEventListener('click', e => {
-    const p = e.target.closest('[data-play]'); if (p) return openGame(p.dataset.play);
-    const o = e.target.closest('[data-open]'); if (o) return openInfo(o.dataset.open);
-    if (e.target.closest('[data-rename]')) return openInfo('rename');
+    const t = e.target;
+    const p = t.closest('[data-play]'); if (p) return openGame(p.dataset.play);
+    const o = t.closest('[data-open]'); if (o) return openInfo(o.dataset.open);
+    if (t.closest('[data-rename]')) return openInfo('rename');
+    if (t.closest('[data-connect]')) return connectWallet();
+    if (t.closest('[data-sign]')) return signInWallet();
+    if (t.closest('[data-recheck]')) return renderAccess();
+    if (t.closest('[data-logout]')) return logout(false);
+    if (t.closest('[data-disconnect]')) return logout(true);
+    const v = t.closest('[data-verify]'); if (v) return verifySocial(v.dataset.verify, v);
+    const st = t.closest('[data-step]'); if (st) { S.step = st.dataset.step; sfx('click'); return renderAccess(); }
+    if (t.closest('[data-enter-arcade]')) { S.step = null; sfx('win'); renderAccess(); renderGames(); $('[data-games]', root).scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); }
   });
 
   function burst(container, color) {
@@ -326,7 +553,7 @@
       </div>
       <p class="ax-hint">Hit pumpkins quickly in a row for COMBO bonuses.</p>
       <span class="tag">${g.limit.remaining} of ${g.limit.limit} hunts left today</span>
-      <button class="btn btn-primary" data-start>${icon('pumpkin')}Start the hunt</button>
+      <button class="btn btn-primary" data-start>${icon('hunt')}Start the hunt</button>
     </div>`;
     $('[data-start]', screen).addEventListener('click', startHunt);
   }
@@ -442,7 +669,7 @@
     screen.innerHTML = `<div class="ax-center">
       <div class="spin-wrap"><span class="spin-pointer"></span>${wheelSvg(segs)}<span class="spin-hub"><img src="img/head.webp" alt=""></span></div>
       <p class="spin-next" data-spin-next data-at="${g.limit.nextAt || ''}"></p>
-      <button class="btn btn-primary" data-spin ${ready ? '' : 'disabled'}>${icon('chest')}Spin the wheel</button>
+      <button class="btn btn-primary" data-spin ${ready ? '' : 'disabled'}>${icon('wheel')}Spin the wheel</button>
       <p class="ax-hint">The result is decided by the server the moment you spin. The wheel just shows it.</p>
       <div class="spin-odds" data-odds></div>
     </div>`;
@@ -527,34 +754,37 @@
       info.innerHTML = '<p class="ax-loading">LOADING…</p>';
       infoModal.showModal();
       const r = await api('GET', '/api/me');
-      if (!r.ok) { info.innerHTML = `<p>${esc(errorText(r).join(' '))}</p>`; return; }
-      const p = r.player;
+      if (!r.ok || !r.player) { info.innerHTML = `<p>${esc(errorText(r).join(' '))}</p>`; return; }
+      const p = r.player, a = r.access;
       info.innerHTML = `<div class="info">
-        <p><b style="color:var(--ghost)">${esc(p.displayName)}</b> · ID ${esc(p.shortId)} · Level ${p.level} ${esc(p.title)} · ${fmt(p.wins)} wins / ${fmt(p.losses)} losses</p>
-        <h4>ACHIEVEMENTS · ${p.achievements.filter(a => a.unlockedAt).length}/${p.achievements.length}</h4>
-        <ul class="ach-grid">${p.achievements.map(a => `<li class="ach ${a.unlockedAt ? 'got' : 'locked'}"><span class="ico">${icon(a.icon)}</span><b>${esc(a.name)}</b><small>${esc(a.description)}</small></li>`).join('')}</ul>
+        <p><b style="color:var(--ghost)">${esc(p.displayName)}</b> · Level ${p.level} ${esc(p.title)} · ${fmt(p.wins)} wins / ${fmt(p.losses)} losses<br><small style="color:var(--muted)">Wallet ${esc(a.wallet || '—')} · X ${a.x.verified ? '@' + esc(a.x.username || 'verified') : 'not verified'} · Telegram ${a.telegram.verified ? (a.telegram.username ? '@' + esc(a.telegram.username) : 'verified') : 'not verified'}</small></p>
+        <h4>ACHIEVEMENTS · ${p.achievements.filter(x => x.unlockedAt).length}/${p.achievements.length}</h4>
+        <ul class="ach-grid">${p.achievements.map(x => `<li class="ach ${x.unlockedAt ? 'got' : 'locked'}"><span class="ico">${icon(x.icon)}</span><b>${esc(x.name)}</b><small>${esc(x.description)}</small></li>`).join('')}</ul>
         <h4>RECENT GAMES</h4>
-        ${p.history.length ? `<ul class="hist">${p.history.map(h => `<li><span>${esc(h.reason)}<br><small style="color:var(--muted)">${new Date(h.at).toLocaleString()}</small></span><b class="${h.points ? '' : 'zero'}">+${fmt(h.points)}</b></li>`).join('')}</ul>` : '<p>No games yet. Pick a cabinet!</p>'}
+        ${p.history.length ? `<ul class="hist">${p.history.map(h => `<li><span>${GAME[h.game] ? `<span class="hist-ico">${icon(GAME[h.game].icon)}</span>` : ''}${esc(h.reason)}<br><small style="color:var(--muted)">${new Date(h.at).toLocaleString()}</small></span><b class="${h.points ? '' : 'zero'}">+${fmt(h.points)}</b></li>`).join('')}</ul>` : '<p>No games yet. Pick a cabinet!</p>'}
       </div>`;
       return;
     }
     if (kind === 'rename') {
-      title.textContent = 'Rename player';
-      info.innerHTML = `<form class="rename" data-rename-form><label for="ax-name">Display name (3–18 characters)</label><input id="ax-name" maxlength="18" minlength="3" required value="${esc(S.player?.displayName || '')}" autocomplete="off"><p class="ax-fine" data-rename-msg>Letters, numbers, spaces, - _ and . · one change per hour</p><button class="btn btn-primary" type="submit">Save name</button></form>`;
+      title.textContent = 'Change player name';
+      info.innerHTML = `<form class="rename" data-rename-form><label for="ax-name">Display name (3–16 characters)</label><input id="ax-name" maxlength="16" minlength="3" required value="${esc(S.player?.displayName || '')}" autocomplete="off" spellcheck="false"><p class="ax-fine" data-rename-msg>Letters, numbers, spaces, - _ and . · unique · one change per 24 hours</p><button class="btn btn-primary" type="submit">Save name</button></form>`;
       infoModal.showModal();
       $('[data-rename-form]', info).addEventListener('submit', async e => {
         e.preventDefault();
         const r = await api('PATCH', '/api/me', { displayName: $('#ax-name', info).value });
         if (!r.ok) { $('[data-rename-msg]', info).textContent = r.message || 'Could not rename.'; return; }
-        infoModal.close(); S.player = { ...S.player, ...r.player }; renderPlayer(); loadBoard(); sfx('win');
+        infoModal.close(); renderAccess(); loadBoard(); sfx('win');
       });
       return;
     }
     if (kind === 'eligibility') {
       title.textContent = 'Prize eligibility';
-      info.innerHTML = `<div class="info"><p>Anyone can play and climb the leaderboard. To receive an actual SOL prize, a winner needs a <b>verified persistent identity</b> and a <b>verified Solana payout wallet</b> (public address only — we will never ask for a seed phrase or private key).</p>
-        <p>Right now your player lives in a secure cookie on this device. Identity verification (via the HALLOWINU Telegram) is coming in the next phase. Until then your prize eligibility shows as <b>NOT VERIFIED</b>.</p>
-        <p>Never share your seed phrase. The HALLOWINU team will never DM you first.</p></div>`;
+      info.innerHTML = `<div class="info">
+        <p>Everyone with a verified wallet and a player name can play and climb the leaderboard. To <b>win SOL</b>, a player must also verify both official HALLOWINU socials:</p>
+        <ul><li><b>X</b> — log in with X and follow <b>@${esc(SITE.links.xHandle)}</b>. The server checks it through the X API.</li>
+        <li><b>Telegram</b> — log in with Telegram. The HALLOWINU bot confirms you are a member of the official group.</li></ul>
+        <p>Prizes go to the Top 10 prize-eligible players. Winners are reviewed by the team before any payout — payouts are never automatic. Prizes are sent to the wallet you signed in with.</p>
+        <p class="ax-fine">HALLOWINU will never ask for your seed phrase, recovery phrase or private key, and will never DM you first.</p></div>`;
       infoModal.showModal(); return;
     }
     if (kind === 'prizes') {
@@ -566,38 +796,42 @@
       const c = r.current, pool = c.pool;
       const fmtD = ts => new Date(ts).toUTCString().replace(':00 GMT', ' UTC');
       const tot = S.games['trick-or-treat']?.odds;
+      const base = c.announcedLamports != null ? BigInt(c.announcedLamports) : null;
+      const at = (bps, total) => (total * BigInt(bps)) / 10000n;
       info.innerHTML = `<div class="info">
         <p><b style="color:var(--ghost)">${esc(c.name)}</b><br>${fmtD(c.startsAt)} → ${fmtD(c.endsAt)}</p>
         <h4>PRIZE POOL</h4>
         <dl class="pool-break">
-          <div><dt>Current pool</dt><dd>◎ ${sol(pool.totalLamports)}</dd></div>
-          <div><dt>Starting pool</dt><dd>◎ ${sol(pool.initialLamports)}</dd></div>
-          <div><dt>Maker rewards added</dt><dd>◎ ${sol(pool.makerLamports)}</dd></div>
+          ${base != null ? `<div><dt>Announced base pool</dt><dd>◎ ${sol(base)}</dd></div>` : ''}
+          <div><dt>Verified base funding</dt><dd>◎ ${sol(pool.initialLamports)}</dd></div>
+          <div><dt>Verified additions (maker rewards)</dt><dd>◎ ${sol(pool.verifiedAdditionsLamports)}</dd></div>
+          <div class="tot"><dt>Current verified pool</dt><dd>◎ ${sol(pool.totalLamports)}</dd></div>
         </dl>
-        <p class="ax-fine">Only funding verified by the team (or on-chain) counts. ${BigInt(pool.totalLamports) === 0n ? 'The initial season funding is awaiting verification.' : ''}</p>
+        <p class="ax-fine">Only funding verified by the team or on-chain counts. ${base != null && BigInt(pool.totalLamports) < base ? 'The announced base pool is not fully verified yet, so it is not counted below.' : ''} Verified maker rewards grow every prize proportionally.</p>
         ${c.funding?.length ? `<ul class="hist">${c.funding.map(f => `<li><span>${esc(f.source.replace('_', ' '))}${f.txSignature ? ` · <a href="https://solscan.io/tx/${encodeURIComponent(f.txSignature)}" target="_blank" rel="noopener noreferrer" style="color:var(--neon-soft)">tx</a>` : ''}<br><small style="color:var(--muted)">verified ${new Date(f.verifiedAt).toLocaleDateString()}</small></span><b>◎ ${sol(f.lamports)}</b></li>`).join('')}</ul>` : ''}
-        <h4>TOP 10 · ESTIMATED PRIZES</h4>
-        <table class="dist"><thead><tr><th>Rank</th><th class="r">Share</th><th class="r">Est. prize</th></tr></thead><tbody>
-        ${c.estPrizes.map(p => `<tr><td>#${p.rank}</td><td class="r">${(p.bps / 100).toFixed(p.bps % 100 ? 1 : 0)}%</td><td class="r sol">◎ ${sol(p.lamports)}</td></tr>`).join('')}
+        <h4>TOP 10 PRIZES</h4>
+        <table class="dist"><thead><tr><th>Prize</th><th class="r">Share</th>${base != null ? '<th class="r">At base</th>' : ''}<th class="r">Now (verified)</th></tr></thead><tbody>
+        ${c.estPrizes.map(p => `<tr><td>#${p.rank}</td><td class="r">${(p.bps / 100).toFixed(p.bps % 100 ? (p.bps % 10 ? 2 : 1) : 0)}%</td>${base != null ? `<td class="r">◎ ${sol(at(p.bps, base))}</td>` : ''}<td class="r sol">◎ ${sol(p.lamports)}</td></tr>`).join('')}
         </tbody></table>
         <h4>RULES</h4>
         <ul>
-          <li>Free to play — no purchase, token or wallet needed to play.</li>
+          <li>Free to play. Sign in with your Phantom wallet (a free message signature — never a transaction) and pick a player name.</li>
           <li>Every game awards Arcade Points. Season points count only while the season is live; lifetime points never reset.</li>
           <li>Daily limits reset at 00:00 UTC: Trick or Treat 3×, Pumpkin Hunt 2×, Quiz 5 rewarded questions. Daily Spin: once every 24 hours.</li>
-          <li>The Top 10 season players share the verified prize pool by the percentages above. Ties are broken by who reached the score first.</li>
-          <li>Prize amounts are estimates until the season ends; the pool can grow with verified maker rewards.</li>
-          <li>At season end the standings and pool are frozen, checked for cheating, and payouts are approved manually. Cheating, bots or multi-accounting lead to disqualification; lower ranks then move up.</li>
-          <li>Payouts require a verified identity and Solana payout wallet. Arcade Points have no cash value. Not available where prohibited by law.</li>
+          <li>Prizes go to the Top 10 <b>prize-eligible</b> players (wallet + X + Telegram verified) by season points. Ties go to whoever reached the score first.</li>
+          <li>Amounts are estimates until the season ends. At the end, standings and pool are frozen, checked for cheating and reviewed; payouts are approved manually, never automatically.</li>
+          <li>Cheating, bots or multiple accounts lead to disqualification; lower ranks move up. Arcade Points have no cash value. Not available where prohibited by law.</li>
         </ul>
         ${tot ? `<h4>TRICK OR TREAT ODDS</h4><p>TREAT: ${tot.treat.map(o => `${o.weight}% → ${o.points}`).join(' · ')}<br>TRICK: ${tot.trick.map(o => `${o.weight}% → ${o.points}`).join(' · ')}</p>` : ''}
-        ${r.previous.length ? `<h4>PREVIOUS SEASONS</h4>${r.previous.map(s => `<p><b style="color:var(--ghost)">${esc(s.name)}</b> · pool ◎ ${sol(s.poolLamports)} · ${esc(s.status)}</p><ul class="hist">${s.winners.map(w => `<li><span>#${w.rank} ${esc(w.name)} · ${fmt(w.points)} pts</span><b>◎ ${esc(w.sol)} <small style="color:var(--muted)">${esc(w.status)}</small></b></li>`).join('')}</ul>`).join('')}` : ''}
+        ${r.previous.length ? `<h4>PREVIOUS SEASONS</h4>${r.previous.map(s => `<p><b style="color:var(--ghost)">${esc(s.name)}</b> · pool ◎ ${sol(s.poolLamports)} · ${esc(s.status === 'FINALIZING' ? 'UNDER REVIEW' : s.status)}</p><ul class="hist">${s.winners.map(w => `<li><span>#${w.rank} ${esc(w.name)} · ${fmt(w.points)} pts</span><b>◎ ${esc(w.sol)} <small style="color:var(--muted)">${esc(w.status)}</small></b></li>`).join('')}</ul>`).join('')}` : ''}
       </div>`;
     }
   }
 
   /* ---------- boot ---------- */
+  const pv = phantom(); if (pv) hookProvider(pv);
+  renderAccess();
   refresh().then(loadBoard);
-  let poll = setInterval(() => { if (!document.hidden && !gameModal.open) refresh().then(() => S.scope && loadBoard()); }, 60000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && !gameModal.open) refresh(); });
+  setInterval(() => { if (!document.hidden && !gameModal.open && !S.busy) refresh().then(() => S.scope && loadBoard()); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !gameModal.open && !S.busy) refresh(); });
 })();

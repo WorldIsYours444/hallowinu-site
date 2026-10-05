@@ -23,7 +23,7 @@ export async function spin(env, player, cfg, body) {
     const result = { segmentId: item.id, segmentIndex: index, label: item.label, points: item.points, rare: !!item.rare, nextAt: lim.nextAt };
     const settled = await settle(env, player, {
       gameId: id, attemptId: attempt.id, reference: `spin:${attempt.id}`, points: item.points,
-      reason: `Daily Spin (${item.label})`, xp: cfg.xpPerPlay + item.points, win: true,
+      reason: `${cfg.name} (${item.label})`, xp: cfg.xpPerPlay + item.points, win: true,
       counters: item.rare ? { spin_rare: 1 } : {}, result,
     });
     return { ...result, attemptId: attempt.id, ...settled };

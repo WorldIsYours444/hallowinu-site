@@ -1,49 +1,124 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeEnv, client, adminClient, clock, idem, cron, S01_START, S01_END } from './helpers.mjs';
+import { makeEnv, client, adminClient, clock, idem, cron, S01_START, S01_END, newWallet, signIn, b64, walletPlayer, uniqueName, grantSocials } from './helpers.mjs';
 import { allocatePool, solStringToLamports, lamportsToSolString, validateDistribution } from '../worker/lib/prizes.js';
 import { CONFIG, validateConfig, levelForXp } from '../worker/config.js';
 import { scoreClaims, generateBoard } from '../worker/games/pumpkin-hunt.js';
+import { validateName } from '../worker/lib/auth.js';
 
 const MID = S01_START + 3 * 86400_000 + 10 * 3600_000; // inside Season 01, 10:00 UTC
 
-async function newPlayer(env) {
-  const c = client(env);
-  const r = await c.post('/api/session');
-  assert.equal(r.status, 201);
-  return { c, player: r.player };
-}
+async function newPlayer(env, opts) { return walletPlayer(env, opts); }
 async function verifyInitialFunding(env) {
   const a = adminClient(env);
   const ov = await a.get('overview');
-  const f = ov.funding.find(x => x.source === 'INITIAL_FUNDING');
+  const f = ov.funding.find(x => x.source === 'INITIAL_FUNDING' && x.status === 'PENDING');
   const r = await a.post(`funding/${f.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' });
   assert.equal(r.ok, true, JSON.stringify(r));
 }
 
-/* ======================= PLAYER / SESSION ======================= */
-describe('player & session', () => {
+/* ======================= PHANTOM WALLET AUTH / PLAYER ACCOUNT ======================= */
+describe('wallet sign-in & player account', () => {
   beforeEach(() => clock.set(MID));
-  test('creates a server-side player with HttpOnly cookie and persists', async () => {
+  test('signature creates player + HttpOnly session; profile required before playing', async () => {
     const env = makeEnv();
-    const { c, player } = await newPlayer(env);
-    assert.match(player.id, /^p_[a-z2-9]{16}$/);
-    assert.equal(player.level, 1);
-    assert.equal(player.payoutEligibility, 'NOT_VERIFIED');
-    const again = await c.post('/api/session');
-    assert.equal(again.status, 200);
-    assert.equal(again.player.id, player.id);
-    const me = await c.get('/api/me');
-    assert.equal(me.player.id, player.id);
+    const c = client(env);
+    const w = await newWallet();
+    assert.equal((await c.get('/api/me')).access.state, 'WALLET_NOT_CONNECTED');
+    const n = await c.post('/api/auth/nonce', { wallet: w.address });
+    assert.match(n.message, /hallowinu\.xyz wants you to sign in with your Solana account:/);
+    assert.match(n.message, /not a transaction/);
+    assert.ok(n.message.includes(w.address) && n.message.includes(n.nonce));
+    const v = await c.post('/api/auth/verify', { wallet: w.address, nonce: n.nonce, signature: b64(await w.sign(n.message)) });
+    assert.equal(v.ok, true, JSON.stringify(v));
+    assert.equal(v.created, true);
+    assert.match(v.setCookie, /HttpOnly/); assert.match(v.setCookie, /Secure/); assert.match(v.setCookie, /SameSite=Lax/); assert.match(v.setCookie, /Path=\/api/);
+    assert.equal(v.access.state, 'PROFILE_REQUIRED');
+    assert.equal(v.access.canPlay, false);
+    assert.equal(v.access.wallet, `${w.address.slice(0, 4)}…${w.address.slice(-4)}`);
+    const blocked = await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() });
+    assert.equal(blocked.status, 403); assert.equal(blocked.error, 'PROFILE_REQUIRED');
+    const named = await c.patch('/api/me', { displayName: 'Pumpkin King' });
+    assert.equal(named.access.state, 'SOCIALS_PENDING');
+    assert.equal(named.access.canPlay, true);
+    assert.equal(named.access.prizeEligible, false);
+    assert.equal(named.player.displayName, 'Pumpkin King');
+    assert.equal((await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() })).ok, true);
     const row = await env.DB.prepare('SELECT token_hash FROM player_sessions').first();
     assert.ok(!c.cookie.includes(row.token_hash), 'raw token is not stored');
   });
-  test('rejects unauthenticated and forged sessions', async () => {
+  test('returning wallet restores the same player, name, points and history', async () => {
+    const env = makeEnv();
+    const { c, wallet, player } = await newPlayer(env, { name: 'Ghost King' });
+    await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() });
+    await c.post('/api/games/daily-spin/spin', { idem: idem() });
+    const before = (await c.get('/api/me')).player;
+    await c.post('/api/auth/logout');
+    const c2 = client(env); // other device
+    const v = await signIn(c2, wallet);
+    assert.equal(v.created, false);
+    const after = (await c2.get('/api/me')).player;
+    assert.equal(after.id, player.id); assert.equal(after.displayName, 'Ghost King');
+    assert.equal(after.totalPoints, before.totalPoints); assert.equal(after.gamesPlayed, 2);
+    assert.equal(after.history.length, before.history.length);
+    const n = await env.DB.prepare("SELECT COUNT(*) n FROM players WHERE kind='wallet'").first();
+    assert.equal(n.n, 1, 'no duplicate player on reconnect');
+    // limits follow the account, not the device
+    assert.equal((await c2.post('/api/games/daily-spin/spin', { idem: idem() })).error, 'COOLDOWN');
+  });
+  test('negative cases: bad signature, reused nonce, expired nonce, wrong wallet, forged address', async () => {
     const env = makeEnv();
     const c = client(env);
-    assert.equal((await c.get('/api/me')).status, 401);
+    const w = await newWallet(), w2 = await newWallet();
+    // signature over a different message
+    let n = await c.post('/api/auth/nonce', { wallet: w.address });
+    let r = await c.post('/api/auth/verify', { wallet: w.address, nonce: n.nonce, signature: b64(await w.sign(n.message + 'x')) });
+    assert.equal(r.error, 'BAD_SIGNATURE');
+    // the nonce was burned by the failed attempt
+    r = await c.post('/api/auth/verify', { wallet: w.address, nonce: n.nonce, signature: b64(await w.sign(n.message)) });
+    assert.equal(r.error, 'NONCE_INVALID');
+    // successful sign-in, then replay of the same signed payload
+    n = await c.post('/api/auth/nonce', { wallet: w.address });
+    const payload = { wallet: w.address, nonce: n.nonce, signature: b64(await w.sign(n.message)) };
+    assert.equal((await c.post('/api/auth/verify', payload)).ok, true);
+    const replay = await client(env).post('/api/auth/verify', payload);
+    assert.equal(replay.error, 'NONCE_INVALID'); assert.equal(replay.status, 401);
+    // expired
+    n = await c.post('/api/auth/nonce', { wallet: w.address });
+    clock.advance(CONFIG.auth.nonceTtlMs + 1000);
+    assert.equal((await c.post('/api/auth/verify', { wallet: w.address, nonce: n.nonce, signature: b64(await w.sign(n.message)) })).error, 'NONCE_EXPIRED');
+    // nonce issued for wallet A, attacker claims wallet B (with B's own valid signature)
+    n = await c.post('/api/auth/nonce', { wallet: w.address });
+    assert.equal((await c.post('/api/auth/verify', { wallet: w2.address, nonce: n.nonce, signature: b64(await w2.sign(n.message)) })).error, 'WALLET_MISMATCH');
+    // forged / malformed addresses and signatures
+    assert.equal((await c.post('/api/auth/nonce', { wallet: 'So1111' })).error, 'BAD_WALLET');
+    assert.equal((await c.post('/api/auth/nonce', { wallet: '0OIl' + 'a'.repeat(40) })).error, 'BAD_WALLET');
+    n = await c.post('/api/auth/nonce', { wallet: w.address });
+    assert.equal((await c.post('/api/auth/verify', { wallet: w.address, nonce: n.nonce, signature: 'abc' })).error, 'BAD_REQUEST');
+  });
+  test('unauthenticated, forged and legacy sessions cannot play; anonymous endpoint is gone', async () => {
+    const env = makeEnv();
+    const c = client(env);
+    assert.equal((await c.post('/api/session')).status, 410);
+    assert.equal((await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() })).status, 401);
     c.cookie = 'hw_sid=' + 'a'.repeat(64);
-    assert.equal((await c.get('/api/me')).status, 401);
+    assert.equal((await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() })).status, 401);
+    assert.equal((await c.get('/api/me')).access.state, 'WALLET_NOT_CONNECTED');
+  });
+  test('logout invalidates the session server-side without deleting the account', async () => {
+    const env = makeEnv();
+    const { c, player } = await newPlayer(env);
+    const stolen = c.cookie;
+    const out = await c.post('/api/auth/logout');
+    assert.match(out.setCookie, /Max-Age=0/);
+    const replay = client(env); replay.cookie = stolen;
+    assert.equal((await replay.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() })).status, 401);
+    assert.ok(await env.DB.prepare('SELECT id FROM players WHERE id=?').bind(player.id).first(), 'account kept');
+  });
+  test('expired session requires a new signature', async () => {
+    const env = makeEnv();
+    const { c } = await newPlayer(env);
+    clock.advance(CONFIG.session.ttlDays * 86400_000 + 1000);
     assert.equal((await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() })).status, 401);
   });
   test('cannot spoof player id via body', async () => {
@@ -62,21 +137,155 @@ describe('player & session', () => {
     assert.equal(r1.status, 403);
     const r2 = await c.raw('POST', '/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() }, { origin: 'https://evil.example' });
     assert.equal(r2.status, 403);
+    const r3 = await client(env).raw('POST', '/api/auth/nonce', { wallet: 'x' }, { origin: 'https://evil.example' });
+    assert.equal(r3.status, 403);
   });
-  test('rate-limits mass player creation per IP', async () => {
+  test('rate-limits new accounts per IP', async () => {
     const env = makeEnv();
     let last;
-    for (let i = 0; i < CONFIG.session.newPlayersPerIpPerHour + 1; i++) last = await client(env, { ip: '1.2.3.4' }).post('/api/session');
+    for (let i = 0; i < CONFIG.auth.newPlayersPerIpPerHour + 1; i++) last = await signIn(client(env, { ip: '1.2.3.4' }), await newWallet());
     assert.equal(last.status, 429);
   });
-  test('rename validation + cooldown', async () => {
+  test('server-side name validation, reserved names, uniqueness, cooldown', () => {
+    const bad = ['', '   ', 'ab', '<script>', 'a'.repeat(17), 'Official Admin', 'HALLOWINU', 'h4ll0w1nu fan', 'mod', 'SYSTEM', 'Fuck Yeah', 'zero​width', 'tab\tname', '---', 'Ünïcode'];
+    for (const n of bad) assert.throws(() => validateName(n), undefined, n);
+    assert.equal(validateName('  Pumpkin   Degen ').name, 'Pumpkin Degen');
+    assert.equal(validateName('INU420').name, 'INU420');
+  });
+  test('names are unique (case/leet-insensitive) and changes are rate limited', async () => {
+    const env = makeEnv();
+    const a = await newPlayer(env, { name: 'Pumpkin King' });
+    const b = client(env); await signIn(b, await newWallet());
+    assert.equal((await b.patch('/api/me', { displayName: 'pumpkin-king' })).error, 'NAME_TAKEN');
+    assert.equal((await b.patch('/api/me', { displayName: 'PUMPK1N KING' })).error, 'NAME_TAKEN');
+    assert.equal((await b.patch('/api/me', { displayName: '<b>x</b>' })).status, 400);
+    assert.equal((await a.c.patch('/api/me', { displayName: 'Ghost Queen' })).ok, true, 'one change allowed');
+    assert.equal((await a.c.patch('/api/me', { displayName: 'Ghost Prince' })).error, 'NAME_COOLDOWN');
+  });
+  test('suspended players cannot sign in or play; legacy anonymous players never rank', async () => {
+    const env = makeEnv();
+    const { c, wallet, player } = await newPlayer(env);
+    await env.DB.prepare('INSERT INTO players (id, display_name, created_at, last_seen_at, total_points) VALUES (?,?,?,?,?)').bind('p_legacy000000000', 'Old Anon', MID, MID, 999).run();
+    const lb = await c.get('/api/leaderboard?scope=all');
+    assert.ok(!lb.rows.some(r => r.name === 'Old Anon'));
+    await env.DB.prepare("UPDATE players SET status='banned' WHERE id=?").bind(player.id).run();
+    assert.equal((await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() })).error, 'SUSPENDED');
+    assert.equal((await signIn(client(env), wallet)).error, 'SUSPENDED');
+  });
+});
+
+/* ======================= SOCIAL VERIFICATION ======================= */
+describe('X + Telegram verification', () => {
+  beforeEach(() => clock.set(MID));
+  const TG = { TELEGRAM_BOT_TOKEN: '123456:TEST-token', TELEGRAM_BOT_USERNAME: 'hallowinu_bot', TELEGRAM_CHAT_ID: '-1001234567890' };
+  const X = { X_CLIENT_ID: 'cid', X_CLIENT_SECRET: 'csecret', X_OFFICIAL_USER_ID: '999' };
+  async function tgAuth(id, { token = TG.TELEGRAM_BOT_TOKEN, age = 10, username = 'spooky' } = {}) {
+    const data = { id, first_name: 'Spooky', username, auth_date: Math.floor(Date.now() / 1000) - age };
+    const check = Object.keys(data).sort().map(k => `${k}=${data[k]}`).join('\n');
+    const secret = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+    const key = await crypto.subtle.importKey('raw', secret, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(check)));
+    return { ...data, hash: [...sig].map(b => b.toString(16).padStart(2, '0')).join('') };
+  }
+  function mockFetch(handler) {
+    const real = globalThis.fetch;
+    globalThis.fetch = async (u, init) => handler(String(u), init);
+    return () => { globalThis.fetch = real; };
+  }
+  const jres = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+  test('not configured: never fakes verification', async () => {
     const env = makeEnv();
     const { c } = await newPlayer(env);
-    assert.equal((await c.patch('/api/me', { displayName: '<script>' })).status, 400);
-    assert.equal((await c.patch('/api/me', { displayName: 'Official Admin' })).status, 400);
-    const ok = await c.patch('/api/me', { displayName: 'Pumpkin King' });
-    assert.equal(ok.player.displayName, 'Pumpkin King');
-    assert.equal((await c.patch('/api/me', { displayName: 'Another' })).status, 429);
+    const me = await c.get('/api/me');
+    assert.equal(me.socials.telegram.available, false); assert.equal(me.socials.x.available, false);
+    assert.equal((await c.post('/api/socials/telegram', { auth: await tgAuth(5) })).error, 'TELEGRAM_NOT_CONFIGURED');
+    const xs = await c.get('/api/socials/x/start');
+    assert.equal(xs.status, 302); assert.match(xs.location, /social=x&status=x_not_configured/);
+    assert.equal((await c.get('/api/me')).access.x.verified, false);
+  });
+  test('telegram: signed login + group membership required; forgery, staleness and reuse rejected', async () => {
+    const env = makeEnv(TG);
+    const { c } = await newPlayer(env);
+    let member = 'left';
+    const restore = mockFetch(u => { assert.match(u, /getChatMember\?chat_id=-1001234567890&user_id=/); return jres({ ok: true, result: { status: member } }); });
+    try {
+      const forged = await tgAuth(77, { token: '999:other-bot' });
+      assert.equal((await c.post('/api/socials/telegram', { auth: forged })).error, 'TELEGRAM_AUTH_INVALID');
+      const tampered = { ...(await tgAuth(77)), id: 78 };
+      assert.equal((await c.post('/api/socials/telegram', { auth: tampered })).error, 'TELEGRAM_AUTH_INVALID');
+      assert.equal((await c.post('/api/socials/telegram', { auth: await tgAuth(77, { age: 2 * 86400 }) })).error, 'TELEGRAM_AUTH_INVALID');
+      assert.equal((await c.post('/api/socials/telegram', { auth: await tgAuth(77) })).error, 'TELEGRAM_NOT_MEMBER');
+      member = 'member';
+      const ok = await c.post('/api/socials/telegram', { auth: await tgAuth(77) });
+      assert.equal(ok.ok, true, JSON.stringify(ok));
+      assert.equal(ok.access.telegram.verified, true);
+      assert.equal(ok.access.prizeEligible, false, 'X still missing');
+      const other = await newPlayer(env);
+      assert.equal((await other.c.post('/api/socials/telegram', { auth: await tgAuth(77) })).error, 'IDENTITY_IN_USE');
+      const row = await env.DB.prepare("SELECT provider_user_id FROM player_identities WHERE provider='telegram'").first();
+      assert.equal(row.provider_user_id, '77', 'stable numeric id stored, not the username');
+    } finally { restore(); }
+  });
+  test('x: OAuth PKCE + follow check; state single-use and bound to the session; both socials => prize eligible', async () => {
+    const env = makeEnv({ ...TG, ...X });
+    const { c, player } = await newPlayer(env);
+    let following = [{ id: '1' }];
+    const restore = mockFetch((u, init) => {
+      if (u.endsWith('/2/oauth2/token')) { assert.match(String(init.body), /code_verifier=[a-f0-9]{96}/); return jres({ access_token: 'AT' }); }
+      if (u.endsWith('/2/users/me')) return jres({ data: { id: '4242', username: 'ghostfan' } });
+      if (u.includes('/2/users/4242/following')) return jres({ data: following, meta: {} });
+      if (u.endsWith('/2/oauth2/revoke')) return jres({});
+      if (u.includes('getChatMember')) return jres({ ok: true, result: { status: 'member' } });
+      throw new Error('unexpected ' + u);
+    });
+    try {
+      const start = await c.get('/api/socials/x/start');
+      assert.equal(start.status, 302);
+      const loc = new URL(start.location);
+      assert.equal(loc.host, 'x.com'); assert.equal(loc.searchParams.get('code_challenge_method'), 'S256');
+      assert.equal(loc.searchParams.get('redirect_uri'), 'https://hallowinu.xyz/api/socials/x/callback');
+      const state = loc.searchParams.get('state');
+      // another player's session cannot complete my OAuth
+      const thief = await newPlayer(env);
+      assert.match((await thief.c.get(`/api/socials/x/callback?state=${state}&code=abc`)).location, /status=session/);
+      // state already burned
+      assert.match((await c.get(`/api/socials/x/callback?state=${state}&code=abc`)).location, /status=expired/);
+      // not following
+      let st = new URL((await c.get('/api/socials/x/start')).location).searchParams.get('state');
+      assert.match((await c.get(`/api/socials/x/callback?state=${st}&code=abc`)).location, /status=not_following/);
+      assert.equal((await c.get('/api/me')).access.x.verified, false);
+      // following -> verified
+      following = [{ id: '1' }, { id: '999' }];
+      st = new URL((await c.get('/api/socials/x/start')).location).searchParams.get('state');
+      assert.match((await c.get(`/api/socials/x/callback?state=${st}&code=abc`)).location, /status=verified/);
+      let me = await c.get('/api/me');
+      assert.equal(me.access.x.verified, true); assert.equal(me.access.x.username, 'ghostfan');
+      assert.equal(me.access.state, 'SOCIALS_PENDING');
+      // telegram too -> eligible
+      const { c: _ } = { c };
+      const tg = await c.post('/api/socials/telegram', { auth: await tgAuth(88) });
+      assert.equal(tg.access.state, 'ARCADE_READY');
+      assert.equal(tg.access.prizeEligible, true);
+      const p = await env.DB.prepare('SELECT payout_verified FROM players WHERE id=?').bind(player.id).first();
+      assert.equal(p.payout_verified, 1);
+      // X API access problems are reported, not faked
+      const restore2 = mockFetch(() => jres({ title: 'CreditsDepleted' }, 402));
+      const p2 = await newPlayer(env);
+      const s2 = new URL((await p2.c.get('/api/socials/x/start')).location).searchParams.get('state');
+      assert.match((await p2.c.get(`/api/socials/x/callback?state=${s2}&code=abc`)).location, /status=x_api_access/);
+      restore2();
+    } finally { restore(); }
+  });
+  test('client cannot grant itself verification or eligibility', async () => {
+    const env = makeEnv(TG);
+    const { c, player } = await newPlayer(env);
+    await c.patch('/api/me', { displayName: 'Ghost Two', payoutVerified: true, x: { verified: true } });
+    assert.equal((await c.post('/api/socials/telegram', { auth: { id: 1, hash: 'f'.repeat(64), auth_date: Math.floor(Date.now() / 1000) } })).error, 'TELEGRAM_AUTH_INVALID');
+    const me = await c.get('/api/me');
+    assert.equal(me.access.prizeEligible, false); assert.equal(me.access.telegram.verified, false);
+    const p = await env.DB.prepare('SELECT payout_verified FROM players WHERE id=?').bind(player.id).first();
+    assert.equal(p.payout_verified, 0);
   });
 });
 
@@ -344,13 +553,15 @@ describe('prize math (lamports)', () => {
   test('distribution sums to 100%', () => { assert.equal(bps.reduce((a, b) => a + b, 0), 10000); assert.ok(validateDistribution(bps)); assert.ok(validateConfig()); });
   test('10 SOL allocates exactly as specified', () => {
     const { amounts, unallocated } = allocatePool(10_000_000_000n, bps);
-    assert.deepEqual(amounts.map(a => lamportsToSolString(a)), ['4', '2', '1.2', '0.8', '0.6', '0.4', '0.3', '0.3', '0.2', '0.2']);
+    assert.deepEqual(amounts.map(a => lamportsToSolString(a)), ['3', '1.75', '1.25', '0.9', '0.75', '0.6', '0.5', '0.45', '0.4', '0.4']);
     assert.equal(amounts.reduce((a, b) => a + b, 0n), 10_000_000_000n);
     assert.equal(unallocated, 0n);
   });
-  test('12.4 SOL (maker rewards added) -> #1 = 4.96 SOL', () => {
+  test('pool grows proportionally: 1 SOL base and 12.4 SOL with maker rewards', () => {
+    assert.deepEqual(allocatePool(1_000_000_000n, bps).amounts.map(a => lamportsToSolString(a)), ['0.3', '0.175', '0.125', '0.09', '0.075', '0.06', '0.05', '0.045', '0.04', '0.04']);
     const { amounts } = allocatePool(solStringToLamports('12.4'), bps);
-    assert.equal(lamportsToSolString(amounts[0]), '4.96');
+    assert.equal(lamportsToSolString(amounts[0]), '3.72');
+    assert.equal(lamportsToSolString(amounts[9]), '0.496');
   });
   test('awkward amounts: deterministic rounding, sum always equals pool', () => {
     for (const pool of [1n, 7n, 9999n, 10_000_000_001n, 123_456_789_123n, 3n * 10n ** 15n]) {
@@ -364,7 +575,7 @@ describe('prize math (lamports)', () => {
     const r = allocatePool(10_000_000_000n, bps, 3);
     assert.equal(r.amounts.length, 3);
     assert.equal(r.amounts.reduce((a, b) => a + b, 0n) + r.unallocated, 10_000_000_000n);
-    assert.equal(lamportsToSolString(r.unallocated), '2.8');
+    assert.equal(lamportsToSolString(r.unallocated), '4');
   });
   test('SOL parsing is exact and strict', () => {
     assert.equal(solStringToLamports('0.000000001'), 1n);
@@ -399,21 +610,25 @@ describe('seasons, funding, finalization', () => {
     const a = adminClient(env);
     let s = await client(env).get('/api/season');
     assert.equal(s.current.pool.totalLamports, '0', 'pending initial funding does not count');
+    assert.equal(s.current.announcedLamports, '1000000000', 'announced base pool shown separately');
+    assert.deepEqual(s.current.distributionBps, [3000, 1750, 1250, 900, 750, 600, 500, 450, 400, 400]);
     await verifyInitialFunding(env);
     s = await client(env).get('/api/season');
-    assert.equal(s.current.pool.totalSol, '10');
-    assert.equal(s.current.estPrizes[0].sol, '4');
+    assert.equal(s.current.pool.totalSol, '1');
+    assert.equal(s.current.estPrizes[0].sol, '0.3');
+    assert.equal(s.current.pool.verifiedAdditionsLamports, '0');
     const sig = '5'.repeat(88);
     const add = await a.post('funding', { seasonId: 's01', amountSol: '2.4', source: 'MAKER_REWARD', txSignature: sig });
     assert.equal(add.ok, true);
     assert.equal((await a.post('funding', { seasonId: 's01', amountSol: '2.4', source: 'MAKER_REWARD', txSignature: sig })).error, 'DUPLICATE_SIGNATURE');
     s = await client(env).get('/api/season');
-    assert.equal(s.current.pool.totalSol, '10', 'pending maker reward not counted');
+    assert.equal(s.current.pool.totalSol, '1', 'pending maker reward not counted');
     await a.post(`funding/${add.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' });
     s = await client(env).get('/api/season');
-    assert.equal(s.current.pool.totalSol, '12.4');
+    assert.equal(s.current.pool.totalSol, '3.4');
     assert.equal(s.current.pool.makerLamports, '2400000000');
-    assert.equal(s.current.estPrizes[0].sol, '4.96');
+    assert.equal(s.current.pool.verifiedAdditionsLamports, '2400000000');
+    assert.equal(s.current.estPrizes[0].sol, '1.02');
     assert.equal((await a.post(`funding/${add.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' })).error, 'NOT_PENDING');
     // public endpoints cannot write the pool
     const p = await newPlayer(env);
@@ -438,8 +653,13 @@ describe('seasons, funding, finalization', () => {
   test('full finalization: freeze, top 10, rank shift on disqualification, approval gate, paid', async () => {
     const env = makeEnv();
     await verifyInitialFunding(env);
+    const a0 = adminClient(env);
+    const top = await a0.post('funding', { seasonId: 's01', amountSol: '9', source: 'MAKER_REWARD', txSignature: '6'.repeat(88) });
+    await a0.post(`funding/${top.id}/verify`, { method: 'manual', confirm: 'I VERIFIED THIS FUNDING' }); // pool = 10 SOL
     const players = [];
     for (let i = 0; i < 12; i++) players.push(await newPlayer(env));
+    // everyone except #2 completed X + Telegram verification
+    for (let i = 0; i < 12; i++) if (i !== 1) await grantSocials(env, players[i].player.id);
     // Give deterministic season points directly via the ledger path: insert season stats
     for (let i = 0; i < 12; i++) {
       await env.DB.prepare('INSERT INTO season_player_stats (season_id, player_id, points, games_played, updated_at) VALUES (?,?,?,?,?)')
@@ -448,9 +668,11 @@ describe('seasons, funding, finalization', () => {
     const lb = await players[0].c.get('/api/leaderboard?scope=season');
     assert.equal(lb.rows.length, 12);
     assert.equal(lb.rows[0].me, true);
-    assert.equal(lb.rows[0].prize.sol, '4');
-    assert.equal(lb.rows[0].prize.eligibility, 'NOT_VERIFIED');
-    assert.equal(lb.rows[10].prize, null);
+    assert.equal(lb.rows[0].prize.sol, '3');
+    assert.equal(lb.rows[1].eligible, false); assert.equal(lb.rows[1].prize, null, 'ineligible rank gets no prize');
+    assert.equal(lb.rows[2].prize.prizeRank, 2); assert.equal(lb.rows[2].prize.sol, '1.75');
+    assert.equal(lb.rows[10].prize.prizeRank, 10, 'prize slot moves down to the next eligible player');
+    assert.equal(lb.rows[11].prize, null);
     // cannot finalize early
     const a = adminClient(env);
     assert.equal((await a.post('seasons/s01/finalize')).error, 'SEASON_NOT_OVER');
@@ -469,15 +691,16 @@ describe('seasons, funding, finalization', () => {
     let ents = (await env.DB.prepare("SELECT * FROM prize_entitlements WHERE season_id='s01' AND status='FINALIZING' ORDER BY rank").all()).results;
     assert.equal(ents.length, 10);
     assert.equal(ents.reduce((s, e) => s + e.amount_lamports, 0), 10_000_000_000);
-    // disqualify #3 -> #4..#11 shift up
-    const dq = await a.post('seasons/s01/disqualify', { playerId: players[2].player.id, reason: 'Bot activity', evidence: 'claims at 50ms' });
+    assert.ok(!ents.some(e => e.player_id === players[1].player.id), 'unverified player gets no entitlement');
+    // disqualify prize #3 (players[3]) -> everyone below shifts up, players[11] enters the top 10
+    const dq = await a.post('seasons/s01/disqualify', { playerId: players[3].player.id, reason: 'Bot activity', evidence: 'claims at 50ms' });
     assert.equal(dq.ok, true);
     ents = (await env.DB.prepare("SELECT * FROM prize_entitlements WHERE season_id='s01' AND status='FINALIZING' ORDER BY rank").all()).results;
     assert.equal(ents.length, 10);
-    assert.equal(ents[2].player_id, players[3].player.id);
-    assert.equal(ents[9].player_id, players[10].player.id);
+    assert.equal(ents[2].player_id, players[4].player.id);
+    assert.equal(ents[9].player_id, players[11].player.id);
     assert.equal(ents.reduce((s, e) => s + e.amount_lamports, 0), 10_000_000_000);
-    const dqRow = await env.DB.prepare("SELECT status FROM prize_entitlements WHERE season_id='s01' AND player_id=?").bind(players[2].player.id).first();
+    const dqRow = await env.DB.prepare("SELECT status FROM prize_entitlements WHERE season_id='s01' AND player_id=?").bind(players[3].player.id).first();
     assert.equal(dqRow.status, 'DISQUALIFIED');
     // history preserved: standings snapshot untouched, audit trail exists
     const snap = await env.DB.prepare("SELECT COUNT(*) n FROM season_final_standings WHERE season_id='s01'").first();
@@ -487,16 +710,10 @@ describe('seasons, funding, finalization', () => {
     // lifetime points survive the season
     const life = await env.DB.prepare('SELECT total_points FROM players WHERE id=?').bind(players[0].player.id).first();
     assert.ok(life.total_points > 0);
-    // approval blocked: anonymous winners are not payout-verified
-    const ap = await a.post('seasons/s01/approve');
-    assert.equal(ap.error, 'UNVERIFIED_WINNERS');
-    assert.equal(ap.blockers.length, 10);
-    // verify all winners manually (admin attestation), then approve, then mark paid
-    let w = 0;
-    for (const e of ents) {
-      const r = await a.post(`players/${e.player_id}/verify-payout`, { wallet: ('W' + 'abcdefghijk'[w++]).padEnd(44, '1'), confirm: 'I VERIFIED THIS PLAYER' });
-      assert.equal(r.ok, true, JSON.stringify(r));
-    }
+    // admin manual override still needs an audited reason and a signature-verified wallet
+    assert.equal((await a.post(`players/${players[1].player.id}/verify-payout`, { confirm: 'I VERIFIED THIS PLAYER' })).error, 'EVIDENCE_REQUIRED');
+    assert.equal((await a.post('players/p_doesnotexist0000/verify-payout', { confirm: 'I VERIFIED THIS PLAYER', evidence: 'checked by hand' })).error, 'NO_WALLET');
+    // all winners are verified -> approval passes (manual review step), then mark paid
     assert.equal((await a.post('seasons/s01/approve')).ok, true);
     assert.equal((await env.DB.prepare("SELECT status FROM seasons WHERE id='s01'").first()).status, 'FINALIZED');
     assert.equal((await a.post('seasons/s01/disqualify', { playerId: players[0].player.id, reason: 'late attempt' })).error, 'ALREADY_APPROVED');
@@ -518,12 +735,32 @@ describe('seasons, funding, finalization', () => {
     assert.equal((await client(env2).get('/api/admin/overview', { authorization: 'Bearer x' })).status, 503);
   });
 
-  test('anonymous players are never payout-verified by gameplay', async () => {
+  test('gameplay alone never makes a player prize-eligible', async () => {
     const env = makeEnv();
     const { c } = await newPlayer(env);
     for (let i = 0; i < 3; i++) await c.post('/api/games/trick-or-treat/play', { choice: 'trick', idem: idem() });
     const me = await c.get('/api/me');
     assert.equal(me.player.payoutEligibility, 'NOT_VERIFIED');
+    assert.equal(me.access.prizeEligible, false);
+  });
+  test('approval is blocked while a winner is not verified (e.g. verification revoked by admin data fix)', async () => {
+    const env = makeEnv();
+    await verifyInitialFunding(env);
+    const p = await newPlayer(env);
+    await grantSocials(env, p.player.id);
+    await env.DB.prepare('INSERT INTO season_player_stats (season_id, player_id, points, games_played, updated_at) VALUES (?,?,?,?,?)').bind('s01', p.player.id, 50, 1, MID).run();
+    clock.set(S01_END + 1000); await cron(env);
+    await env.DB.prepare("DELETE FROM player_identities WHERE player_id=? AND provider='solana_wallet'").bind(p.player.id).run();
+    const ap = await adminClient(env).post('seasons/s01/approve');
+    assert.equal(ap.error, 'UNVERIFIED_WINNERS'); assert.equal(ap.blockers.length, 1);
+  });
+  test('announced pool is admin-editable and audited', async () => {
+    const env = makeEnv();
+    const a = adminClient(env);
+    assert.equal((await a.patch('seasons/s01', { announcedSol: '2.5' })).ok, true);
+    assert.equal((await client(env).get('/api/season')).current.announcedLamports, '2500000000');
+    assert.equal((await client(env).get('/api/season')).current.pool.totalLamports, '0', 'announcing does not add money');
+    assert.equal((await a.patch('seasons/s01', { announcedSol: '-1' })).error, 'BAD_AMOUNT');
   });
 });
 
@@ -534,7 +771,7 @@ describe('leaderboard & settings', () => {
     const env = makeEnv();
     for (let i = 0; i < 105; i++) {
       const id = `p_bulk${String(i).padStart(12, '0')}`;
-      await env.DB.prepare('INSERT INTO players (id, display_name, created_at, last_seen_at, total_points, last_point_at) VALUES (?,?,?,?,?,?)').bind(id, `Bot ${i}`, MID, MID, 10000 - i, MID).run();
+      await env.DB.prepare("INSERT INTO players (id, display_name, created_at, last_seen_at, total_points, last_point_at, kind, name_set_at) VALUES (?,?,?,?,?,?,'wallet',?)").bind(id, `Bot ${i}`, MID, MID, 10000 - i, MID, MID).run();
     }
     const { c } = await newPlayer(env);
     await c.post('/api/games/trick-or-treat/play', { choice: 'treat', idem: idem() });

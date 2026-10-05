@@ -22,7 +22,7 @@ export async function play(env, player, cfg, body) {
     const result = { choice, points: item.points, label: item.label, jackpot: item.label === 'JACKPOT!' };
     const settled = await settle(env, player, {
       gameId: id, attemptId: attempt.id, reference: `tot:${attempt.id}`, points: item.points,
-      reason: `Trick or Treat (${choice})`, xp: cfg.xpPerPlay + item.points, win: item.points > 0,
+      reason: `${cfg.name} (${choice})`, xp: cfg.xpPerPlay + item.points, win: item.points > 0,
       counters: { [choice === 'trick' ? 'tot_trick' : 'tot_treat']: 1 }, result,
     });
     return { ...result, attemptId: attempt.id, remaining: cfg.limit.count - lim.used, ...settled };

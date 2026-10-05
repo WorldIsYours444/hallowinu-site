@@ -6,23 +6,44 @@
    the keys listed in OVERRIDABLE_SETTINGS.
    ========================================================= */
 
+import { SITE } from './site-meta.js';
+const GAME_META = Object.fromEntries(SITE.games.map(g => [g.id, g]));
+
 export const CONFIG = {
   /* Day boundary for daily limits: 00:00 UTC (02:00 CEST / 01:00 CET). */
   dayBoundary: 'UTC',
 
   session: {
     cookieName: 'hw_sid',
-    ttlDays: 180,
-    // New anonymous players per IP-hash per hour (anti-spam, not anti-Sybil).
-    newPlayersPerIpPerHour: 6,
+    ttlDays: 30,                       // wallet sessions expire; a new signature rotates the token
+  },
+
+  /* Phantom / Solana wallet sign-in (message signing, never a transaction). */
+  auth: {
+    nonceTtlMs: 5 * 60_000,            // a sign-in request is valid for 5 minutes and usable once
+    noncesPerIpPerHour: 60,
+    verifyPerIpPerHour: 60,
+    newPlayersPerIpPerHour: 10,        // anti-spam, not anti-Sybil (see docs)
+    statement: 'Sign in to the HALLOWINU Arcade.',
+  },
+
+  /* Social eligibility. Both X and Telegram must be verified for prize eligibility. */
+  socials: {
+    xHandle: SITE.links.xHandle,       // official account players must follow (tools/site/site.json)
+    xFollowPages: 1,                   // pages of the player's "following" list checked (1000 most recent follows each)
+    telegramMaxAuthAgeSec: 24 * 3600,  // Telegram login data older than this is rejected
+    oauthStateTtlMs: 10 * 60_000,
   },
 
   names: {
     minLength: 3,
-    maxLength: 18,
+    maxLength: 16,
     pattern: /^[A-Za-z0-9 _.\-]+$/,
-    changeCooldownMs: 60 * 60 * 1000,
-    blocked: ['admin', 'hallowinu team', 'moderator', 'official', 'support'],
+    changeCooldownMs: 24 * 60 * 60 * 1000,
+    // Compared against the normalized name (lowercase, separators removed, 0→o 1→i 3→e 4→a 5→s 7→t @→a $→s).
+    reserved: ['admin', 'system', 'hallowinu', 'moderator', 'official', 'support', 'helpdesk'],      // blocked anywhere in the name
+    reservedExact: ['mod', 'mods', 'dev', 'devs', 'bot', 'team', 'staff', 'root', 'owner', 'null', 'undefined'],
+    profanity: ['fuck', 'shit', 'cunt', 'nigger', 'nigga', 'faggot', 'retard', 'whore', 'slut', 'rape', 'hitler', 'nazi', 'porn', 'dick', 'pussy', 'cock'],
   },
 
   rateLimits: {
@@ -30,12 +51,13 @@ export const CONFIG = {
     gameActions: { limit: 40, windowMs: 60_000 },
     huntClaims: { limit: 25, windowMs: 10_000 },
     reads: { limit: 120, windowMs: 60_000 },
+    socialChecks: { limit: 10, windowMs: 10 * 60_000 },
     adminFailures: { limit: 10, windowMs: 15 * 60_000 },
   },
 
   games: {
     'trick-or-treat': {
-      name: 'Trick or Treat',
+      name: GAME_META['trick-or-treat'].name,
       enabled: true,
       limit: { type: 'daily', count: 3 },
       xpPerPlay: 5,
@@ -59,7 +81,7 @@ export const CONFIG = {
     },
 
     'pumpkin-hunt': {
-      name: 'Pumpkin Hunt',
+      name: GAME_META['pumpkin-hunt'].name,
       enabled: true,
       limit: { type: 'daily', count: 2 },
       xpPerPlay: 10,
@@ -80,7 +102,7 @@ export const CONFIG = {
     },
 
     'daily-spin': {
-      name: 'Daily Spin',
+      name: GAME_META['daily-spin'].name,
       enabled: true,
       limit: { type: 'cooldown', ms: 24 * 60 * 60 * 1000 },
       xpPerPlay: 5,
@@ -97,7 +119,7 @@ export const CONFIG = {
     },
 
     quiz: {
-      name: 'HALLOWINU Quiz',
+      name: GAME_META.quiz.name,
       enabled: true,
       limit: { type: 'daily', count: 5 },  // rewarded questions per day
       xpPerPlay: 3,
@@ -121,19 +143,21 @@ export const CONFIG = {
   /* Achievements are evaluated server-side from player counters. */
   achievements: [
     { id: 'first_blood', name: 'FIRST BLOOD', description: 'Play your first Arcade game.', icon: 'skull', test: c => (c.games_played || 0) >= 1, points: 0 },
-    { id: 'pumpkin_slayer', name: 'PUMPKIN SLAYER', description: 'Find 50 pumpkins.', icon: 'pumpkin', test: c => (c.pumpkins_found || 0) >= 50, points: 0 },
+    { id: 'pumpkin_slayer', name: 'PUMPKIN SLAYER', description: 'Find 50 pumpkins.', icon: 'hunt', test: c => (c.pumpkins_found || 0) >= 50, points: 0 },
     { id: 'golden_hunter', name: 'GOLDEN HUNTER', description: 'Find your first Golden Pumpkin.', icon: 'trophy', test: c => (c.golden_found || 0) >= 1, points: 0 },
-    { id: 'lucky_ghost', name: 'LUCKY GHOST', description: 'Hit a rare Daily Spin reward.', icon: 'ghost', test: c => (c.spin_rare || 0) >= 1, points: 0 },
-    { id: 'trickster', name: 'TRICKSTER', description: 'Choose Trick 25 times.', icon: 'pumpkin', test: c => (c.tot_trick || 0) >= 25, points: 0 },
+    { id: 'lucky_ghost', name: 'LUCKY GHOST', description: 'Hit a rare Daily Spin reward.', icon: 'wheel', test: c => (c.spin_rare || 0) >= 1, points: 0 },
+    { id: 'trickster', name: 'TRICKSTER', description: 'Choose Trick 25 times.', icon: 'bag', test: c => (c.tot_trick || 0) >= 25, points: 0 },
     { id: 'sweet_tooth', name: 'SWEET TOOTH', description: 'Choose Treat 25 times.', icon: 'candy', test: c => (c.tot_treat || 0) >= 25, points: 0 },
-    { id: 'brain_of_the_grave', name: 'BRAIN OF THE GRAVE', description: 'Answer 25 quiz questions correctly.', icon: 'skull', test: c => (c.quiz_correct || 0) >= 25, points: 0 },
+    { id: 'brain_of_the_grave', name: 'BRAIN OF THE GRAVE', description: 'Answer 25 quiz questions correctly.', icon: 'quiz', test: c => (c.quiz_correct || 0) >= 25, points: 0 },
     { id: 'perfect_night', name: 'PERFECT NIGHT', description: 'Reach a 5-answer quiz streak.', icon: 'moon', test: c => (c.quiz_best_streak || 0) >= 5, points: 0 },
     { id: 'halloween_degen', name: 'HALLOWEEN DEGEN', description: 'Play every Arcade game at least once.', icon: 'chest', test: c => ['played_trick-or-treat', 'played_pumpkin-hunt', 'played_daily-spin', 'played_quiz'].every(k => (c[k] || 0) >= 1), points: 0 },
   ],
 
   seasons: {
     // Prize distribution in basis points (1/100 of a percent). MUST sum to 10000.
-    defaultDistributionBps: [4000, 2000, 1200, 800, 600, 400, 300, 300, 200, 200],
+    // #1 3.00 · #2 1.75 · #3 1.25 · #4 0.90 · #5 0.75 · #6 0.60 · #7 0.50 · #8 0.45 · #9 0.40 · #10 0.40 (per 10 SOL).
+    // Every rank scales proportionally with the CURRENT VERIFIED pool.
+    defaultDistributionBps: [3000, 1750, 1250, 900, 750, 600, 500, 450, 400, 400],
     leaderboardSize: 100,
   },
 

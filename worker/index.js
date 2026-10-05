@@ -3,14 +3,16 @@
 import { CONFIG, levelInfo, validateConfig, OVERRIDABLE_SETTINGS as OVERRIDABLE } from './config.js';
 import { ApiError, json, errorResponse, now, readJson, sha256Hex, str, timingSafeEqualStr } from './lib/util.js';
 import { loadSettings, gameConfig, rateLimit, RL, auditStmt, cleanupRateLimits } from './lib/platform.js';
-import { getSessionPlayer, requirePlayer, createPlayer, sessionCookie } from './lib/session.js';
+import { getSession, getSessionPlayer, requirePlayer, requireSession, sessionCookie, clearSessionCookie, destroySession } from './lib/session.js';
+import { createNonce, verifySignIn, setPlayerName, shortWallet } from './lib/auth.js';
+import { socialsConfig, identitiesOf, verifyTelegram, startX, finishX } from './lib/socials.js';
 import { limitStatus } from './lib/rewards.js';
 import {
-  syncSeasonStates, getActiveSeason, getDisplaySeason, seasonPhase, poolSummary, effectivePool, distributionOf,
+  syncSeasonStates, getActiveSeason, getDisplaySeason, seasonPhase, poolSummary, effectivePool, distributionOf, RANKED,
   seasonRanking, finalizeSeason, recomputeEntitlements, disqualify, approveSeason, publicSeason,
 } from './lib/seasons.js';
 import { allocatePool, lamportsToSolString, solStringToLamports, toLamports, validateDistribution } from './lib/prizes.js';
-import { verifyTransferToPool, isValidSignature, isValidAddress } from './lib/solana.js';
+import { verifyTransferToPool, isValidSignature } from './lib/solana.js';
 import * as TOT from './games/trick-or-treat.js';
 import * as HUNT from './games/pumpkin-hunt.js';
 import * as SPIN from './games/daily-spin.js';
@@ -77,11 +79,39 @@ async function route(request, env, url) {
 
   if (path.startsWith('/api/admin/')) return admin(request, env, url, path.slice('/api/admin/'.length));
 
-  if (path === '/api/session' && m === 'POST') {
-    const existing = await getSessionPlayer(env, request);
-    if (existing) return json({ ok: true, player: await profile(env, existing) });
-    const { player, token } = await createPlayer(env, request, await ipKey(request, env));
-    return json({ ok: true, created: true, player: await profile(env, player) }, 201, { 'set-cookie': sessionCookie(token, request) });
+  // ---- Phantom wallet sign-in ----
+  if (path === '/api/auth/nonce' && m === 'POST') {
+    return json({ ok: true, ...(await createNonce(env, request, url, await readJson(request), await ipKey(request, env))) });
+  }
+  if (path === '/api/auth/verify' && m === 'POST') {
+    const { player, token, created } = await verifySignIn(env, request, url, await readJson(request), await ipKey(request, env));
+    return json({ ok: true, created, ...(await accountView(env, player)) }, 200, { 'set-cookie': sessionCookie(token, request) });
+  }
+  if (path === '/api/auth/logout' && m === 'POST') {
+    const s = await getSession(env, request);
+    if (s) await destroySession(env, s.tokenHash);
+    return json({ ok: true }, 200, { 'set-cookie': clearSessionCookie(request) });
+  }
+  if (path === '/api/session') throw new ApiError(410, 'WALLET_REQUIRED', 'Connect your Phantom wallet to play.');
+
+  // ---- social verification ----
+  if (path === '/api/socials/telegram' && m === 'POST') {
+    const { player } = await requireSession(env, request);
+    const r = await verifyTelegram(env, player, await readJson(request, 4096));
+    return json({ ok: true, ...r, ...(await accountView(env, player)) });
+  }
+  if (path === '/api/socials/x/start' && m === 'GET') {
+    const s = await getSession(env, request);
+    if (!s) return redirect(url, 'x', 'session');
+    try { return Response.redirect(await startX(env, url, s.player), 302); }
+    catch (e) { return redirect(url, 'x', e instanceof ApiError ? e.code.toLowerCase() : 'error'); }
+  }
+  if (path === '/api/socials/x/callback' && m === 'GET') {
+    const s = await getSession(env, request);
+    let status;
+    try { status = await finishX(env, url, s && s.player); }
+    catch (e) { if (!(e instanceof ApiError)) console.error('x_callback', e && (e.stack || e.message)); status = e instanceof ApiError ? e.code.toLowerCase() : 'error'; }
+    return redirect(url, 'x', status);
   }
   if (path === '/api/arcade' && m === 'GET') {
     const player = await getSessionPlayer(env, request);
@@ -95,20 +125,17 @@ async function route(request, env, url) {
   if (path === '/api/season' && m === 'GET') return json({ ok: true, ...(await seasonDetails(env)) });
 
   // ---- authenticated player routes ----
-  if (path === '/api/me' && m === 'GET') { const p = await requirePlayer(env, request); return json({ ok: true, player: await profile(env, p, true) }); }
+  if (path === '/api/me' && m === 'GET') {
+    const s = await getSession(env, request);
+    if (!s) return json({ ok: true, ...(await accountView(env, null)) });
+    return json({ ok: true, ...(await accountView(env, s.player, true)) });
+  }
   if (path === '/api/me' && m === 'PATCH') {
-    const p = await requirePlayer(env, request);
-    await rateLimit(env, `act:${p.id}`, RL.gameActions);
+    const { player } = await requireSession(env, request);
+    await rateLimit(env, `act:${player.id}`, RL.gameActions);
     const body = await readJson(request);
-    const N = CONFIG.names;
-    const name = str(body.displayName, { min: N.minLength, max: N.maxLength, pattern: N.pattern });
-    if (!name) throw new ApiError(400, 'BAD_NAME', `Name must be ${N.minLength}–${N.maxLength} letters, numbers, spaces, - _ or .`);
-    if (N.blocked.some(b => name.toLowerCase().includes(b))) throw new ApiError(400, 'BAD_NAME', 'That name is reserved.');
-    const t = now();
-    const r = await env.DB.prepare('UPDATE players SET display_name=?, name_changed_at=? WHERE id=? AND (name_changed_at IS NULL OR name_changed_at < ?) RETURNING id')
-      .bind(name.replace(/\s+/g, ' '), t, p.id, t - N.changeCooldownMs).first();
-    if (!r) throw new ApiError(429, 'NAME_COOLDOWN', 'You can rename once per hour.');
-    return json({ ok: true, player: await profile(env, { ...p, display_name: name }) });
+    await setPlayerName(env, player, body.displayName);
+    return json({ ok: true, ...(await accountView(env, player, true)) });
   }
 
   const gm = path.match(/^\/api\/games\/([a-z-]+)\/([a-z]+)$/);
@@ -128,6 +155,34 @@ async function route(request, env, url) {
   throw new ApiError(404, 'NOT_FOUND', 'Unknown endpoint.');
 }
 
+function redirect(url, provider, status) {
+  const safe = String(status || 'error').replace(/[^a-z_]/g, '').slice(0, 40) || 'error';
+  return new Response(null, { status: 302, headers: { location: `${url.origin}/?social=${provider}&status=${safe}#arcade`, 'cache-control': 'no-store' } });
+}
+
+/* Access-state model (server-authoritative). The client only adds WALLET_CONNECTED (Phantom connected, not signed). */
+async function accountView(env, player, full = false) {
+  if (!player) return { access: { state: 'WALLET_NOT_CONNECTED', canPlay: false }, player: null, socials: socialsConfig(env) };
+  const fresh = await env.DB.prepare('SELECT * FROM players WHERE id = ?').bind(player.id).first();
+  const ids = await identitiesOf(env, fresh.id);
+  const xOk = !!ids.x, tgOk = !!ids.telegram;
+  const state = fresh.status !== 'active' ? 'SUSPENDED' : !fresh.name_set_at ? 'PROFILE_REQUIRED' : xOk && tgOk ? 'ARCADE_READY' : 'SOCIALS_PENDING';
+  return {
+    access: {
+      state,
+      canPlay: fresh.status === 'active' && !!fresh.name_set_at,
+      wallet: shortWallet(ids.solana_wallet && ids.solana_wallet.provider_user_id),
+      walletVerified: !!ids.solana_wallet,
+      x: { verified: xOk, username: ids.x ? ids.x.username : null },
+      telegram: { verified: tgOk, username: ids.telegram ? ids.telegram.username : null },
+      profileComplete: !!fresh.name_set_at,
+      prizeEligible: !!fresh.payout_verified && !!ids.solana_wallet,
+    },
+    player: fresh.name_set_at ? await profile(env, fresh, full) : null,
+    socials: socialsConfig(env),
+  };
+}
+
 function stringifyBig(o) { return JSON.parse(JSON.stringify(o, (k, v) => (typeof v === 'bigint' ? v.toString() : v))); }
 
 /* ---------- views ---------- */
@@ -135,16 +190,17 @@ async function profile(env, p, full = false) {
   const season = await getActiveSeason(env) || await getDisplaySeason(env);
   const sp = season && await env.DB.prepare('SELECT points, updated_at FROM season_player_stats WHERE season_id=? AND player_id=?').bind(season.id, p.id).first();
   const fresh = await env.DB.prepare('SELECT * FROM players WHERE id=?').bind(p.id).first();
-  const allRank = fresh.total_points > 0 ? (await env.DB.prepare(
-    `SELECT COUNT(*) + 1 AS r FROM players WHERE status='active' AND total_points > 0 AND
+  const ranked = fresh.kind === 'wallet' && fresh.name_set_at && fresh.status === 'active';
+  const allRank = ranked && fresh.total_points > 0 ? (await env.DB.prepare(
+    `SELECT COUNT(*) + 1 AS r FROM players p WHERE ${RANKED} AND total_points > 0 AND
       (total_points > ?1 OR (total_points = ?1 AND (last_point_at < ?2 OR (last_point_at = ?2 AND id < ?3))))`)
     .bind(fresh.total_points, fresh.last_point_at ?? 0, fresh.id).first()).r : null;
   let seasonRank = null;
-  if (sp && sp.points > 0) {
+  if (ranked && sp && sp.points > 0) {
     const dq = await env.DB.prepare('SELECT 1 FROM season_disqualifications WHERE season_id=? AND player_id=?').bind(season.id, p.id).first();
     if (!dq) seasonRank = (await env.DB.prepare(
       `SELECT COUNT(*) + 1 AS r FROM season_player_stats s JOIN players p ON p.id=s.player_id
-       WHERE s.season_id=?1 AND s.points > 0 AND p.status='active'
+       WHERE s.season_id=?1 AND s.points > 0 AND ${RANKED}
          AND NOT EXISTS (SELECT 1 FROM season_disqualifications d WHERE d.season_id=s.season_id AND d.player_id=s.player_id)
          AND (s.points > ?2 OR (s.points = ?2 AND (s.updated_at < ?3 OR (s.updated_at = ?3 AND s.player_id < ?4))))`)
       .bind(season.id, sp.points, sp.updated_at, p.id).first()).r;
@@ -157,6 +213,7 @@ async function profile(env, p, full = false) {
     gamesPlayed: fresh.games_played, wins: fresh.wins, losses: fresh.losses,
     currentStreak: fresh.current_streak, bestStreak: fresh.best_streak,
     payoutEligibility: fresh.payout_verified ? 'VERIFIED' : 'NOT_VERIFIED',
+    nameChangeAvailableAt: fresh.name_changed_at ? fresh.name_changed_at + CONFIG.names.changeCooldownMs : null,
     createdAt: fresh.created_at,
   };
   if (full) {
@@ -187,21 +244,22 @@ async function arcadeState(env, player) {
   for (const id of Object.keys(GAMES)) {
     const cfg = gameConfig(id, settings);
     const g = { id, name: cfg.name, enabled: cfg.enabled, limit: await limitStatus(env, player, id, cfg) };
+    if (!player || !player.name_set_at) g.limit = { ...g.limit, remaining: undefined };
     if (id === 'daily-spin') g.wheel = SPIN.publicWheel(cfg);
     if (id === 'trick-or-treat') g.odds = Object.fromEntries(Object.entries(cfg.tables).map(([k, t]) => [k, t.map(r => ({ weight: r.weight, points: r.points }))]));
     if (id === 'pumpkin-hunt') g.rules = { durationMs: cfg.durationMs, points: Object.fromEntries(Object.entries(cfg.targets).map(([k, v]) => [k, v.points])) };
     if (id === 'quiz') g.rules = { rewards: cfg.rewards, streakBonuses: cfg.streakBonuses, answerTimeMs: cfg.answerTimeMs };
     games.push(g);
   }
-  return { serverNow: now(), dayBoundary: CONFIG.dayBoundary, season: seasonOut, games, player: player ? await profile(env, player, true) : null };
+  return { serverNow: now(), dayBoundary: CONFIG.dayBoundary, season: seasonOut, games, ...(await accountView(env, player, true)) };
 }
 
 async function leaderboard(env, player, scope) {
   const size = CONFIG.seasons.leaderboardSize;
   if (scope === 'all') {
     const { results } = await env.DB.prepare(
-      `SELECT id, display_name, total_points FROM players WHERE status='active' AND total_points > 0
-       ORDER BY total_points DESC, last_point_at ASC, id ASC LIMIT ?`).bind(size).all();
+      `SELECT p.id, p.display_name, p.total_points FROM players p WHERE ${RANKED} AND p.total_points > 0
+       ORDER BY p.total_points DESC, p.last_point_at ASC, p.id ASC LIMIT ?`).bind(size).all();
     const rows = results.map((r, i) => ({ rank: i + 1, name: r.display_name, points: r.total_points, me: !!player && r.id === player.id }));
     let me = null;
     if (player && !rows.some(r => r.me)) { const pr = await profile(env, player); if (pr.allTimeRank) me = { rank: pr.allTimeRank, points: pr.totalPoints, name: pr.displayName }; }
@@ -222,9 +280,15 @@ async function leaderboard(env, player, scope) {
     rows = results.map(r => ({ rank: r.rank, name: r.display_name, points: r.points, me: !!player && r.player_id === player.id,
       prize: r.amount_lamports != null ? { lamports: String(r.amount_lamports), sol: lamportsToSolString(r.amount_lamports), status: r.pstatus } : null }));
   } else {
-    const ranking = await seasonRanking(env, season.id, size);
-    rows = ranking.map(r => ({ rank: r.rank, name: r.display_name, points: r.points, me: !!player && r.player_id === player.id,
-      prize: r.rank <= bps.length ? { lamports: prizes[r.rank - 1].lamports, sol: prizes[r.rank - 1].sol, status: 'ESTIMATED', eligibility: r.payout_verified ? 'VERIFIED' : 'NOT_VERIFIED' } : null }));
+    // Prize positions go to the top PRIZE-ELIGIBLE players (wallet + X + Telegram verified), in ranking order.
+    const ranking = await seasonRanking(env, season.id, Math.max(size, 1000));
+    let slot = 0;
+    rows = ranking.slice(0, size).map(r => {
+      const eligible = !!r.payout_verified;
+      const prize = eligible && slot < bps.length ? { prizeRank: slot + 1, lamports: prizes[slot].lamports, sol: prizes[slot].sol, status: 'ESTIMATED' } : null;
+      if (eligible && slot < bps.length) slot++;
+      return { rank: r.rank, name: r.display_name, points: r.points, me: !!player && r.player_id === player.id, eligible, prize };
+    });
   }
   let me = null;
   if (player && !rows.some(r => r.me)) { const pr = await profile(env, player); if (pr.seasonRank) me = { rank: pr.seasonRank, points: pr.seasonPoints, name: pr.displayName }; }
@@ -274,13 +338,13 @@ async function admin(request, env, url, sub) {
     const { results: funding } = await env.DB.prepare('SELECT * FROM prize_pool_transactions ORDER BY id DESC LIMIT 50').all();
     const { results: audit } = await env.DB.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT 40').all();
     const { results: settings } = await env.DB.prepare('SELECT * FROM settings').all();
-    const counts = await env.DB.prepare('SELECT (SELECT COUNT(*) FROM players) AS players, (SELECT COUNT(*) FROM game_attempts WHERE status=\'complete\') AS plays, (SELECT COALESCE(SUM(amount),0) FROM point_transactions) AS points').first();
+    const counts = await env.DB.prepare('SELECT (SELECT COUNT(*) FROM players WHERE kind=\'wallet\') AS players, (SELECT COUNT(*) FROM game_attempts WHERE status=\'complete\') AS plays, (SELECT COALESCE(SUM(amount),0) FROM point_transactions) AS points').first();
     const ents = [];
     for (const s of seasons) {
       const { results } = await env.DB.prepare(`SELECT e.*, p.display_name, p.payout_verified FROM prize_entitlements e JOIN players p ON p.id=e.player_id WHERE e.season_id=? ORDER BY e.status='DISQUALIFIED', e.rank`).bind(s.id).all();
       if (results.length) ents.push({ seasonId: s.id, entitlements: results });
     }
-    return json({ ok: true, counts, seasons, funding, audit, settings, entitlements: ents, overridable: OVERRIDABLE, poolWallet: env.POOL_WALLET || null });
+    return json({ ok: true, counts, seasons, funding, audit, settings, entitlements: ents, overridable: OVERRIDABLE, poolWallet: env.POOL_WALLET || null, socials: socialsConfig(env) });
   }
 
   // Funding: add (PENDING) -> verify (onchain|manual) / reject
@@ -371,11 +435,16 @@ async function admin(request, env, url, sub) {
     if (s.status === 'FINALIZING' || s.status === 'FINALIZED') throw new ApiError(409, 'SEASON_LOCKED', 'Finalized seasons cannot change.');
     if (started && (body.startsAt != null || body.distributionBps != null)) throw new ApiError(409, 'SEASON_STARTED', 'Start time and prize distribution are locked once a season starts.');
     if (started && endsAt < now()) throw new ApiError(400, 'BAD_SEASON', 'End time cannot be in the past.');
+    let announced = s.announced_lamports;
+    if (body.announcedSol !== undefined) {
+      if (body.announcedSol === null || body.announcedSol === '') announced = null;
+      else { try { announced = Number(solStringToLamports(String(body.announcedSol))); } catch { throw new ApiError(400, 'BAD_AMOUNT', 'Invalid announced amount.'); } if (announced < 0) throw new ApiError(400, 'BAD_AMOUNT', 'Invalid announced amount.'); }
+    }
     let dist = s.distribution_json;
     if (body.distributionBps != null) { try { validateDistribution(body.distributionBps); } catch (e) { throw new ApiError(400, 'BAD_DISTRIBUTION', e.message); } dist = JSON.stringify(body.distributionBps); }
     await env.DB.batch([
-      env.DB.prepare('UPDATE seasons SET name=?, starts_at=?, ends_at=?, distribution_json=? WHERE id=?').bind(name, startsAt, endsAt, dist, s.id),
-      auditStmt(env, actor, 'season.update', s.id, { before: { name: s.name, startsAt: s.starts_at, endsAt: s.ends_at, dist: s.distribution_json }, after: { name, startsAt, endsAt, dist } }),
+      env.DB.prepare('UPDATE seasons SET name=?, starts_at=?, ends_at=?, distribution_json=?, announced_lamports=? WHERE id=?').bind(name, startsAt, endsAt, dist, announced, s.id),
+      auditStmt(env, actor, 'season.update', s.id, { before: { name: s.name, startsAt: s.starts_at, endsAt: s.ends_at, dist: s.distribution_json, announced: s.announced_lamports }, after: { name, startsAt, endsAt, dist, announced } }),
     ]);
     return json({ ok: true });
   }
@@ -400,7 +469,13 @@ async function admin(request, env, url, sub) {
   // Players
   if (sub === 'players' && m === 'GET') {
     const q = (url.searchParams.get('q') || '').trim().slice(0, 40);
-    const { results } = await env.DB.prepare("SELECT id, display_name, total_points, xp, level, status, payout_verified, created_at FROM players WHERE id = ? OR display_name LIKE ? ORDER BY total_points DESC LIMIT 25").bind(q, `%${q}%`).all();
+    const { results } = await env.DB.prepare(
+      `SELECT p.id, p.display_name, p.total_points, p.xp, p.level, p.status, p.kind, p.payout_verified, p.created_at,
+         (SELECT provider_user_id FROM player_identities i WHERE i.player_id=p.id AND i.provider='solana_wallet') AS wallet,
+         (SELECT COALESCE(username, provider_user_id) FROM player_identities i WHERE i.player_id=p.id AND i.provider='x') AS x,
+         (SELECT COALESCE(username, provider_user_id) FROM player_identities i WHERE i.player_id=p.id AND i.provider='telegram') AS telegram
+       FROM players p WHERE p.id = ? OR p.display_name LIKE ? OR EXISTS (SELECT 1 FROM player_identities i WHERE i.player_id=p.id AND i.provider_user_id = ?)
+       ORDER BY p.total_points DESC LIMIT 25`).bind(q, `%${q}%`, q).all();
     return json({ ok: true, players: results });
   }
   if (seg[0] === 'players' && seg[2] === 'ban' && m === 'POST') {
@@ -413,17 +488,17 @@ async function admin(request, env, url, sub) {
   }
   // Phase-1 manual payout verification (identity confirmed out-of-band + public wallet). Audited.
   if (seg[0] === 'players' && seg[2] === 'verify-payout' && m === 'POST') {
-    const wallet = String(body.wallet || '').trim();
-    if (!isValidAddress(wallet)) throw new ApiError(400, 'BAD_WALLET', 'Provide a valid public Solana address.');
+    // Manual override for exceptional cases (e.g. social API outage). The player must already have a
+    // signature-verified wallet; this only records that the team checked X + Telegram by hand. Audited.
     if (body.confirm !== 'I VERIFIED THIS PLAYER') throw new ApiError(400, 'CONFIRM_REQUIRED', 'Requires confirm: "I VERIFIED THIS PLAYER".');
-    const t = now();
-    try {
-      await env.DB.batch([
-        env.DB.prepare("INSERT INTO identity_links (player_id, provider, external_id, verified_at, verification, created_at) VALUES (?, 'solana_wallet', ?, ?, 'admin_manual', ?)").bind(seg[1], wallet, t, t),
-        env.DB.prepare('UPDATE players SET payout_verified=1 WHERE id=?').bind(seg[1]),
-        auditStmt(env, actor, 'player.verify_payout', seg[1], { wallet, evidence: str(body.evidence, { max: 1000 }) }),
-      ]);
-    } catch (e) { if (/UNIQUE/i.test(e.message)) throw new ApiError(409, 'WALLET_IN_USE', 'Wallet already linked to a player.'); throw e; }
+    const evidence = str(body.evidence, { min: 5, max: 1000 });
+    if (!evidence) throw new ApiError(400, 'EVIDENCE_REQUIRED', 'Describe how X + Telegram were verified.');
+    const w = await env.DB.prepare("SELECT provider_user_id FROM player_identities WHERE player_id=? AND provider='solana_wallet'").bind(seg[1]).first();
+    if (!w) throw new ApiError(409, 'NO_WALLET', 'Player has no signature-verified wallet.');
+    await env.DB.batch([
+      env.DB.prepare('UPDATE players SET payout_verified=1 WHERE id=?').bind(seg[1]),
+      auditStmt(env, actor, 'player.verify_payout', seg[1], { wallet: w.provider_user_id, evidence }),
+    ]);
     return json({ ok: true });
   }
 

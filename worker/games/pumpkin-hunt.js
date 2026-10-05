@@ -156,7 +156,7 @@ async function finalizeSession(env, player, cfg, s) {
   const result = { sessionId: s.id, ...sc, points, flagged: !!flags };
   const settled = await settle(env, player, {
     gameId: id, attemptId: s.attempt_id, reference: `hunt:${s.id}`, points,
-    reason: `Pumpkin Hunt (${sc.found} found)`, xp: cfg.xpPerPlay + points, win: points > 0,
+    reason: `${cfg.name} (${sc.found} found)`, xp: cfg.xpPerPlay + points, win: points > 0,
     counters: { pumpkins_found: sc.found, golden_found: sc.golden }, result,
     extraStatements: [env.DB.prepare('UPDATE hunt_sessions SET score=?, flags=? WHERE id=?').bind(points, flags, s.id)],
   });
