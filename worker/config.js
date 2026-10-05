@@ -31,6 +31,9 @@ export const CONFIG = {
   socials: {
     xHandle: SITE.links.xHandle,       // official account players must follow (tools/site/site.json)
     xFollowPages: 1,                   // pages of the player's "following" list checked (1000 most recent follows each)
+    // The X "following" lookup is billed per returned user ($0.01 each → up to $10 per check), so it is OFF by
+    // default. With it off, X verification = proven ownership of the X account (OAuth). Env X_FOLLOW_CHECK=on enables it.
+    xFollowCheckDefault: false,
     telegramMaxAuthAgeSec: 24 * 3600,  // Telegram login data older than this is rejected
     oauthStateTtlMs: 10 * 60_000,
   },
@@ -153,6 +156,48 @@ export const CONFIG = {
     { id: 'halloween_degen', name: 'HALLOWEEN DEGEN', description: 'Play every Arcade game at least once.', icon: 'chest', test: c => ['played_trick-or-treat', 'played_pumpkin-hunt', 'played_daily-spin', 'played_quiz'].every(k => (c[k] || 0) >= 1), points: 0 },
   ],
 
+  /* =========================================================
+     THE HAUNT — X raid board. All tunables live here.
+     ========================================================= */
+  haunt: {
+    currency: 'HAUNT_XP',              // separate from Arcade Points: never counts toward Season SOL prizes
+    sourceType: 'HAUNT_X_REPLY',
+    defaultReward: 5,
+    maxReward: 100,
+    // Reward limits (approved haunts). In-flight verifications count too, so parallel tabs cannot exceed them.
+    limits: {
+      window: { count: 3, ms: 10 * 60_000 },   // max 3 approved haunts per rolling 10 minutes
+      minGapMs: 2 * 60_000,                    // at least 2 minutes between two rewarded haunts
+      perDay: 20,                              // per UTC day
+      perTargetPerPlayer: 1,                   // one rewarded reply per player per target (no thread spamming)
+    },
+    // Technical abuse protection (applies BEFORE any paid X API call, counts every submit attempt).
+    submitRate: { limit: 20, windowMs: 10 * 60_000 },
+    submitRatePerIp: { limit: 60, windowMs: 60 * 60_000 },
+    reply: {
+      maxAgeMs: 48 * 3600_000,                 // reply must be at most 48h old when submitted
+      minLetters: 8,                           // letters after removing @mentions, links and emoji
+      maxDuplicatesPerPlayerDays: 7,           // identical text by the same player within 7 days = DUPLICATE_CONTENT
+      maxSameTextAcrossPlayers24h: 3,          // same text from 3+ different players in 24h = COPY_PASTE (rejects the 3rd+)
+    },
+    targets: { defaultExpiryMin: 24 * 60, maxPerPage: 30 },
+    retry: { baseMs: 5 * 60_000, maxAttempts: 6, batch: 20 },
+    // X API cost guard (pay-per-use). Above the daily budget new verifications wait in VERIFICATION_PENDING.
+    budget: { dailyCents: 100 },               // $1.00/day default, admin-adjustable (settings: haunt.dailyBudgetCents)
+    costMicros: { postRead: 5000, userRead: 10000, ownedRead: 1000 },   // $0.005 / $0.010 / $0.001 per resource
+    cacheTtlMs: { target: 6 * 3600_000, user: 24 * 3600_000 },
+    // Phase 2 (disabled): replies under non-curated crypto posts, scored on several signals.
+    discovered: {
+      enabled: false,
+      minRelevance: 70,
+      maxTargetAgeMs: 72 * 3600_000,
+      terms: ['crypto', 'solana', '$sol', 'memecoin', 'memecoins', 'onchain', 'on-chain', 'defi', 'web3', 'dex', 'pump.fun', 'pumpfun', 'raydium', 'jupiter', 'trading', 'market cap', 'mcap', 'liquidity', 'token', 'wallet', 'launch', 'airdrop', 'degen', 'bonk', 'wif', 'ct'],
+      weights: { terms: 12, maxTerms: 48, cashtag: 15, hashtag: 5, allowlistedAuthor: 40, cryptoBio: 20, engagement: 10 },
+      allowlist: [],                           // X user ids of known crypto accounts
+      denylist: [],
+    },
+  },
+
   seasons: {
     // Prize distribution in basis points (1/100 of a percent). MUST sum to 10000.
     // #1 3.00 · #2 1.75 · #3 1.25 · #4 0.90 · #5 0.75 · #6 0.60 · #7 0.50 · #8 0.45 · #9 0.40 · #10 0.40 (per 10 SOL).
@@ -176,6 +221,8 @@ export const OVERRIDABLE_SETTINGS = {
   'games.trick-or-treat.dailyLimit': 'int',
   'games.pumpkin-hunt.dailyLimit': 'int',
   'games.quiz.dailyLimit': 'int',
+  'haunt.enabled': 'boolean',
+  'haunt.dailyBudgetCents': 'int',
 };
 
 export function levelForXp(xp) {

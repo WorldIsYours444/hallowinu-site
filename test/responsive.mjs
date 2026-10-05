@@ -35,7 +35,7 @@ for (const w of WIDTHS) {
     }
     // socials pairing per component
     const groups = new Map();
-    for (const a of document.querySelectorAll('a[href*="x.com/"], a[href*="t.me/"]')) {
+    for (const a of document.querySelectorAll('a[href*="x.com/hionchains" i], a[href*="t.me/"]')) {
       const g = a.closest('.socials,.menu-actions,.cta-row,.official-links,.portals,.foot-col,.modal-actions') || a.parentElement;
       const e = groups.get(g) || { x: 0, tg: 0 }; a.href.includes('t.me/') ? e.tg++ : e.x++; groups.set(g, e);
     }

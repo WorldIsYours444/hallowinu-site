@@ -413,6 +413,7 @@
   }
   const SOCIAL_STATUS = {
     verified: ['X VERIFIED', 'You follow @' + SITE.links.xHandle + '. Nice.', false],
+    connected: ['X CONNECTED', 'Your X account is linked to your player.', false],
     not_following: ['NOT FOLLOWING YET', 'Follow @' + SITE.links.xHandle + ' on X, then verify again.', true],
     denied: ['X LOGIN CANCELLED', 'Verification needs your permission on X.', true],
     expired: ['X CHECK EXPIRED', 'Please start the X verification again.', true],

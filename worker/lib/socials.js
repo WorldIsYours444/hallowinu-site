@@ -101,7 +101,10 @@ export async function verifyTelegram(env, player, body) {
 /* ===================== X (OAuth 2.0 + PKCE) ===================== */
 function xRedirectUri(env, url) { return env.X_REDIRECT_URI || `${url.origin}/api/socials/x/callback`; }
 
-export async function startX(env, url, player) {
+const RETURN_PAGES = ['/arcade', '/haunt'];
+export const followCheckOn = env => (env.X_FOLLOW_CHECK ? env.X_FOLLOW_CHECK === 'on' : SC.xFollowCheckDefault);
+
+export async function startX(env, url, player, returnTo = '/arcade') {
   const cfg = socialsConfig(env);
   if (!cfg.x.available) throw new ApiError(503, 'X_NOT_CONFIGURED', 'X verification is not switched on yet.');
   await rateLimit(env, `social:${player.id}`, RL.socialChecks);
@@ -110,13 +113,13 @@ export async function startX(env, url, player) {
   const verifier = randomToken(48);
   const challenge = b64url(await crypto.subtle.digest('SHA-256', enc.encode(verifier)));
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO oauth_states (state, player_id, provider, verifier, created_at, expires_at) VALUES (?,?, 'x', ?,?,?)")
-      .bind(state, player.id, verifier, t, t + SC.oauthStateTtlMs),
+    env.DB.prepare("INSERT INTO oauth_states (state, player_id, provider, verifier, created_at, expires_at, return_to) VALUES (?,?, 'x', ?,?,?,?)")
+      .bind(state, player.id, verifier, t, t + SC.oauthStateTtlMs, RETURN_PAGES.includes(returnTo) ? returnTo : '/arcade'),
     env.DB.prepare('DELETE FROM oauth_states WHERE expires_at < ?').bind(t - 3600_000),
   ]);
   const q = new URLSearchParams({
     response_type: 'code', client_id: env.X_CLIENT_ID, redirect_uri: xRedirectUri(env, url),
-    scope: 'users.read tweet.read follows.read', state, code_challenge: challenge, code_challenge_method: 'S256',
+    scope: followCheckOn(env) ? 'users.read tweet.read follows.read' : 'users.read tweet.read', state, code_challenge: challenge, code_challenge_method: 'S256',
   });
   return `https://x.com/i/oauth2/authorize?${q}`;
 }
@@ -131,16 +134,25 @@ async function xJson(res, what) {
   return data;
 }
 
-/* Returns a redirect target for the browser. Never throws to the user: errors become ?social=x&status=<code>. */
+/* Returns { status, returnTo } for the browser redirect. Never throws to the user: errors become ?social=x&status=<code>. */
 export async function finishX(env, url, player, fetchImpl = fetch) {
   const state = url.searchParams.get('state') || '';
   const code = url.searchParams.get('code') || '';
-  if (url.searchParams.get('error')) return 'denied';
-  if (!/^[a-f0-9]{48}$/.test(state) || !code || code.length > 1000) return 'invalid';
   const t = now();
-  const row = await env.DB.prepare("UPDATE oauth_states SET used_at = ? WHERE state = ? AND provider = 'x' AND used_at IS NULL RETURNING player_id, verifier, expires_at").bind(t, state).first();
-  if (!row || row.expires_at <= t) return 'expired';
-  if (!player || row.player_id !== player.id) return 'session';
+  const row = /^[a-f0-9]{48}$/.test(state)
+    ? await env.DB.prepare("UPDATE oauth_states SET used_at = ? WHERE state = ? AND provider = 'x' AND used_at IS NULL RETURNING player_id, verifier, expires_at, return_to").bind(t, state).first()
+    : null;
+  const returnTo = (row && row.return_to) || '/arcade';
+  const out = status => ({ status, returnTo });
+  if (url.searchParams.get('error')) return out('denied');
+  if (!state || !code || code.length > 1000) return out('invalid');
+  if (!row || row.expires_at <= t) return out('expired');
+  if (!player || row.player_id !== player.id) return out('session');
+  try { return out(await completeX(env, url, player, row, code, fetchImpl)); }
+  catch (e) { if (e instanceof ApiError) return out(e.code.toLowerCase()); throw e; }
+}
+
+async function completeX(env, url, player, row, code, fetchImpl) {
   const basic = btoa(`${env.X_CLIENT_ID}:${env.X_CLIENT_SECRET}`);
   const tokenRes = await fetchImpl('https://api.x.com/2/oauth2/token', {
     method: 'POST',
@@ -154,6 +166,13 @@ export async function finishX(env, url, player, fetchImpl = fetch) {
   const me = await xJson(await fetchImpl('https://api.x.com/2/users/me', { headers: auth }), 'me');
   const xId = me?.data?.id, xUser = me?.data?.username;
   if (!xId || !/^\d{1,25}$/.test(xId)) return 'invalid';
+  const basicRevoke = () => fetchImpl('https://api.x.com/2/oauth2/revoke', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${basic}` }, body: new URLSearchParams({ token: access, token_type_hint: 'access_token' }) }).catch(() => {});
+  if (!followCheckOn(env)) {
+    // Account ownership proven by OAuth. (Follow lookup is off: billed per returned user.)
+    await basicRevoke();
+    await linkIdentity(env, player, 'x', xId, xUser ? String(xUser).slice(0, 64) : null, 'oauth2', {});
+    return 'connected';
+  }
   // Official account id: configured, or resolved once from the handle.
   let officialId = env.X_OFFICIAL_USER_ID;
   if (!officialId) {

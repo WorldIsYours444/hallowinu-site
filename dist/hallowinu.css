@@ -610,3 +610,12 @@ button{font:inherit;color:inherit}
   .menu-actions,.modal-actions{grid-template-columns:1fr}
 }
 .btn:disabled,.btn[aria-disabled="true"]{opacity:.45;filter:grayscale(.6);cursor:not-allowed;transform:none!important;animation:none!important}
+/* 7 nav items (Arcade + Haunt): keep the desktop bar on one line down to 1021px */
+@media (max-width:1240px) and (min-width:1021px){
+  .hud-bar{gap:12px}
+  .nav-links{gap:0}
+  .nav-links a{padding-inline:7px;font-size:9px;letter-spacing:.03em}
+  .hud-actions{gap:8px}
+  .hud-actions .buy-top .soon{display:none}
+  .wordmark{font-size:22px}
+}

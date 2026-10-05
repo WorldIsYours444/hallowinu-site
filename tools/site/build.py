@@ -13,7 +13,7 @@ import json, re, random, html, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 P = lambda *a: os.path.join(ROOT, *a)
-V = '45'
+V = '46'
 
 icons = json.load(open(P('tools/site/icons.json')))
 site = json.load(open(P('tools/site/site.json')))
@@ -95,13 +95,18 @@ HERO_PRELOAD = '<link rel="preload" href="img/hero-world.webp" as="image" type="
 PAGES = [
     # (output, content file, url path, title, base for section links, extra)
     ('dist/index.html', 'tools/site/home.html', '/', 'HALLOWINU — The ghost dog of Halloween on Solana', '', HERO_PRELOAD, '', ''),
-    ('dist/arcade.html', 'tools/site/arcade.html', '/arcade', 'HALLOWINU Arcade — play, earn points, climb the board', '/', '', ' class="arcade-page"', ' aria-current="true"'),
+    ('dist/arcade.html', 'tools/site/arcade.html', '/arcade', 'HALLOWINU Arcade — play, earn points, climb the board', '/', '', ' class="arcade-page"', 'arcade'),
+    ('dist/haunt.html', 'tools/site/haunt.html', '/haunt', 'THE HAUNT — HALLOWINU X raid board', '/', '', ' class="haunt-page"', 'haunt'),
 ]
+PAGE_JS = {'arcade': ['arcade.js'], 'haunt': ['wallet.js', 'haunt.js']}
+PAGE_CSS = {'haunt': ['haunt.css']}
 for out, content, path, title, base, preload, mainclass, cur in PAGES:
     t = layout.replace('{{content}}', open(P(content)).read())
     t = t.replace('{{title}}', title).replace('{{path}}', path).replace('{{base}}', base).replace('{{preload}}', preload)
-    t = t.replace('{{mainclass}}', mainclass).replace('{{arcadeCurrent}}', cur)
-    t = t.replace('{{pagescripts}}', f'<script src="arcade.js?v={V}" defer></script>\n' if 'arcade' in out else '')
+    t = t.replace('{{mainclass}}', mainclass)
+    t = t.replace('{{arcadeCurrent}}', ' aria-current="true"' if cur == 'arcade' else '').replace('{{hauntCurrent}}', ' aria-current="true"' if cur == 'haunt' else '')
+    t = t.replace('{{pagescripts}}', ''.join(f'<script src="{js}?v={V}" defer></script>\n' for js in PAGE_JS.get(cur, [])))
+    t = t.replace('{{pagestyles}}', ''.join(f'\n<link rel="stylesheet" href="{css}?v={V}">' for css in PAGE_CSS.get(cur, [])))
     t = t.replace('{{symbols}}', symbols).replace('{{tg}}', TG).replace('{{x}}', X).replace('{{v}}', V)
     t = t.replace('{{spark1}}', spark(3, 1.1)).replace('{{spark2}}', spark(7, 1.4)).replace('{{spark3}}', spark(11, 1.7))
     t = t.replace('{{games}}', game_cards())

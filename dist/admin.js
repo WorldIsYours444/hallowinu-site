@@ -36,9 +36,38 @@
         : `<label>${esc(k)}<input data-set="${esc(k)}" data-type="int" type="number" min="0" max="1000" placeholder="config default" value="${val === '' ? '' : esc(val)}"></label>`;
     }).join('');
     $('#audit').innerHTML = '<tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th></tr>' + d.audit.map(a => `<tr><td>${dt(a.created_at)}</td><td>${esc(a.actor)}</td><td>${esc(a.action)}</td><td class="mono">${esc(a.target || '')}</td><td class="mono">${esc((a.details_json || '').slice(0, 300))}</td></tr>`).join('');
+    loadHaunt().catch(e => { $('#hauntInfo').textContent = e.message; });
     const q = await call('GET', 'quiz');
     $('#quiz').innerHTML = '<tr><th>Id</th><th>Category</th><th>Diff</th><th>Question</th><th>Correct</th><th>Active</th></tr>' + q.questions.map(x => `<tr><td>${x.id}</td><td>${esc(x.category)}</td><td>${esc(x.difficulty)}</td><td>${esc(x.question)}</td><td>${esc(JSON.parse(x.answers_json)[x.correct_index])}</td><td><button class="btn btn-sm ${x.active ? 'btn-purple' : 'btn-orange'}" data-qt="${x.id}" data-on="${x.active ? 0 : 1}">${x.active ? 'on' : 'off'}</button></td></tr>`).join('');
   }
+
+  /* ---------- THE HAUNT ---------- */
+  let hauntFilter = '';
+  const usd = m => '$' + (Number(m || 0) / 1e6).toFixed(3);
+  async function loadHaunt() {
+    const h = await call('GET', 'haunt' + hauntFilter);
+    $('#hauntInfo').textContent = h.xConfigured ? `X API connected · today est. ${usd(h.todayCostMicros)} of ${usd(h.budgetMicros)} budget (change via Games & limits → haunt.dailyBudgetCents)` : 'X API NOT configured — set X_BEARER_TOKEN (+ X_CLIENT_ID / X_CLIENT_SECRET) in Cloudflare. Targets cannot be created until then.';
+    $('#hauntStats').innerHTML = h.last24h.map(c => `<span>${esc(c.status)} <b>${c.n}</b></span>`).join('') || '<span>No submissions in the last 24h</span>';
+    $('#hauntTargets').innerHTML = '<tr><th>#</th><th>Target</th><th>Category</th><th>Reward</th><th>Claims</th><th>Expires</th><th>Active</th><th></th></tr>' + h.targets.map(t => `<tr><td>${t.id}</td><td><a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">@${esc(t.author_username || t.author_id)}</a><br><small>${esc((t.text_preview || '').slice(0, 80))}</small></td><td>${esc(t.category)}</td><td>${t.reward}</td><td>${t.claims}${t.max_submissions ? ' / ' + t.max_submissions : ''}</td><td>${t.expires_at ? dt(t.expires_at) : 'never'}</td><td>${t.active ? 'yes' : 'no'}</td>
+      <td class="acts"><button class="btn btn-sm ${t.active ? 'btn-orange' : 'btn-primary'}" data-ht="${t.id}" data-on="${t.active ? 0 : 1}">${t.active ? 'Disable' : 'Enable'}</button><button class="btn btn-purple btn-sm" data-hr="${t.id}">Reward</button><button class="btn btn-purple btn-sm" data-he="${t.id}">Expiry</button></td></tr>`).join('');
+    $('#hauntSubs').innerHTML = '<tr><th>When</th><th>Player</th><th>Target</th><th>Status</th><th>XP</th><th>Reply / evidence</th><th>Checks</th><th></th></tr>' + h.submissions.map(x => {
+      const checks = JSON.parse(x.checks_json || '[]').map(c => `${c.ok ? '✓' : '✗'} ${c.key}${c.detail ? ' (' + c.detail + ')' : ''}`).join('<br>');
+      return `<tr><td>${dt(x.created_at)}</td><td>${esc(x.display_name)}<br><code>${esc(x.player_id)}</code><br><small>X ${esc(x.x_user_id)}</small></td><td>#${x.target_id ?? '—'}</td><td>${esc(x.status)}${x.reason ? '<br><small>' + esc(x.reason) + '</small>' : ''}</td><td>${x.points_awarded}</td>
+        <td><a href="${esc(x.normalized_url)}" target="_blank" rel="noopener noreferrer">${esc(x.x_status_id)}</a><br><small>${esc(x.text_excerpt || '')}</small></td><td class="mono"><small>${checks}</small></td>
+        <td class="acts">${x.status !== 'INVALIDATED' ? `<button class="btn btn-orange btn-sm" data-hinv="${esc(x.id)}">Invalidate</button>` : ''}${['VERIFICATION_PENDING', 'MANUAL_REVIEW'].includes(x.status) ? `<button class="btn btn-primary btn-sm" data-hretry="${esc(x.id)}">Retry</button>` : ''}</td></tr>`;
+    }).join('');
+    $('#hauntSus').innerHTML = '<tr><th>Player</th><th>Rejected</th><th>Reasons</th></tr>' + h.suspicious.map(x => `<tr><td>${esc(x.display_name)}<br><code>${esc(x.player_id)}</code></td><td>${x.rejected}</td><td>${esc(x.reasons)}</td></tr>`).join('');
+    $('#hauntUsage').innerHTML = '<tr><th>Day</th><th>Endpoint</th><th>Requests</th><th>Resources</th><th>Cache hits</th><th>Errors</th><th>Est. cost</th></tr>' + h.usage.map(u => `<tr><td>${esc(u.day)}</td><td>${esc(u.endpoint)}</td><td>${u.requests}</td><td>${u.resources}</td><td>${u.cache_hits}</td><td>${u.errors}</td><td>${usd(u.cost_micros)}</td></tr>`).join('');
+  }
+  async function hact(fn, okText) { try { await fn(); msg(okText, true); await loadHaunt(); } catch (e) { msg(e.message); } }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; const d = b.dataset;
+    if (d.ht) hact(() => call('PATCH', `haunt/targets/${d.ht}`, { active: d.on === '1' }), 'Target updated.');
+    if (d.hr) { const v = prompt('New reward (XP, 0–100):'); if (v !== null) hact(() => call('PATCH', `haunt/targets/${d.hr}`, { reward: Number(v) }), 'Reward updated.'); }
+    if (d.he) { const v = prompt('Expires in how many minutes from now? (0 = never)'); if (v !== null) hact(() => call('PATCH', `haunt/targets/${d.he}`, { expiresInMinutes: Number(v) }), 'Expiry updated.'); }
+    if (d.hinv) { const r = prompt('Reason (e.g. reply deleted after claim, bot, multi-account):'); if (r) hact(() => call('POST', `haunt/submissions/${d.hinv}/invalidate`, { reason: r }), 'Submission invalidated, XP reversed.'); }
+    if (d.hretry) hact(() => call('POST', `haunt/submissions/${d.hretry}/retry`), 'Verification retried.');
+  });
 
   $('#auth').addEventListener('submit', async e => { e.preventDefault(); token = $('#token').value.trim(); ss.set('hw-admin', token); try { await load(); msg('Authenticated.', true); } catch (err) { msg(err.message); } });
   if (token) load().catch(e => msg(e.message));
@@ -68,6 +97,8 @@
   form('#dq', f => act(() => call('POST', `seasons/${f.season}/disqualify`, { playerId: f.playerId, reason: f.reason, evidence: f.evidence }), 'Player disqualified.'));
   form('#verify', f => { const c = prompt('Type exactly: I VERIFIED THIS PLAYER'); if (c) act(() => call('POST', `players/${f.playerId}/verify-payout`, { evidence: f.evidence, confirm: c }), 'Player marked prize-eligible.'); });
   form('#qnew', (f, el) => act(async () => { await call('POST', 'quiz', { question: f.question, answers: [f.a0, f.a1, f.a2, f.a3], correctIndex: 0, difficulty: f.difficulty, category: f.category }); el.reset(); }, 'Question added (answers are shuffled for players).'));
+  form('#hauntNew', (f, el) => act(async () => { await call('POST', 'haunt/targets', { url: f.url, category: f.category, reward: f.reward ? Number(f.reward) : undefined, expiresInMinutes: f.expiresInMinutes === '' ? undefined : Number(f.expiresInMinutes), maxSubmissions: f.maxSubmissions ? Number(f.maxSubmissions) : undefined }); el.reset(); }, 'Haunt target created.'));
+  form('#hauntFilter', f => { const q = new URLSearchParams(); if (f.status) q.set('status', f.status); if (f.q) q.set('q', f.q); hauntFilter = q.toString() ? '?' + q : ''; hact(async () => {}, 'Filtered.'); });
   form('#psearch', async f => {
     try { const d = await call('GET', 'players?q=' + encodeURIComponent(f.q || ''));
       $('#players').innerHTML = '<tr><th>Id</th><th>Name</th><th>Points</th><th>Wallet</th><th>X</th><th>Telegram</th><th>Status</th><th>Eligible</th><th></th></tr>' + d.players.map(p => `<tr><td class="mono">${esc(p.id)}${p.kind === 'legacy' ? '<br><small>legacy test</small>' : ''}</td><td>${esc(p.display_name)}</td><td>${p.total_points}</td><td class="mono">${esc(p.wallet || '—')}</td><td>${esc(p.x || '—')}</td><td>${esc(p.telegram || '—')}</td><td>${esc(p.status)}</td><td>${p.payout_verified ? 'yes' : 'no'}</td><td><button class="btn btn-orange btn-sm" data-ban="${esc(p.id)}" data-banned="${p.status === 'banned' ? 0 : 1}">${p.status === 'banned' ? 'Unban' : 'Ban'}</button></td></tr>`).join('');

@@ -178,7 +178,7 @@ describe('wallet sign-in & player account', () => {
 describe('X + Telegram verification', () => {
   beforeEach(() => clock.set(MID));
   const TG = { TELEGRAM_BOT_TOKEN: '123456:TEST-token', TELEGRAM_BOT_USERNAME: 'hallowinu_bot', TELEGRAM_CHAT_ID: '-1001234567890' };
-  const X = { X_CLIENT_ID: 'cid', X_CLIENT_SECRET: 'csecret', X_OFFICIAL_USER_ID: '999' };
+  const X = { X_CLIENT_ID: 'cid', X_CLIENT_SECRET: 'csecret', X_OFFICIAL_USER_ID: '999', X_FOLLOW_CHECK: 'on' };
   async function tgAuth(id, { token = TG.TELEGRAM_BOT_TOKEN, age = 10, username = 'spooky' } = {}) {
     const data = { id, first_name: 'Spooky', username, auth_date: Math.floor(Date.now() / 1000) - age };
     const check = Object.keys(data).sort().map(k => `${k}=${data[k]}`).join('\n');

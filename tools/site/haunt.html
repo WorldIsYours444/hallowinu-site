@@ -1,0 +1,117 @@
+<!-- ============ THE HAUNT ============ -->
+<section class="section haunt" id="haunt" aria-labelledby="haunt-title" data-haunt>
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">Raid · Verify · Climb</p>
+      <h1 class="neon-sign" id="haunt-title"><span class="o">THE</span> <span class="p">HAUNT</span></h1>
+      <p class="lead hn-tagline">Haunt the timeline. Earn XP. Climb the graveyard.</p>
+      <p class="hn-intro">Pick a Haunt, reply on X in your own words, paste the link of your reply — HALLOWINU checks it on X automatically and drops the XP in your player card.</p>
+    </div>
+
+    <!-- Status HUD (player state, always visible) -->
+    <div class="hn-hud px-frame is-orange hud-glass reveal" data-hud aria-live="polite">
+      <div class="hn-stat"><span>HAUNT XP</span><b data-s="xp">—</b></div>
+      <div class="hn-stat"><span>RANK</span><b data-s="rank">—</b></div>
+      <div class="hn-stat"><span>HAUNTS</span><b data-s="haunts">—</b></div>
+      <div class="hn-stat"><span>TODAY</span><b data-s="today">—</b></div>
+      <div class="hn-stat"><span data-s="windowLabel">10 MIN</span><b data-s="window">—</b></div>
+      <div class="hn-stat hn-state"><span>STATUS</span><b data-s="state"><i class="dot"></i>—</b><small data-s="next"></small></div>
+    </div>
+
+    <!-- Access gate: sign in / connect X / opening soon -->
+    <div class="hn-gate px-frame hud-glass" data-gate hidden></div>
+
+    <div class="hn-main">
+      <!-- SYSTEM CONTENT: targets chosen by the HALLOWINU team -->
+      <div class="hn-targets">
+        <div class="hn-head">
+          <h2 class="panel-title"><span class="ico">{{icon:ghost}}</span>AVAILABLE HAUNTS</h2>
+          <span class="tag is-dim" data-target-count>—</span>
+        </div>
+        <div class="hn-target-list" data-targets><p class="hn-empty">Summoning targets…</p></div>
+      </div>
+
+      <!-- USER CONTENT: dedicated submission terminal -->
+      <aside class="hn-submit" data-submit aria-labelledby="hn-submit-title">
+        <div class="hn-term">
+          <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>hallowinu://submit-haunt</span></div>
+          <div class="hn-term-body">
+            <h2 class="hn-submit-title" id="hn-submit-title"><span class="ico">{{icon:ghost}}</span>SUBMIT YOUR HAUNT</h2>
+            <p class="hn-term-text">Completed the raid? Paste the link of <b>your</b> X reply below.</p>
+            <div class="hn-picked" data-picked><span class="tag is-dim">NO HAUNT SELECTED</span><small>Pick a Haunt from the list first.</small></div>
+            <form class="hn-form" data-form novalidate>
+              <label class="sr" for="hn-url">Your X reply URL</label>
+              <input id="hn-url" name="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://x.com/you/status/…" required>
+              <button class="btn btn-primary" type="submit" data-claim>{{icon:ghost}}Verify &amp; claim XP</button>
+            </form>
+            <ol class="hn-log" data-log aria-live="polite"></ol>
+            <div class="hn-result" data-result hidden></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="hn-lower">
+      <div class="hn-board px-frame hud-glass reveal">
+        <div class="ax-board-head">
+          <h2 class="panel-title"><span class="ico">{{icon:crown}}</span>HAUNT LEADERBOARD</h2>
+          <div class="ax-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected="true" data-range="today">Today</button>
+            <button type="button" role="tab" aria-selected="false" data-range="week">Week</button>
+            <button type="button" role="tab" aria-selected="false" data-range="all">All time</button>
+          </div>
+        </div>
+        <div class="ax-table-wrap">
+          <table class="ax-table">
+            <thead><tr><th>#</th><th>Player</th><th class="r">Haunts</th><th class="r">XP</th></tr></thead>
+            <tbody data-board><tr><td colspan="4" class="ax-empty">Loading the graveyard…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="ax-fine">Haunt XP is separate from Arcade Points and does not count toward the SOL prize pool.</p>
+      </div>
+      <div class="hn-side">
+        <div class="hn-activity px-frame hud-glass reveal" data-delay="1">
+          <h2 class="panel-title"><span class="ico">{{icon:moon}}</span>RECENT ACTIVITY</h2>
+          <ul class="hn-feed" data-feed><li class="hn-empty">Quiet in the graveyard…</li></ul>
+        </div>
+        <div class="hn-mine px-frame hud-glass reveal" data-delay="2" data-mine-box hidden>
+          <h2 class="panel-title"><span class="ico">{{icon:trophy}}</span>YOUR LAST HAUNTS</h2>
+          <ul class="hn-feed" data-mine></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="hn-how reveal">
+      <h2 class="section-title hn-h2">How <span class="o">the</span> <span class="p">Haunt</span> works</h2>
+      <ol class="hn-steps">
+        <li><b>01</b><span>Connect Phantom &amp; your X account</span></li>
+        <li><b>02</b><span>Pick a Haunt</span></li>
+        <li><b>03</b><span>Open the target on X</span></li>
+        <li><b>04</b><span>Reply naturally, in your own words</span></li>
+        <li><b>05</b><span>Copy the link of your reply</span></li>
+        <li><b>06</b><span>Paste it in Submit your Haunt</span></li>
+        <li><b>07</b><span>HALLOWINU checks who, where &amp; what on X</span></li>
+        <li><b>08</b><span>Earn XP</span></li>
+        <li><b>09</b><span>Climb the Haunt leaderboard</span></li>
+        <li><b>10</b><span>Pick the next Haunt</span></li>
+      </ol>
+    </div>
+
+    <!-- RULES / FAQ -->
+    <div class="hn-faq reveal">
+      <h2 class="section-title hn-h2">Rules <span class="o">&amp;</span> <span class="p">FAQ</span></h2>
+      <div class="hn-faq-grid" data-faq>
+        <details><summary>What counts?</summary><p>A real reply from <b>your connected X account</b>, posted under the selected Haunt (or inside its thread) after the Haunt opened. Write like a human: short is fine, copy-paste spam is not.</p></details>
+        <details><summary>Why was I rejected?</summary><p>The terminal tells you the exact reason: wrong X account, not under the Haunt, too short, text you already used, text copy-pasted by others, or the post could not be found on X.</p></details>
+        <details><summary>How often can I haunt?</summary><p data-faq-limits>Up to 3 rewarded haunts per 10 minutes, 2 minutes apart, 20 per day (UTC), one per Haunt.</p></details>
+        <details><summary>What happens during cooldown?</summary><p>You can still browse Haunts, the leaderboard and activity. The status shows a live countdown until your next haunt can be claimed.</p></details>
+        <details><summary>Can I use someone else's reply?</summary><p>No. HALLOWINU compares the author of the reply with your connected X account (by permanent X user id). Someone else's reply is always rejected.</p></details>
+        <details><summary>What if X verification fails?</summary><p>If X is busy, your haunt is queued and checked again automatically. You never lose XP because of an outage — and nothing is paid out before it is verified.</p></details>
+        <details><summary>What is Haunt XP for?</summary><p>Haunt XP levels up your HALLOWINU player and ranks you on the Haunt leaderboard. It is separate from Arcade Points and not part of the SOL prize pool.</p></details>
+        <details><summary>Is this spam?</summary><p>No bots, no copy-paste, no flooding: limits keep the pack natural and within X's rules. Fraud (e.g. deleting replies after claiming) is removed by the team.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="ax-toasts" data-toasts aria-live="polite"></div>
+</section>

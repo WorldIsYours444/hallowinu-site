@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>HALLOWINU Arcade — Admin</title>
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="hallowinu.css?v=43">
+<link rel="stylesheet" href="hallowinu.css?v=46">
 <style>
   body{padding:24px 16px 80px}
   .adm{max-width:1200px;margin:auto;display:grid;gap:22px}
@@ -69,9 +69,23 @@
         <label>Difficulty<select name="difficulty"><option>easy</option><option>medium</option><option>hard</option></select></label><label>Category<input name="category" value="HALLOWINU"></label><button class="btn btn-purple btn-sm">Add</button></form>
       <div class="scroll" style="margin-top:12px"><table id="quiz"></table></div>
     </section>
+    <section class="card px-frame is-orange hud-glass"><h2>THE HAUNT</h2>
+      <p class="ax-fine" id="hauntInfo"></p>
+      <div class="stats" id="hauntStats"></div>
+      <h2 style="margin-top:18px">NEW TARGET (VERIFIED VIA X ON CREATE)</h2>
+      <form class="row" id="hauntNew"><label>X post URL<input name="url" placeholder="https://x.com/…/status/…" required></label><label>Category<input name="category" value="SOLANA / MEMECOINS" required></label>
+        <label>Reward (XP)<input name="reward" type="number" min="1" max="100" value="5"></label><label>Expires in (minutes, 0 = never)<input name="expiresInMinutes" type="number" min="0" value="1440"></label>
+        <label>Max claims (optional)<input name="maxSubmissions" type="number" min="1"></label><button class="btn btn-purple btn-sm">Create target</button></form>
+      <h2 style="margin-top:18px">TARGETS</h2><div class="scroll"><table id="hauntTargets"></table></div>
+      <h2 style="margin-top:18px">SUBMISSIONS</h2>
+      <form class="row" id="hauntFilter"><label>Status<select name="status"><option value="">all</option><option>AUTO_APPROVED</option><option>AUTO_REJECTED</option><option>VERIFICATION_PENDING</option><option>MANUAL_REVIEW</option><option>INVALIDATED</option></select></label><label>Player / name / status id<input name="q"></label><button class="btn btn-purple btn-sm">Filter</button></form>
+      <div class="scroll"><table id="hauntSubs"></table></div>
+      <h2 style="margin-top:18px">SUSPICIOUS (≥3 SUSPICIOUS REJECTIONS IN 24H)</h2><div class="scroll"><table id="hauntSus"></table></div>
+      <h2 style="margin-top:18px">X API USAGE</h2><div class="scroll"><table id="hauntUsage"></table></div>
+    </section>
     <section class="card px-frame hud-glass"><h2>AUDIT LOG (LATEST 40)</h2><div class="scroll"><table id="audit"></table></div></section>
   </div>
 </main>
-<script src="admin.js?v=43" defer></script>
+<script src="admin.js?v=46" defer></script>
 </body>
 </html>

@@ -17,6 +17,8 @@ import * as TOT from './games/trick-or-treat.js';
 import * as HUNT from './games/pumpkin-hunt.js';
 import * as SPIN from './games/daily-spin.js';
 import * as QUIZ from './games/quiz.js';
+import * as HAUNT from './haunt/engine.js';
+import { xConfigured } from './haunt/xclient.js';
 
 validateConfig();
 
@@ -52,6 +54,7 @@ export async function cron(env) {
   const { results } = await env.DB.prepare("SELECT id FROM seasons WHERE status IN ('ACTIVE','UPCOMING') AND ends_at <= ?").bind(t).all();
   for (const s of results) { try { await finalizeSeason(env, s.id, 'cron'); } catch (e) { console.error('auto-finalize', s.id, e.message); } }
   await cleanupRateLimits(env);
+  try { await HAUNT.retryPending(env); } catch (e) { console.error('haunt_retry_cron', e.message); }
 }
 
 /* ---------- request guards ---------- */
@@ -101,18 +104,45 @@ async function route(request, env, url) {
     return json({ ok: true, ...r, ...(await accountView(env, player)) });
   }
   if (path === '/api/socials/x/start' && m === 'GET') {
+    const back = url.searchParams.get('return') === 'haunt' ? '/haunt' : '/arcade';
     const s = await getSession(env, request);
-    if (!s) return redirect(url, 'x', 'session');
-    try { return Response.redirect(await startX(env, url, s.player), 302); }
-    catch (e) { return redirect(url, 'x', e instanceof ApiError ? e.code.toLowerCase() : 'error'); }
+    if (!s) return redirect(url, 'x', 'session', back);
+    try { return Response.redirect(await startX(env, url, s.player, back), 302); }
+    catch (e) { return redirect(url, 'x', e instanceof ApiError ? e.code.toLowerCase() : 'error', back); }
   }
   if (path === '/api/socials/x/callback' && m === 'GET') {
     const s = await getSession(env, request);
-    let status;
-    try { status = await finishX(env, url, s && s.player); }
-    catch (e) { if (!(e instanceof ApiError)) console.error('x_callback', e && (e.stack || e.message)); status = e instanceof ApiError ? e.code.toLowerCase() : 'error'; }
-    return redirect(url, 'x', status);
+    let r;
+    try { r = await finishX(env, url, s && s.player); }
+    catch (e) { console.error('x_callback', e && (e.stack || e.message)); r = { status: 'error', returnTo: '/arcade' }; }
+    return redirect(url, 'x', r.status, r.returnTo);
   }
+
+  // ---- THE HAUNT ----
+  if (path === '/api/haunt' && m === 'GET') {
+    const s = await getSession(env, request);
+    const player = s && s.player.name_set_at ? s.player : null;
+    if (player) await rateLimit(env, `read:${player.id}`, RL.reads);
+    const H = CONFIG.haunt;
+    return json({ ok: true, serverNow: now(),
+      rules: { window: H.limits.window.count, windowMinutes: H.limits.window.ms / 60_000, minGapMinutes: H.limits.minGapMs / 60_000, perDay: H.limits.perDay, perTarget: H.limits.perTargetPerPlayer, defaultReward: H.defaultReward },
+      available: xConfigured(env) && socialsConfig(env).x.available,
+      access: (await accountView(env, s ? s.player : null)).access,
+      targets: await HAUNT.targetsFor(env, player),
+      me: player ? await HAUNT.playerStatus(env, player) : null });
+  }
+  if (path === '/api/haunt/leaderboard' && m === 'GET') {
+    const s = await getSession(env, request);
+    const range = ['today', 'week', 'all'].includes(url.searchParams.get('range')) ? url.searchParams.get('range') : 'today';
+    return json({ ok: true, ...(await HAUNT.leaderboard(env, s && s.player, range)) });
+  }
+  if (path === '/api/haunt/activity' && m === 'GET') return json({ ok: true, serverNow: now(), items: await HAUNT.activity(env) });
+  if (path === '/api/haunt/submit' && m === 'POST') {
+    const p = await requirePlayer(env, request);
+    return json({ ok: true, ...(await HAUNT.submit(env, p, await readJson(request, 2048), await ipKey(request, env))) });
+  }
+  const hs = path.match(/^\/api\/haunt\/submissions\/(hs_[a-z2-9]{16})$/);
+  if (hs && m === 'GET') { const p = await requirePlayer(env, request); return json({ ok: true, submission: await HAUNT.view(env, hs[1], p.id) }); }
   if (path === '/api/arcade' && m === 'GET') {
     const player = await getSessionPlayer(env, request);
     if (player) await rateLimit(env, `read:${player.id}`, RL.reads);
@@ -155,9 +185,10 @@ async function route(request, env, url) {
   throw new ApiError(404, 'NOT_FOUND', 'Unknown endpoint.');
 }
 
-function redirect(url, provider, status) {
+function redirect(url, provider, status, page = '/arcade') {
   const safe = String(status || 'error').replace(/[^a-z_]/g, '').slice(0, 40) || 'error';
-  return new Response(null, { status: 302, headers: { location: `${url.origin}/arcade?social=${provider}&status=${safe}`, 'cache-control': 'no-store' } });
+  const dest = page === '/haunt' ? '/haunt' : '/arcade';
+  return new Response(null, { status: 302, headers: { location: `${url.origin}${dest}?social=${provider}&status=${safe}`, 'cache-control': 'no-store' } });
 }
 
 /* Access-state model (server-authoritative). The client only adds WALLET_CONNECTED (Phantom connected, not signed). */
@@ -220,8 +251,9 @@ async function profile(env, p, full = false) {
     const { results: ach } = await env.DB.prepare('SELECT achievement_id, unlocked_at FROM player_achievements WHERE player_id=?').bind(p.id).all();
     const got = Object.fromEntries(ach.map(a => [a.achievement_id, a.unlocked_at]));
     out.achievements = CONFIG.achievements.map(a => ({ id: a.id, name: a.name, description: a.description, icon: a.icon, unlockedAt: got[a.id] || null }));
-    const { results: hist } = await env.DB.prepare('SELECT game, amount, reason, created_at FROM point_transactions WHERE player_id=? ORDER BY id DESC LIMIT 15').bind(p.id).all();
+    const { results: hist } = await env.DB.prepare("SELECT game, amount, reason, created_at FROM point_transactions WHERE player_id=? AND currency='ARCADE_POINTS' ORDER BY id DESC LIMIT 15").bind(p.id).all();
     out.history = hist.map(h => ({ game: h.game, points: h.amount, reason: h.reason, at: h.created_at }));
+    out.hauntXp = fresh.haunt_xp; out.haunts = fresh.haunt_count;
   }
   return out;
 }
@@ -338,7 +370,7 @@ async function admin(request, env, url, sub) {
     const { results: funding } = await env.DB.prepare('SELECT * FROM prize_pool_transactions ORDER BY id DESC LIMIT 50').all();
     const { results: audit } = await env.DB.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT 40').all();
     const { results: settings } = await env.DB.prepare('SELECT * FROM settings').all();
-    const counts = await env.DB.prepare('SELECT (SELECT COUNT(*) FROM players WHERE kind=\'wallet\') AS players, (SELECT COUNT(*) FROM game_attempts WHERE status=\'complete\') AS plays, (SELECT COALESCE(SUM(amount),0) FROM point_transactions) AS points').first();
+    const counts = await env.DB.prepare('SELECT (SELECT COUNT(*) FROM players WHERE kind=\'wallet\') AS players, (SELECT COUNT(*) FROM game_attempts WHERE status=\'complete\') AS plays, (SELECT COALESCE(SUM(amount),0) FROM point_transactions WHERE currency=\'ARCADE_POINTS\') AS points').first();
     const ents = [];
     for (const s of seasons) {
       const { results } = await env.DB.prepare(`SELECT e.*, p.display_name, p.payout_verified FROM prize_entitlements e JOIN players p ON p.id=e.player_id WHERE e.season_id=? ORDER BY e.status='DISQUALIFIED', e.rank`).bind(s.id).all();
@@ -539,6 +571,17 @@ async function admin(request, env, url, sub) {
     return json({ ok: true });
   }
   if (sub === 'cron' && m === 'POST') { await cron(env); return json({ ok: true }); }
+
+  // THE HAUNT
+  if (sub === 'haunt' && m === 'GET') return json({ ok: true, ...(await HAUNT.adminOverview(env, url)) });
+  if (sub === 'haunt/targets' && m === 'POST') return json({ ok: true, ...(await HAUNT.adminCreateTarget(env, actor, body)) });
+  if (seg[0] === 'haunt' && seg[1] === 'targets' && seg[2] && m === 'PATCH') return json({ ok: true, ...(await HAUNT.adminUpdateTarget(env, actor, Number(seg[2]), body)) });
+  if (seg[0] === 'haunt' && seg[1] === 'submissions' && seg[3] === 'invalidate' && m === 'POST') {
+    const reason = str(body.reason, { min: 3, max: 200 });
+    if (!reason) throw new ApiError(400, 'BAD_REQUEST', 'A reason is required.');
+    return json({ ok: true, ...(await HAUNT.adminInvalidate(env, actor, seg[2], reason)) });
+  }
+  if (seg[0] === 'haunt' && seg[1] === 'submissions' && seg[3] === 'retry' && m === 'POST') return json({ ok: true, ...(await HAUNT.adminRetry(env, actor, seg[2])) });
 
   throw new ApiError(404, 'NOT_FOUND', 'Unknown admin endpoint.');
 }
