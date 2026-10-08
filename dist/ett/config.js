@@ -18,7 +18,7 @@ export const ETT = Object.freeze({
   maxRunTicks: 60 * 60 * 45,      // 45 minutes hard cap per run
 
   /* ---------- lanes & player ---------- */
-  laneX: [-2.5, 0, 2.5],          // LEFT, CENTER, RIGHT (metres)
+  laneX: [2.5, 0, -2.5],          // LEFT, CENTER, RIGHT as seen on screen (metres; the camera looks along +z, so screen-left is +x)
   laneHalfWidth: 1.05,            // obstacle half-width inside a lane
   laneSwitchSpeed: 17,            // metres per second sideways (one lane ≈ 0.15 s)
   player: {

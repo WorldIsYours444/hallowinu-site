@@ -300,8 +300,8 @@ export class World {
         add(type, x, z, type === 'tree' ? r() * TAU : -s * r() * 0.6, 0.8 + r() * 0.5);
       }
     }
-    if (t % 6 === 3) { add('signHaunt', -5.6, 6, -0.45, 1); }
-    if (t % 6 === 0 && t > 0) { add('signTrench', 5.6, 12, 0.45, 1); }
+    if (t % 6 === 3) { add('signHaunt', 5.6, 6, 0.45, 1); }
+    if (t % 6 === 0 && t > 0) { add('signTrench', -5.6, 12, -0.45, 1); }
     if (t % 15 === 9) add('gate', 0, 10, 0, 1);
     if (r() < 0.35) add('ghostC', side() * (5.5 + r() * 4), r() * 20, 0, 0.7 + r() * 0.4);
     // ---- far layer per biome ----
@@ -638,8 +638,8 @@ export class World {
     a.lean = damp(a.lean, 0, 8, dt);
     if (a.stumbleT > 0) a.stumbleT -= dt;
     if (this.mode === 'run' && a.state !== 'crash') a.state = a.stumbleT > 0 ? 'stumble' : 'run';
-    this.player.rotation.z = -a.lean * 0.22 + (a.stumbleT > 0 ? Math.sin(time * 40) * 0.12 : 0);
-    this.player.rotation.y = this.mode === 'select' || this.mode === 'menu' ? this.dragYaw + (this.mode === 'select' ? time * 0.6 : Math.PI - 0.45 + Math.sin(time * 0.5) * 0.25) : a.lean * 0.25;
+    this.player.rotation.z = a.lean * 0.22 + (a.stumbleT > 0 ? Math.sin(time * 40) * 0.12 : 0);
+    this.player.rotation.y = this.mode === 'select' || this.mode === 'menu' ? this.dragYaw + (this.mode === 'select' ? time * 0.6 : Math.PI - 0.45 + Math.sin(time * 0.5) * 0.25) : -a.lean * 0.25;
     this._poseInu(this.current, { speed: v.speed, air: v.y > 0.05 && a.state !== 'crash', slide: v.slide && a.state !== 'crash' }, time, dt);
     this.shadowP.position.set(v.px, 0.04, v.pz); const sh = clamp(1 - v.y * 0.3, 0.4, 1); this.shadowP.scale.set(sh, sh, sh);
     this.playerGlow.position.set(v.px, 1.5, v.pz + (this.mode === 'run' || this.mode === 'over' ? -0.9 : 1.8));
