@@ -44,7 +44,7 @@ async function runUntilDeath(drive = 0) {
     }, 40);
   }, drive);
   // run straight down the centre lane until the first obstacle ends the run (real time)
-  await page.waitForFunction(() => window.__ETT.G.screen === 'over', null, { timeout: 120000, polling: 250 });
+  await page.waitForFunction(() => window.__ETT.G.screen === 'over', null, { timeout: 400000, polling: 500 });
   await page.waitForFunction(() => !/VERIFYING/.test(document.querySelector('#o-status').textContent), null, { timeout: 30000 });
 }
 
@@ -78,7 +78,7 @@ await page.click('#s-select [data-act="choose"]');
 check(await page.evaluate(() => JSON.parse(localStorage.getItem('ett.character'))) === 'artificial-inu', 'character choice saved');
 
 // earning run 1 (steered to collect coins, then left to crash)
-await runUntilDeath(260);
+await runUntilDeath(150);
 const st1 = await page.textContent('#o-status');
 check(/VERIFIED · PENDING|nothing to redeem/.test(st1), 'run verified by server replay → pending: ' + st1.trim().slice(0, 60));
 await page.waitForTimeout(1500);

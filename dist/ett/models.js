@@ -49,6 +49,7 @@ export function buildInu(id) {
   if (hero) { tb.c(0, 1.7, 1.95, 1.6, 1.8, 0.2, '#f2b632', true); tb.c(0, 0, -1.75, 5.1, 0.6, 3.5, '#f2b632'); }   // emblem + belt
   if (robot) { tb.c(0, 1.6, 1.95, 1.4, 1.4, 0.2, NEON, true); tb.c(0, 1, -2.4, 3, 3, 0.8, '#3c4254'); tb.c(-0.9, 1.4, -2.5, 0.6, 2, 0.2, '#3b82f6', true); tb.c(0.9, 1.4, -2.5, 0.6, 2, 0.2, '#3b82f6', true); }
   if (hallow) tb.c(0, 2, 1.95, 1.4, 1.4, 0.2, '#ff8a1f', true);
+  if (!hero && !robot) { tb.c(0, 0, -1.95, 3.6, 2.2, 0.3, P.cream); tb.c(0, 0.2, -2.05, 2.4, 1.4, 0.2, P.cream); }   // white rump (seen from behind)
   if (id === 'shiba-inu') { tb.c(0, 4.1, -1.8, 5.2, 0.6, 3.6, '#d62f3a'); tb.c(0, 3.3, 1.85, 0.8, 0.8, 0.3, '#ffc44d', true); }
   const torso = part(tb, 0, 0.46, 0);
 
@@ -64,7 +65,10 @@ export function buildInu(id) {
   // ---- head (pivot at neck) ----
   const hb = new VB();
   const fur = P.fur, cream = P.cream;
-  hb.c(0, 0, -3, 7, 6, 6, fur);
+  hb.c(0, 0, -3, 7.2, 5.2, 6, fur);
+  hb.c(0, 5.2, -2.6, 6.4, 1, 5.2, fur);                  // rounded crown
+  hb.c(0, -0.4, -2.6, 6.2, 0.4, 5.2, fur);
+  for (const s of [-1, 1]) hb.c(s * 3.75, 0.2, -2.4, 0.5, 4, 4.8, fur);   // puffy cheeks
   hb.c(0, 0, 2.6, 6.4, 2.6, 0.6, cream);                 // lower face / cheeks
   hb.c(0, 0.5, 3, 3.4, 2.2, 1.8, cream);                 // snout
   hb.c(0, 2.1, 4.6, 1.3, 0.9, 0.4, '#1a0f0a');           // nose
@@ -97,18 +101,8 @@ export function buildInu(id) {
     hb.c(0, 2.6, 2.9, 6.8, 1.6, 0.3, '#14224f');            // domino mask
     for (const s of [-1, 1]) { hb.c(s * 1.7, 2.9, 3.15, 1.3, 1, 0.15, '#ffffff'); hb.c(s * 1.6, 3.0, 3.25, 0.6, 0.6, 0.1, '#14224f'); }
   }
-  if (hallow) {
-    // ghost-sheet hood (open face), skull spots on top
-    const W = '#f4f0fb', S = '#d9d1ea';
-    hb.c(0, 5.6, -3.4, 7.8, 1.1, 6.6, W);
-    hb.c(-3.9, 0.2, -3.4, 0.6, 5.6, 6.4, W); hb.c(3.9, 0.2, -3.4, 0.6, 5.6, 6.4, W);
-    hb.c(0, -0.2, -3.6, 7.8, 6.1, 0.6, W);
-    hb.c(0, 4.9, 2.6, 7.6, 0.8, 0.9, W);
-    for (const s of [-1, 1]) { hb.c(s * 4.1, -1.3, -3.2, 0.8, 1.6, 5, S); hb.c(s * 3.7, -2.1, -2.2, 0.8, 1, 3, W); }
-    for (let i = -3; i <= 3; i += 1.5) hb.c(i, -1.6 - (Math.abs(i) % 3 ? 0.6 : 0), -3.9, 1.4, 1.6, 0.5, i % 3 ? S : W);   // ragged drape
-    hb.c(-1.5, 2.6, -4.0, 1.8, 2, 0.3, '#191022'); hb.c(1.5, 2.6, -4.0, 1.8, 2, 0.3, '#191022'); hb.c(0, 1.2, -4.0, 1, 0.9, 0.3, '#191022');   // spooky face on the back
-    hb.c(-1.6, 6.65, 0.2, 1.6, 0.15, 1.5, '#191022'); hb.c(1.6, 6.65, 0.2, 1.6, 0.15, 1.5, '#191022'); hb.c(0, 6.65, -1.6, 0.9, 0.15, 0.9, '#191022');
-    for (const s of [-1, 1]) { hb.c(s * 2.5, 6.6, -1.2, 2.2, 1.2, 2, fur); hb.c(s * 2.6, 7.7, -0.9, 1.5, 1, 1.4, fur); hb.c(s * 2.7, 8.6, -0.6, 0.8, 0.9, 0.8, fur); }
+  if (hallow) {   // little dark hood-collar the cape hangs from
+    hb.c(0, -0.6, -3.2, 7.4, 1.2, 6.2, '#2b1840');
   }
   const head = part(hb, 0, 0.46 + 0.45, 0);
 
@@ -122,7 +116,7 @@ export function buildInu(id) {
   let cape = null;
   if (hallow || hero) {
     const cb = new VB();
-    const main = hallow ? '#2a1640' : '#c4162b', lining = hallow ? '#5b2a86' : '#f2b632';
+    const main = hallow ? '#2b1840' : '#c4162b', lining = hallow ? '#4a2470' : '#f2b632';
     cb.c(0, -7, -0.6, 7.6, 7, 0.6, main);
     cb.c(0, -7, -0.05, 7.4, 7, 0.1, lining);
     cb.c(-3.9, -6.6, -0.5, 0.6, 6, 0.5, lining); cb.c(3.9, -6.6, -0.5, 0.6, 6, 0.5, lining);
@@ -229,13 +223,14 @@ export function buildObstacle(kind, variant = 0) {
   const b = new VB();
   const r = crand(17 + variant * 31 + kind.length * 7);
   switch (kind) {
-    case 'tombstone': {
-      b.c(0, 0, 0, 14, 1, 7, STONE_D);
-      b.c(0, 1, 1, 11, 7.5, 5, STONE); b.c(0, 8.5, 1.5, 9, 1, 4, STONE);
-      b.c(0, 5, 6.05, 1.2, 3.2, 0.3, '#2b2638'); b.c(0, 6.6, 6.05, 3.4, 0.9, 0.3, '#2b2638');
-      b.c(-3, 2, 6.05, 6, 0.5, 0.3, '#3b2f4f');
-      b.c(4.4, 1, 0.6, 1.5, 1.5, 1.5, '#4caf50');                         // moss
-      if (variant % 2) b.c(-5.5, 1, 4.5, 1.6, 1.4, 1.6, ORANGE, true);
+    case 'tombstone': {   // rounded grave with a skull, like the reference
+      b.c(0, 0, 0, 15, 1.2, 8, STONE_D);
+      b.c(0, 1.2, 1, 12, 6.6, 5.4, STONE); b.c(0, 7.8, 1.3, 10, 1, 4.8, STONE); b.c(0, 8.8, 1.8, 7, 0.8, 3.8, STONE);
+      b.c(0, 1.2, 0.6, 12.6, 1, 6.2, STONE_D);
+      skull(b, 0, 3.6, 0.3, 2.2);
+      b.c(-0.9, 4.9, 0.05, 0.9, 0.9, 0.2, '#b04cff', true); b.c(0.9, 4.9, 0.05, 0.9, 0.9, 0.2, '#b04cff', true);
+      b.c(-4.6, 1.2, 0.2, 1.4, 2.2, 1.4, '#3d6b2a'); b.c(4.4, 6, 0.5, 1.2, 1.2, 1, '#3d6b2a');
+      if (variant % 2) { b.c(-6.2, 1.2, -1.4, 1.4, 2.6, 1.4, '#c21a2e'); b.c(-6.2, 3.8, -1.2, 0.5, 0.9, 0.5, '#ffd34d', true); }
       break;
     }
     case 'pumpkin': {
@@ -246,13 +241,16 @@ export function buildObstacle(kind, variant = 0) {
       b.c(0, 1.8, -0.1, 9, 1.8, 0.4, '#ffd34d', true); b.c(-2.4, 3.4, -0.1, 1.2, 0.8, 0.4, '#ffd34d', true);
       break;
     }
-    case 'lowWall': {
-      for (let i = 0; i < 6; i++) for (let row = 0; row < 3; row++) {
-        if (row === 2 && (i === 1 || i === 4)) continue;
-        b.b(-10 + i * 3.4 + (row % 2) * 1.2, row * 2.8, 1, 3.2, 2.7, 6, r() > 0.5 ? STONE : STONE_D);
+    case 'lowWall': {   // cracked stone blocks with glowing purple runes
+      for (let i = 0; i < 3; i++) {
+        const x = -6.6 + i * 6.6, h = 7 + (i % 2) * 1.6;
+        b.c(x, 0, 1, 6.2, h, 6, i % 2 ? STONE : '#5d5873');
+        b.c(x, h, 1.4, 5, 0.8, 5.2, STONE_D);
+        b.c(x - 1, 1.5, 0.9, 0.5, h - 3, 0.3, '#c45cff', true);
+        b.c(x + 0.6, h - 3, 0.9, 2.2, 0.5, 0.3, '#c45cff', true);
+        b.c(x + 1.5, 2, 0.9, 0.5, 2.5, 0.3, '#c45cff', true);
       }
-      b.c(-6, 8.4, 2, 2, 1.2, 3, STONE); b.c(7, 0, -1, 3, 1.6, 2, STONE_D);
-      b.c(3, 6, 6.9, 1.4, 1.4, 0.3, PURP, true);
+      b.c(7, 0, -1, 3, 1.6, 2, STONE_D);
       break;
     }
     case 'boneFence': {
@@ -374,29 +372,29 @@ function r2(z) { return ((z * 7919) % 5) / 5 - 0.4; }
 /* =========================================================
    COINS (geometries for InstancedMesh)
    ========================================================= */
-function disk(b, R, fill, rim, depth = 1.2) {
+function disk(b, R, fill, rim, depth = 1.2, g = false) {
   for (let y = -R; y < R; y++) {
     const yc = y + 0.5; if (R * R - yc * yc <= 0) continue;
     const half = Math.sqrt(R * R - yc * yc);
     const w = Math.round(half * 2);
     if (w <= 0) continue;
-    b.c(0, y, -depth / 2, w, 1, depth, Math.abs(yc) > R - 1.3 || half < 1.5 ? rim : fill);
+    b.c(0, y, -depth / 2, w, 1, depth, Math.abs(yc) > R - 1.3 || half < 1.5 ? rim : fill, g);
   }
 }
 export function coinGeometries(type) {
   const lit = new VB(), glow = new VB();
+  disk(glow, 4.6, '#ffc93a', '#ffe9a0', 1.4, true);                         // gold coin + light rim
+  const face = { HALLOWINU: '#ff7a1a', USDC: '#2f7bff', SOLANA: '#1a0d33' }[type];
+  const inner = new VB(); disk(inner, 3.4, face, face, 1.9, true);
+  for (const bx of inner.glow) glow.glow.push(bx);
+  const sym = (x, y, w, h, c, g = false) => (g ? glow : lit).c(x, y, -1.1, w, h, 2.2, c, g);
   if (type === 'HALLOWINU') {
-    disk(glow, 4, '#ff8a1f', '#ffc44d');
-    for (const s of [-1, 1]) lit.c(s * 1.3, 0.4, -0.75, 1.2, 1.2, 1.5, '#2a1205');
-    lit.c(0, -1.8, -0.75, 3.2, 0.8, 1.5, '#2a1205'); lit.c(0, 3.6, -0.3, 1, 1.2, 0.6, '#3d7a24');
+    sym(-1.2, 0.3, 1.1, 1.1, '#2a1205'); sym(1.2, 0.3, 1.1, 1.1, '#2a1205'); sym(0, -1.8, 3, 0.8, '#2a1205'); sym(-1.1, -1.2, 0.7, 0.6, '#2a1205'); sym(1.1, -1.2, 0.7, 0.6, '#2a1205');
+    sym(0, 3.4, 0.9, 1, '#3d7a24');
   } else if (type === 'USDC') {
-    disk(glow, 4, '#2f7bff', '#bcd6ff');
-    lit.c(0, -2.6, -0.75, 1, 5.2, 1.5, '#ffffff'); lit.c(0, 1.2, -0.75, 2.6, 0.7, 1.5, '#ffffff'); lit.c(0, -0.3, -0.75, 2.6, 0.7, 1.5, '#ffffff');
-    lit.c(0, -1.8, -0.75, 2.6, 0.7, 1.5, '#ffffff'); lit.c(-1, 0.4, -0.75, 0.7, 1.2, 1.5, '#ffffff'); lit.c(1, -1.1, -0.75, 0.7, 1.2, 1.5, '#ffffff');
+    sym(0, -2.5, 0.9, 5, '#ffffff'); sym(0, 1.1, 2.4, 0.7, '#ffffff'); sym(0, -0.3, 2.4, 0.7, '#ffffff'); sym(0, -1.7, 2.4, 0.7, '#ffffff'); sym(-0.9, 0.4, 0.7, 1.1, '#ffffff'); sym(0.9, -1, 0.7, 1.1, '#ffffff');
   } else {
-    disk(lit, 4.2, '#140a24', '#9945ff');
-    glow.c(0.4, 1.4, -0.8, 5, 0.9, 1.6, '#14f195'); glow.c(-0.4, -0.4, -0.8, 5, 0.9, 1.6, '#7a6bff'); glow.c(0.4, -2.2, -0.8, 5, 0.9, 1.6, '#c34bff');
-    glow.c(-2.2, 1.4, -0.8, 0.6, 0.9, 1.6, '#14f195'); glow.c(2.2, -2.2, -0.8, 0.6, 0.9, 1.6, '#c34bff');
+    sym(0.3, 1.2, 4.4, 0.85, '#14f195', true); sym(-0.3, -0.4, 4.4, 0.85, '#7a6bff', true); sym(0.3, -2, 4.4, 0.85, '#c34bff', true);
   }
   return { lit: lit.lit.length ? lit.geometries(0.1).lit : null, glow: glow.glow.length ? glow.geometries(0.1).glow : null };
 }
@@ -468,6 +466,101 @@ export function propGeometries() {
   // road-side chart sign (crypto)
   { const b = new VB(); b.c(0, 0, -0.5, 1, 14, 1, IRON); b.c(0, 14, -0.6, 16, 9, 1, '#120c1c');
     const pts = [7, 6, 7.5, 5, 4, 4.5, 2.5, 3, 1.4]; pts.forEach((y, i) => b.c(-7 + i * 1.75, 14.6 + y, 0.45, 1.6, 0.8, 0.3, i < 2 ? '#2bd96b' : '#ff3b4e', true)); put('chartSign', b); }
+
+  // ===== reference-style roadside set =====
+  const WD = '#4a2e1c', WD2 = '#5e3b24', WDK = '#2e1c12';
+  // wooden fence segment along z (4 m), slightly crooked pickets
+  { const b = new VB(); const r = crand(5);
+    for (let z = -20; z <= 20; z += 10) b.c(0, 0, z - 0.8, 1.6, 11 + r() * 2, 1.6, WDK);
+    b.c(0, 3.5, -20, 0.8, 1.2, 40, WD); b.c(0, 8, -20, 0.8, 1.2, 40, WD2);
+    for (let z = -18; z < 20; z += 3.2) { const h = 8 + r() * 3; b.c(0, 1, z, 0.7, h, 2.2, r() < 0.5 ? WD : WD2); b.c(0, 1 + h, z + 0.5, 0.7, 0.8, 1.2, WD2); }
+    put('fenceW', b); }
+  // wooden lantern post with a hanging lantern (glows)
+  { const b = new VB();
+    b.c(0, 0, -0.9, 1.8, 30, 1.8, WDK); b.c(0, 0, -1.6, 3.2, 2, 3.2, '#3a3046');
+    b.c(2.4, 28, -0.6, 6, 1.2, 1.2, WDK); b.c(1.4, 26.6, -0.4, 0.8, 1.6, 0.8, WDK);
+    b.c(4.6, 25, -0.2, 0.3, 3, 0.3, '#1b1820');
+    b.c(4.6, 19.6, -1.4, 3.2, 0.8, 3.2, '#1b1820'); b.c(4.6, 24.2, -1.2, 2.6, 0.9, 2.6, '#1b1820'); b.c(4.6, 25, -0.6, 1.4, 0.6, 1.4, '#1b1820');
+    for (const [dx, dz] of [[-1.4, -1.4], [1.1, -1.4], [-1.4, 1.1], [1.1, 1.1]]) b.b(4.6 + dx, 20.4, dz, 0.3, 3.8, 0.3, '#1b1820');
+    b.c(4.6, 20.4, -1.1, 2.4, 3.8, 2.2, '#ffb347', true); b.c(4.6, 21.2, -0.4, 0.9, 1.6, 0.9, '#fff2b0', true);
+    put('lampW', b); }
+  // red candle cluster with flames
+  { const b = new VB(); const r = crand(11);
+    for (let i = 0; i < 5; i++) { const x = (r() - 0.5) * 5, z = (r() - 0.5) * 5, h = 2 + r() * 4.5, w = 1 + r() * 0.6;
+      b.c(x, 0, z - w / 2, w, h, w, i % 2 ? '#c21a2e' : '#a8122a'); b.c(x + w * 0.3, h - 1.6, z + w / 2 - 0.05, 0.35, 1.6, 0.2, '#e8394c');
+      b.c(x, h, z - 0.15, 0.3, 0.5, 0.3, '#2a1205'); b.c(x, h + 0.4, z - 0.3, 0.6, 1.2, 0.6, '#ffd34d', true); b.c(x, h + 1.5, z - 0.15, 0.3, 0.4, 0.3, '#fff2b0', true); }
+    put('candles', b); }
+  // pixel font (3x5) for signs and graves
+  const FONT = { T: ['111', '010', '010', '010', '010'], H: ['101', '101', '111', '101', '101'], E: ['111', '100', '110', '100', '111'], A: ['010', '101', '111', '101', '101'],
+    U: ['101', '101', '101', '101', '111'], N: ['101', '111', '111', '111', '101'], R: ['110', '101', '110', '101', '101'], C: ['011', '100', '100', '100', '011'],
+    S: ['011', '100', '010', '001', '110'], I: ['111', '010', '010', '010', '111'], P: ['110', '101', '110', '100', '100'], ' ': ['000', '000', '000', '000', '000'] };
+  // text faces -z (towards the runner); letters run towards -x (screen right)
+  const text = (b, str, x0, y0, z, px, color, g) => {
+    [...str].forEach((ch, i) => (FONT[ch] || FONT[' ']).forEach((row, ry) => [...row].forEach((bit, cx) => {
+      if (bit === '1') b.b(x0 - (i * 4 + cx) * px - px, y0 + (4 - ry) * px, z, px, px, 0.3, color, g);
+    })));
+  };
+  const sign = (label, dir) => {
+    const b = new VB();
+    b.c(0, 0, -0.8, 1.6, 22, 1.6, WDK);
+    const w = label.length * 4 * 0.9 + 6;
+    b.c(0, 12, -0.6, w, 8, 1.2, WD); b.c(0, 12.4, -0.75, w - 0.8, 7.2, 0.2, WD2);
+    for (const yy of [13.6, 16.4]) b.c(0, yy, -0.8, w - 0.4, 0.3, 0.1, WDK);
+    b.c(-w / 2 + 0.6, 12, -0.85, 0.6, 8, 0.2, WDK);
+    text(b, label, (label.length * 4 * 0.9) / 2 + (dir > 0 ? 1.6 : -1.6), 16.1, -1.0, 0.9, '#d77bff', true);
+    // arrow
+    const ax = dir > 0 ? -(label.length * 4 * 0.9) / 2 - 0.4 : (label.length * 4 * 0.9) / 2 + 0.4;
+    b.c(ax - dir * 1.3, 13.3, -1.0, 3.2, 0.8, 0.3, '#d77bff', true);
+    b.c(ax - dir * 2.6, 12.7, -1.0, 0.8, 2, 0.3, '#d77bff', true);
+    return b;
+  };
+  put('signHaunt', sign('THE HAUNT', 1));
+  put('signTrench', sign('TRENCHES', -1));
+  // RIP grave with a crown
+  { const b = new VB(); b.c(0, 0, -2, 10, 1, 5, '#3d3850');
+    b.c(0, 1, -1.2, 8.6, 10, 2.4, '#6d6680'); b.c(0, 11, -1, 6.6, 1.2, 2, '#6d6680'); b.c(0, 12.2, -0.8, 4, 0.8, 1.6, '#6d6680');
+    text(b, 'RIP', 4.6, 3, -1.45, 0.75, '#3b324f', false);
+    b.c(0, 8.4, -1.45, 3.6, 0.8, 0.3, '#ffc44d', true); for (const x of [-1.5, 0, 1.5]) b.c(x, 9.2, -1.45, 0.7, 0.9, 0.3, '#ffc44d', true);
+    b.c(3.6, 1, 1.1, 1.4, 2, 1.4, '#3d6b2a');
+    put('rip', b); }
+  // cracked rune stone
+  { const b = new VB(); b.c(0, 0, -3, 7, 8, 6, '#5d5873'); b.c(0.4, 8, -2.6, 6, 1.6, 5, '#6d6680'); b.c(-1, 9.6, -1.6, 3, 1, 3, '#6d6680');
+    b.c(-1, 1.5, -3.15, 0.5, 5.5, 0.3, '#c45cff', true); b.c(0.4, 4.5, -3.15, 2.8, 0.5, 0.3, '#c45cff', true); b.c(1.6, 2, -3.15, 0.5, 2.8, 0.3, '#c45cff', true);
+    b.c(-3.65, 3, -1, 0.3, 4, 0.5, '#c45cff', true);
+    put('rune', b); }
+  // barrel
+  { const b = new VB(); b.c(0, 0, -2.6, 5.2, 7, 5.2, '#5a3820'); b.c(0, 0.6, -2.9, 5.8, 5.8, 5.8, '#6b4428');
+    for (const y of [1, 5.6]) b.c(0, y, -3, 6, 0.6, 6, '#2c2a33'); b.c(0, 7, -2.4, 4.8, 0.4, 4.8, '#3a2618'); put('barrel', b); }
+  // big carved pumpkin
+  { const b = new VB(); b.c(0, 0, -4.5, 11, 7.5, 9, '#e2650c'); b.c(0, 0.6, -5, 8, 6.4, 10, '#ff7a1a'); b.c(0, 0.6, -4, 12.4, 6, 8, '#f06d10');
+    b.c(0, 7.5, -0.8, 1.4, 2, 1.4, '#3d7a24'); b.c(1, 9, -0.6, 2, 0.6, 0.8, '#3d7a24');
+    b.c(-2.4, 4, -5.15, 2.2, 1.6, 0.3, '#ffd34d', true); b.c(2.4, 4, -5.15, 2.2, 1.6, 0.3, '#ffd34d', true);
+    b.c(0, 1.5, -5.15, 6.4, 1.3, 0.3, '#ffd34d', true); b.c(-1.6, 2.8, -5.15, 1, 0.6, 0.3, '#ffd34d', true); b.c(1.6, 2.8, -5.15, 1, 0.6, 0.3, '#ffd34d', true);
+    put('pumpkinL', b); }
+  // cute floating ghost (bright)
+  { const b = new VB(); const W = '#d9d2ea';
+    b.c(0, 2, -3, 8, 7, 6, W, true); b.c(0, 9, -2.6, 6.6, 1.4, 5.2, W, true); b.c(0, 10.4, -1.8, 4.4, 0.8, 3.6, W, true);
+    for (let i = 0; i < 4; i++) b.b(-4 + i * 2, 0.4 + (i % 2), -3, 2, 1.8 - (i % 2), 6, '#c9c0e0', true);
+    b.c(-4.4, 5, -1, 1, 2.4, 2, W, true); b.c(4.4, 5, -1, 1, 2.4, 2, W, true);
+    b.c(-1.5, 6, -3.15, 1.2, 1.6, 0.3, '#1a1022', true); b.c(1.5, 6, -3.15, 1.2, 1.6, 0.3, '#1a1022', true);
+    b.c(-2.8, 4.6, -3.15, 1.2, 0.6, 0.3, '#ffb3d1', true); b.c(2.8, 4.6, -3.15, 1.2, 0.6, 0.3, '#ffb3d1', true);
+    b.c(0, 4, -3.15, 1.4, 0.7, 0.3, '#1a1022', true);
+    put('ghostC', b); }
+  // gothic graveyard gate over the road (open, spans about ±6.6 m); pumpkin face on top
+  { const b = new VB(); const S = '#4a4260', S2 = '#3a3350', I = '#1b1724';
+    for (const s of [-1, 1]) {
+      b.c(s * 62, 0, -4, 10, 46, 8, S); b.c(s * 62, 46, -4.6, 12, 3, 9.2, S2); b.c(s * 62, 49, -3, 7, 6, 6, S); b.c(s * 62, 55, -1.6, 3.6, 4, 3.2, S2);
+      lanternBox(b, s * 62, 38, -5.2);
+      // swung-open iron doors along the road side
+      for (let z = 0; z < 26; z += 3) b.c(s * 56, 4, z, 0.6, 32 + (z % 6 ? 0 : 4), 0.6, I);
+      b.c(s * 56, 6, 0, 0.8, 1, 27, I); b.c(s * 56, 26, 0, 0.8, 1, 27, I);
+    }
+    for (let i = 0; i < 31; i++) { const x = -57 + i * 3.8; const t = x / 60; const y = 46 + 16 * (1 - t * t); b.c(x, y, -3, 4.2, 4, 6, i % 2 ? S : S2); }
+    for (let x = -50; x <= 50; x += 5) b.c(x, 48, -0.6, 0.7, 10 * (1 - (x / 60) ** 2) + 4, 0.7, I);
+    b.c(0, 64, -5, 13, 11, 10, '#ff7a1a'); b.c(0, 64.6, -5.5, 10, 9.6, 11, '#e2650c'); b.c(0, 75, -1.5, 1.6, 2.6, 1.6, '#3d7a24');
+    b.c(-3, 70, -5.75, 2.8, 2.2, 0.3, '#ffd34d', true); b.c(3, 70, -5.75, 2.8, 2.2, 0.3, '#ffd34d', true); b.c(0, 66, -5.75, 7.6, 1.6, 0.3, '#ffd34d', true);
+    for (const x of [-2.6, 0, 2.6]) b.c(x, 67.6, -5.75, 1, 0.8, 0.3, '#ffd34d', true);
+    put('gate', b); }
   return out;
 }
 
@@ -484,6 +577,18 @@ export function buildCastle() {
   for (let x = -76; x < 80; x += 8) b.c(x, 50, -18, 5, 6, 36, S2);
   b.c(10, 8, 20.05, 22, 30, 0.5, '#0c0816'); b.c(10, 12, 20.2, 16, 4, 0.4, '#ff8a1f', true);
   return b.mesh(0.5);
+}
+
+/* Floating rock island with a tiny haunted castle (sky decoration, scale 1 = metres) */
+export function buildIsland(seed) {
+  const b = new VB(); const r = crand(seed * 13);
+  for (let i = 0; i < 9; i++) { const w = 34 - i * 3.6; b.c((r() - 0.5) * 3, -i * 2.4, -w / 2, w, 2.4, w * 0.8, i % 2 ? '#2a2140' : '#332848'); }
+  b.c(0, 0, -15, 34, 1.2, 28, '#2f3a2a');
+  b.c(0, 1.2, -5, 12, 12, 10, '#2b2242'); b.c(-7, 1.2, -4, 5, 20, 5, '#2f2648'); b.c(7, 1.2, -4, 5, 16, 5, '#2f2648');
+  for (let i = 0; i < 4; i++) { b.c(-7, 21 + i * 2, -3.5 + i * 0.6, 6 - i * 1.4, 2, 6 - i * 1.4, '#1c1530'); b.c(7, 17 + i * 2, -3.5 + i * 0.6, 6 - i * 1.4, 2, 6 - i * 1.4, '#1c1530'); }
+  for (const [x, y] of [[-7, 14], [7, 10], [-2, 6], [2, 6], [0, 9]]) b.c(x, y, 5.05, 1.4, 2, 0.3, r() < 0.7 ? '#ffb347' : '#b04cff', true);
+  b.c(12, 1.2, -2, 2, 6, 2, '#2a1c22'); b.c(12, 7, -1, 4, 4, 4, '#ff7a1a');
+  return b.mesh(1);
 }
 
 /* Distant forest/hill silhouette ring piece */

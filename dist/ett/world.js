@@ -4,7 +4,7 @@ import { EffectComposer, RenderPass, UnrealBloomPass, OutputPass } from './vendo
 import { ETT } from './config.js';
 import { obstacleWorldZ } from './sim.js';
 import { VB, materials, crand } from './voxel.js';
-import { buildInu, buildSkeleton, buildBoneDog, buildObstacle, coinGeometries, propGeometries, buildCastle, buildHills } from './models.js';
+import { buildInu, buildSkeleton, buildBoneDog, buildObstacle, coinGeometries, propGeometries, buildCastle, buildHills, buildIsland } from './models.js';
 
 const TAU = Math.PI * 2;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -55,6 +55,7 @@ export class World {
     this._buildPools();
     this._buildActors();
     this._buildParticles();
+    this._buildMist();
     this.composer = null;
     this.camPos = new THREE.Vector3(0, 3, -6); this.camLook = new THREE.Vector3(0, 1, 8);
     this.shake = 0; this.orbit = 0; this.dragYaw = 0;
@@ -81,7 +82,7 @@ export class World {
   _buildComposer() {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.85, 0.55, 0.5);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.7, 0.5, 0.62);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
   }
@@ -119,17 +120,26 @@ export class World {
     this.stars = new THREE.Points(sg, new THREE.PointsMaterial({ color: '#e8d8ff', size: 2.2, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.85 }));
     this.skyGroup.add(this.stars);
     // giant orange moon (+ halo), always ahead of the runner
-    const moonTex = canvasTex(256, 256, (g, w) => {
-      const grd = g.createRadialGradient(w / 2, w / 2, w * 0.05, w / 2, w / 2, w / 2);
-      grd.addColorStop(0, '#ffd27a'); grd.addColorStop(0.55, '#ff9a2e'); grd.addColorStop(0.92, '#ff7a1a'); grd.addColorStop(1, 'rgba(255,122,26,0)');
-      g.fillStyle = grd; g.beginPath(); g.arc(w / 2, w / 2, w / 2, 0, TAU); g.fill();
-      g.fillStyle = 'rgba(200,80,20,.35)';
-      for (const [x, y, s] of [[90, 80, 26], [160, 120, 18], [120, 170, 22], [70, 150, 12], [175, 70, 10]]) { g.fillRect(x - s / 2, y - s / 2, s, s); }
+    const moonTex = canvasTex(512, 512, (g, w) => {
+      const grd = g.createRadialGradient(w * 0.42, w * 0.4, w * 0.05, w / 2, w / 2, w / 2);
+      grd.addColorStop(0, '#ffe7a3'); grd.addColorStop(0.5, '#ffb84a'); grd.addColorStop(0.9, '#ff8a1f'); grd.addColorStop(1, 'rgba(255,122,26,0)');
+      g.fillStyle = grd; g.beginPath(); g.arc(w / 2, w / 2, w / 2 - 2, 0, TAU); g.fill();
+      g.fillStyle = 'rgba(214,110,30,.35)';
+      for (const [x, y, r] of [[150, 120, 34], [360, 140, 22], [120, 300, 18], [390, 330, 26], [250, 420, 16]]) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+      // carved grin (pixel-stepped)
+      g.fillStyle = 'rgba(150,40,10,.78)';
+      const px = 12, tri = (cx, cy, size, dir) => { for (let row = 0; row < size; row++) { const wd = (dir > 0 ? row + 1 : size - row) * 2; g.fillRect(cx - wd * px / 2, cy + row * px, wd * px, px); } };
+      tri(178, 170, 6, 1); tri(334, 170, 6, 1);
+      for (let i = 0; i < 17; i++) { const x = 100 + i * 18, curve = Math.round(Math.sin((i / 16) * Math.PI) * 4); g.fillRect(x, 300 + curve * px, 18, px * 3); }
+      g.clearRect(0, 0, 0, 0);
+      g.fillStyle = 'rgba(255,215,120,.9)';
+      for (const x of [154, 226, 298, 370]) g.fillRect(x, 300 + Math.round(Math.sin(((x - 100) / 288) * Math.PI) * 4) * px, 14, 14);
     });
+    moonTex.magFilter = THREE.NearestFilter;
     const halo = canvasTex(256, 256, (g, w) => { const grd = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); grd.addColorStop(0, 'rgba(255,140,40,.65)'); grd.addColorStop(0.4, 'rgba(255,90,30,.25)'); grd.addColorStop(1, 'rgba(255,60,30,0)'); g.fillStyle = grd; g.fillRect(0, 0, w, w); });
-    this.moon = new THREE.Mesh(new THREE.PlaneGeometry(190, 190), new THREE.MeshBasicMaterial({ map: moonTex, transparent: true, fog: false, depthWrite: false, toneMapped: false }));
+    this.moon = new THREE.Mesh(new THREE.PlaneGeometry(230, 230), new THREE.MeshBasicMaterial({ map: moonTex, transparent: true, fog: false, depthWrite: false, toneMapped: false }));
     this.moonHalo = new THREE.Mesh(new THREE.PlaneGeometry(520, 520), new THREE.MeshBasicMaterial({ map: halo, transparent: true, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }));
-    this.moon.position.set(-40, 105, 700); this.moonHalo.position.set(-40, 105, 705);
+    this.moon.position.set(-30, 130, 700); this.moonHalo.position.set(-30, 130, 705);
     this.moon.rotation.y = Math.PI; this.moonHalo.rotation.y = Math.PI;
     this.skyGroup.add(this.moonHalo, this.moon);
     // purple cloud bands
@@ -146,7 +156,16 @@ export class World {
       this.skyGroup.add(m); this.clouds.push(m);
     }
     // horizon castle + hill silhouettes (parallax with the camera)
-    this.castle = buildCastle(); this.castle.position.set(-150, 0, 520); this.castle.rotation.y = 0.25;
+    this.castle = buildCastle(); this.castle.position.set(-150, 26, 520); this.castle.rotation.y = 0.25;
+    { const hb = new VB(); const r3 = crand(31);
+      for (let i = 0; i < 18; i++) { const w = 120 - i * 6; hb.c((r3() - 0.5) * 8, i * 1.6, -w / 2, w, 1.7, w * 0.6, i % 3 ? '#1b1430' : '#221a3a'); }
+      const hill = hb.mesh(1); hill.position.set(-150, -2, 520); hill.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.fog = false; } }); this.skyGroup.add(hill); }
+    this.islands = [];
+    for (const [x, y, z, sc, seed] of [[150, 120, 560, 1, 1], [-260, 150, 610, 0.8, 2], [300, 90, 470, 0.6, 3]]) {
+      const isl = buildIsland(seed); isl.position.set(x, y, z); isl.scale.setScalar(sc);
+      isl.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.fog = false; } });
+      this.skyGroup.add(isl); this.islands.push({ m: isl, y, ph: seed });
+    }
     this.castle.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.fog = false; } });
     this.skyGroup.add(this.castle);
     this.hills = [];
@@ -154,7 +173,7 @@ export class World {
   }
 
   _buildLights() {
-    this.hemi = new THREE.HemisphereLight('#7a4cc2', '#2a1418', 1.9);
+    this.hemi = new THREE.HemisphereLight('#9a6ad8', '#3a2030', 2.0);
     this.moonLight = new THREE.DirectionalLight('#ffb070', 2.3);
     this.moonLight.position.set(-8, 14, 30);
     this.moonLight.shadow.mapSize.set(1024, 1024);
@@ -163,6 +182,9 @@ export class World {
     this.fill = new THREE.DirectionalLight('#b59bff', 1.5); this.fill.position.set(4, 8, -12);
     this.scene.add(this.hemi, this.moonLight, this.moonLight.target, this.fill, this.fill.target);
     this.playerGlow = new THREE.PointLight('#ff9a3c', 6, 9, 1.6); this.scene.add(this.playerGlow);
+    // warm pools of light under the nearest roadside lanterns
+    this.lanternLights = [];
+    for (let i = 0; i < 4; i++) { const l = new THREE.PointLight('#ffa340', 5, 9, 1.6); l.position.set(0, -50, 0); this.scene.add(l); this.lanternLights.push(l); }
   }
 
   _buildGround() {
@@ -171,38 +193,63 @@ export class World {
       for (let i = 0; i < 900; i++) { const s = 4 + Math.floor(r() * 3) * 4; const v = 150 + r() * 105; g.fillStyle = `rgb(${v * 0.9},${v * 0.85},${v})`; g.fillRect(Math.floor(r() * 64) * 4, Math.floor(r() * 64) * 4, s, s); }
     });
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(40, 60); tex.magFilter = THREE.NearestFilter;
-    this.groundMat = new THREE.MeshLambertMaterial({ color: '#2a1838', map: tex });
+    this.groundMat = new THREE.MeshLambertMaterial({ color: '#2f2238', map: tex });
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 600), this.groundMat);
     this.ground.rotation.x = -Math.PI / 2; this.ground.position.y = -0.05; this.ground.receiveShadow = true;
     this.groundTex = tex;
     this.scene.add(this.ground);
   }
 
-  /* Trench road: three mine-rail lanes between low trench walls. 20 m segments recycled. */
+  /* Cobblestone path (pixel texture) with chunky stone kerbs. 20 m segments recycled. */
   _buildRoad() {
-    const SEG = 20, b = new VB();
-    const X = [-25, 0, 25];
-    b.b(-41, -1, 0, 82, 1, SEG * 10, '#2a1f30');
-    for (const lx of X) {
-      b.b(lx - 11, 0, 0, 22, 0.4, SEG * 10, '#1f1626');
-      for (let z = 0; z < SEG * 10; z += 8) b.b(lx - 10, 0.4, z + 1, 20, 0.8, 3.2, (z / 8) % 3 ? '#3a2618' : '#4a3020');
-      for (const s of [-1, 1]) b.b(lx + s * 6.5 - 0.6, 1.2, 0, 1.2, 0.9, SEG * 10, '#6d6680');
-    }
-    for (const sx of [-12.5, 12.5]) { b.b(sx - 1.4, 0, 0, 2.8, 1.6, SEG * 10, '#3d3550'); for (let z = 6; z < SEG * 10; z += 50) b.b(sx - 0.5, 1.6, z, 1, 0.3, 4, '#b04cff', true); }
-    for (const s of [-1, 1]) {
-      b.b(s * 38 - (s > 0 ? 0 : 6), 0, 0, 6, 6, SEG * 10, '#3a3046');
-      for (let z = 0; z < SEG * 10; z += 20) b.b(s * 38 - (s > 0 ? -0.2 : 6.2), 6, z, 6.4, 1.6, 10, '#4a405a');
-      for (let z = 10; z < SEG * 10; z += 40) b.b(s * 41 - 1, 6, z, 2, 2, 2, '#ff8a1f', true);
-    }
-    const geo = b.geometries(0.1);
+    const SEG = 20;
+    const tex = canvasTex(256, 512, (g, w, h) => {
+      const r = crand(12);
+      g.fillStyle = '#231b2c'; g.fillRect(0, 0, w, h);                 // grout
+      let y = 0;
+      while (y < h) {
+        const rh = 22 + Math.floor(r() * 3) * 6; let x = -Math.floor(r() * 30);
+        while (x < w) {
+          const sw = 26 + Math.floor(r() * 4) * 8;
+          const v = 92 + r() * 46, tint = r() < 0.12 ? 18 : 0;
+          const lane = Math.abs((x + sw / 2) - w / 3) < 14 || Math.abs((x + sw / 2) - (2 * w) / 3) < 14;
+          const base = lane ? v + 14 : v;
+          g.fillStyle = `rgb(${base * 0.92 + tint},${base * 0.86},${base + tint})`; g.fillRect(x + 2, y + 2, sw - 4, rh - 4);
+          g.fillStyle = `rgba(255,240,255,${0.07 + r() * 0.06})`; g.fillRect(x + 2, y + 2, sw - 4, 4);           // top highlight
+          g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x + 2, y + rh - 6, sw - 4, 4);
+          if (r() < 0.06) { g.fillStyle = 'rgba(60,110,50,.55)'; g.fillRect(x + 4, y + rh - 8, 8, 6); }
+          x += sw;
+        }
+        y += rh;
+      }
+    });
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.magFilter = THREE.NearestFilter; tex.repeat.set(1, 1);
+    const roadMat = new THREE.MeshLambertMaterial({ map: tex });
+    const roadGeo = new THREE.PlaneGeometry(7.8, SEG); roadGeo.rotateX(-Math.PI / 2); roadGeo.translate(0, 0.02, SEG / 2);
+    // kerb stones + mossy verge
+    const variants = [0, 1, 2].map(vi => {
+      const b = new VB(); const r = crand(40 + vi);
+      for (const s of [-1, 1]) {
+        for (let z = 0; z < SEG * 10; z += 6 + Math.floor(r() * 3)) {
+          const h = 2.4 + r() * 1.6, c = ['#8a82a0', '#7a7290', '#9a92b0', '#6d6680'][Math.floor(r() * 4)];
+          b.b(s * 39 - (s > 0 ? 0 : 6.5), 0, z, 6.5, h, 5.6 + r() * 1.5, c);
+          b.b(s * 39 - (s > 0 ? -0.3 : 6.2), h, z + 0.6, 6, 0.5, 4, '#a49cba');
+        }
+        b.b(s * 46 - (s > 0 ? 0 : 20), -0.6, 0, 20, 0.8, SEG * 10, '#2a2a2c');
+        for (let z = 0; z < SEG * 10; z += 9) if (r() < 0.6) b.b(s * (47 + r() * 14) - 1, 0, z, 2 + r() * 3, 0.8 + r() * 1.2, 2 + r() * 2, r() < 0.5 ? '#2f4a2a' : '#3a2a3e');
+      }
+      return b.geometries(0.1);
+    });
     this.roadSegs = [];
     const M = materials();
     for (let i = 0; i < 12; i++) {
       const g = new THREE.Group();
+      const road = new THREE.Mesh(roadGeo, roadMat); road.receiveShadow = true; g.add(road);
+      const geo = variants[i % 3];
       const m = new THREE.Mesh(geo.lit, M.lit); m.receiveShadow = true; g.add(m);
-      g.add(new THREE.Mesh(geo.glow, M.glow));
       this.scene.add(g); this.roadSegs.push(g);
     }
+    this.roadTex = tex;
     this.SEG = SEG;
   }
 
@@ -210,7 +257,7 @@ export class World {
   _buildProps() {
     const geos = propGeometries();
     const M = materials();
-    const caps = { tree: 90, pine: 140, cross: 80, grave: 90, fence: 60, lamp: 50, pumpkinS: 90, house: 20, mausoleum: 12, arch: 8, candleRed: 30, candleGreen: 30, rock: 80, bush: 80, bones: 50, ghost: 20, chartSign: 24 };
+    const caps = { tree: 80, pine: 110, cross: 40, grave: 40, fenceW: 130, lampW: 24, candles: 60, rip: 40, rune: 40, barrel: 30, pumpkinL: 40, pumpkinS: 50, signHaunt: 6, signTrench: 6, ghostC: 24, gate: 3, house: 20, mausoleum: 10, arch: 6, candleRed: 24, candleGreen: 24, rock: 40, bush: 50, bones: 30, chartSign: 16 };
     this.props = {};
     for (const [name, cap] of Object.entries(caps)) {
       const g = geos[name];
@@ -234,29 +281,45 @@ export class World {
     const r = crand(t * 7 + 3), z0 = t * 20, biome = biomeAt(z0), list = [];
     const add = (type, x, z, rot = 0, s = 1) => list.push({ type, x, z: z0 + z, rot, s });
     const side = () => (r() < 0.5 ? -1 : 1);
-    if (t % 2 === 0) for (const s of [-1, 1]) add('lamp', s * 5.2, 10, s > 0 ? Math.PI : 0, 1);
     const B = BIOMES[biome].id, dens = this.Q.density;
-    const N = Math.round((B === 'village' ? 8 : 12) * dens);
-    for (let i = 0; i < N; i++) {
-      const s = side(), x = s * (6.5 + r() * 34), z = r() * 20, rot = r() * TAU;
-      const near = Math.abs(x) < 14;
-      let type;
-      const q = r();
-      if (B === 'forest') type = q < 0.35 ? 'tree' : q < 0.7 ? 'pine' : q < 0.82 ? 'bush' : q < 0.92 ? 'pumpkinS' : 'rock';
-      else if (B === 'graveyard') type = q < 0.32 ? 'grave' : q < 0.55 ? 'cross' : q < 0.7 ? 'tree' : q < 0.8 ? 'bones' : q < 0.9 ? 'pumpkinS' : 'pine';
-      else if (B === 'village') type = q < 0.3 ? 'pumpkinS' : q < 0.5 ? 'tree' : q < 0.7 ? 'bush' : q < 0.85 ? 'grave' : 'pine';
-      else if (B === 'bridge') type = q < 0.45 ? 'pine' : q < 0.65 ? 'rock' : q < 0.8 ? 'tree' : 'bush';
-      else type = q < 0.25 ? 'bones' : q < 0.5 ? 'rock' : q < 0.7 ? 'chartSign' : q < 0.85 ? 'grave' : 'tree';
-      if (type === 'chartSign' && !near) continue;
-      add(type, x, z, type === 'chartSign' ? (s > 0 ? -Math.PI / 2 : Math.PI / 2) : rot, 0.8 + r() * 0.6);
+    // ---- the reference look: fences, lanterns, candles, graves and rune stones hugging the path ----
+    for (const s of [-1, 1]) {
+      for (let z = 2; z < 20; z += 4) if (r() < 0.8) add('fenceW', s * 6.4, z, 0, 1);
+      if ((t + (s > 0 ? 1 : 0)) % 2 === 0) add('lampW', s * 4.7, 8, s > 0 ? Math.PI : 0, 1);
+      const nNear = 1 + Math.floor(r() * 3 * dens);
+      for (let i = 0; i < nNear; i++) {
+        const q = r(), x = s * (4.5 + r() * 1.4), z = r() * 20, tilt = -s * (0.2 + r() * 0.4);
+        const type = q < 0.3 ? 'candles' : q < 0.48 ? 'rip' : q < 0.64 ? 'rune' : q < 0.78 ? 'pumpkinL' : q < 0.88 ? 'barrel' : 'candles';
+        add(type, x, z, tilt, type === 'candles' ? 1 : 0.85 + r() * 0.3);
+      }
+      // second row behind the fence
+      const nBack = Math.round((2 + r() * 3) * dens);
+      for (let i = 0; i < nBack; i++) {
+        const q = r(), x = s * (8 + r() * 10), z = r() * 20;
+        const type = q < 0.3 ? 'rip' : q < 0.5 ? 'tree' : q < 0.62 ? 'pumpkinL' : q < 0.74 ? 'rune' : q < 0.86 ? 'candles' : 'cross';
+        add(type, x, z, type === 'tree' ? r() * TAU : -s * r() * 0.6, 0.8 + r() * 0.5);
+      }
     }
-    if (B === 'graveyard') { for (const s of [-1, 1]) add('fence', s * 6, 10, Math.PI / 2, 1); if (r() < 0.35) add('mausoleum', side() * (16 + r() * 10), 10, r() < 0.5 ? Math.PI / 2 : -Math.PI / 2, 1); }
-    if (B === 'village' && r() < 0.8) { const s = side(); add('house', s * (18 + r() * 12), 10, s > 0 ? -Math.PI / 2 : Math.PI / 2, 0.8 + r() * 0.3); }
-    if (B === 'village' && r() < 0.5) add('fence', side() * 6, 10, Math.PI / 2, 1);
+    if (t % 6 === 3) { add('signHaunt', -5.6, 6, -0.45, 1); }
+    if (t % 6 === 0 && t > 0) { add('signTrench', 5.6, 12, 0.45, 1); }
+    if (t % 15 === 9) add('gate', 0, 10, 0, 1);
+    if (r() < 0.35) add('ghostC', side() * (5.5 + r() * 4), r() * 20, 0, 0.7 + r() * 0.4);
+    // ---- far layer per biome ----
+    const N = Math.round(7 * dens);
+    for (let i = 0; i < N; i++) {
+      const s = side(), x = s * (18 + r() * 30), z = r() * 20, rot = r() * TAU, q = r();
+      let type;
+      if (B === 'forest') type = q < 0.45 ? 'tree' : q < 0.85 ? 'pine' : 'bush';
+      else if (B === 'graveyard') type = q < 0.35 ? 'grave' : q < 0.6 ? 'cross' : q < 0.8 ? 'tree' : 'pine';
+      else if (B === 'village') type = q < 0.4 ? 'pumpkinS' : q < 0.7 ? 'tree' : 'pine';
+      else if (B === 'bridge') type = q < 0.55 ? 'pine' : q < 0.8 ? 'rock' : 'tree';
+      else type = q < 0.3 ? 'bones' : q < 0.55 ? 'rock' : q < 0.75 ? 'grave' : 'tree';
+      add(type, x, z, rot, 0.9 + r() * 0.7);
+    }
+    if (B === 'graveyard' && r() < 0.4) add('mausoleum', side() * (17 + r() * 10), 10, r() < 0.5 ? Math.PI / 2 : -Math.PI / 2, 1);
+    if ((B === 'village' && r() < 0.85) || r() < 0.18) { const s = side(); add('house', s * (19 + r() * 14), 10, s > 0 ? -Math.PI / 2 : Math.PI / 2, 0.8 + r() * 0.3); }
     if (B === 'bridge' && t % 3 === 0) add('arch', 0, 4, 0, 1);
-    if (B === 'trenches') { add(r() < 0.6 ? 'candleRed' : 'candleGreen', side() * (14 + r() * 26), r() * 20, 0, 0.6 + r() * 0.7); if (r() < 0.5) add(r() < 0.6 ? 'candleRed' : 'candleGreen', side() * (20 + r() * 30), r() * 20, 0, 0.5 + r() * 0.8); }
-    if (r() < 0.12) add('ghost', side() * (7 + r() * 12), r() * 20, 0, 1 + r() * 0.5);
-    if (B !== 'village' && r() < 0.06 * dens) { const s = side(); add('house', s * (28 + r() * 14), 10, s > 0 ? -Math.PI / 2 : Math.PI / 2, 0.9); }
+    if (B === 'trenches') { add(r() < 0.6 ? 'candleRed' : 'candleGreen', side() * (14 + r() * 26), r() * 20, 0, 0.6 + r() * 0.7); if (r() < 0.5) add('chartSign', side() * 9, r() * 20, 0, 1); }
     const tile = { t, list, biome };
     this.tiles.set(t, tile);
     return tile;
@@ -267,11 +330,13 @@ export class World {
     const t0 = Math.floor((camZ - 25) / 20), t1 = Math.floor((camZ + this.Q.far + 10) / 20);
     for (const key of this.tiles.keys()) if (key < t0 - 1 || key > t1 + 1) this.tiles.delete(key);
     const m4 = this._m4, q = this._q, v = this._v, s = this._s, e = this._e;
+    const lights = this.Q.bloom ? this.lanternLights : []; let nl = 0;
     for (let t = t0; t <= t1; t++) {
       for (const p of this._tile(t).list) {
         const P = this.props[p.type]; if (!P || P.n >= P.cap) continue;
         let y = 0, rot = p.rot;
-        if (p.type === 'ghost') { y = 2.5 + Math.sin(time * 1.4 + p.z) * 0.6; rot = Math.sin(time * 0.6 + p.x) * 0.5 + (p.x > 0 ? -Math.PI / 2 : Math.PI / 2); }
+        if (p.type === 'ghostC') { y = 2.4 + Math.sin(time * 1.6 + p.z) * 0.45; rot = Math.PI + Math.sin(time * 0.8 + p.x) * 0.35; }
+        if (p.type === 'lampW' && nl < lights.length && p.z > camZ - 4 && p.z < camZ + 40) { const l = lights[nl++]; l.position.set(p.x + (p.x < 0 ? 0.46 : -0.46), 2.1, p.z); }
         e.set(0, rot, 0); q.setFromEuler(e); v.set(p.x, y, p.z); s.set(p.s, p.s, p.s);
         m4.compose(v, q, s);
         if (P.lit) P.lit.setMatrixAt(P.n, m4);
@@ -280,6 +345,7 @@ export class World {
       }
     }
     for (const k in this.props) { const P = this.props[k]; for (const im of [P.lit, P.glow]) if (im) { im.count = P.n; im.instanceMatrix.needsUpdate = true; } }
+    for (let k = nl; k < this.lanternLights.length; k++) this.lanternLights[k].position.y = -50;
     // bats circling ahead
     let i = 0;
     for (const b of this.bats.list) {
@@ -468,6 +534,35 @@ export class World {
     p.hip.position.y = running ? Math.abs(Math.sin(c)) * 0.12 : excited ? Math.abs(Math.sin(time * 9)) * 0.55 : 0;
   }
 
+  /* ---------------- low rolling mist (soft sprite cards) ---------------- */
+  _buildMist() {
+    const tex = canvasTex(128, 64, (g, w, h) => {
+      const r = crand(8);
+      for (let i = 0; i < 26; i++) { const x = 20 + r() * (w - 40), y = 18 + r() * (h - 36), rad = 10 + r() * 18;
+        const grd = g.createRadialGradient(x, y, 0, x, y, rad); grd.addColorStop(0, 'rgba(225,205,255,.32)'); grd.addColorStop(1, 'rgba(225,205,255,0)');
+        g.fillStyle = grd; g.fillRect(0, 0, w, h); }
+    });
+    this.mist = [];
+    const r = crand(66);
+    for (let i = 0; i < 34; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: i > 20 ? 0.5 : 0.28, color: i % 3 ? '#cdb6ff' : '#ffc8a8' }));
+      const far = i > 20;
+      const sx = far ? 70 + r() * 60 : 14 + r() * 14;
+      sp.scale.set(sx, sx * 0.35, 1);
+      this.mist.push({ sp, x: (r() < 0.5 ? -1 : 1) * (far ? 20 + r() * 60 : 9 + r() * 14), y: far ? 2 + r() * 6 : 0.3 + r() * 0.8, dz: r() * 200, sp2: 0.3 + r() * 0.6, far });
+      this.scene.add(sp);
+    }
+  }
+  _updateMist(camZ, time) {
+    const n = Math.round(this.mist.length * (0.4 + 0.6 * this.Q.density));
+    this.mist.forEach((m, i) => {
+      m.sp.visible = i < n;
+      const z = camZ - 10 + ((m.dz - camZ * 0.0 + 1000) % 200);
+      const dz = (((m.dz - camZ) % 200) + 200) % 200; m.sp.position.set(m.x + Math.sin(time * m.sp2 + i) * 2, m.y, camZ + 12 + dz);
+      void z;
+    });
+  }
+
   /* ---------------- particles ---------------- */
   _buildParticles() {
     const N = 700;
@@ -590,6 +685,8 @@ export class World {
     this.groundTex.offset.y = (camZ / 600) * 60 % 1;
     this.skyGroup.position.set(0, 0, camZ);
     this.clouds.forEach((c, i) => { c.position.x = ((time * (3 + i * 2) + i * 300) % 900) - 450; });
+    for (const isl of this.islands) isl.m.position.y = isl.y + Math.sin(time * 0.4 + isl.ph) * 4;
+    this._updateMist(camZ, time);
     // biome colour grading
     const bz = Math.max(0, camZ), bi = biomeAt(bz), within = (bz % BIOME_LEN) / BIOME_LEN;
     const nb = (bi + 1) % BIOMES.length, mix = within > 0.93 ? (within - 0.93) / 0.07 : 0;
@@ -606,7 +703,7 @@ export class World {
 
     // ----- camera -----
     this._camera(dt, v, time);
-    if (this.bloom) this.bloom.strength = 0.8 + this.flash;
+    if (this.bloom) this.bloom.strength = 0.68 + this.flash;
     if (this.composer && this.Q.bloom) this.composer.render(dt); else this.renderer.render(this.scene, this.camera);
   }
 

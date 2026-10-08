@@ -391,6 +391,7 @@ function startSim(seed, run) {
   G.sim = new Sim(seed); G.run = run; G.inputs = []; G.queue = []; G.acc = 0; G.paused = false; G.biome = -1; G.stepT = 0;
   G.prev = { pz: 0, px: G.sim.px, y: 0 };
   G.runStartedAt = performance.now(); G.fps = []; G.qualityChecked = 0;
+  G.bestKnown = Math.max(store.get('ett.best', { score: 0 }).score || 0, (G.me && G.me.personalBest && G.me.personalBest.score) || 0);
   world.setCharacter(G.char);
   world.resetRun(); world.setMode('run'); world.snapCamera({ pz: 0, px: 0 });
   G.back = [];
@@ -471,7 +472,9 @@ let hudCache = {};
 function renderHud() {
   const s = G.sim; if (!s) return;
   const c = s.stats.coins;
-  const vals = { '#h-score': s.points, '#h-ch': c.HALLOWINU, '#h-cu': c.USDC, '#h-cs': c.SOLANA, '#h-dist': Math.floor(s.pz), '#h-speed': `${s.speed.toFixed(1)} M/S` };
+  const best = Math.max(s.points, G.bestKnown || 0);
+  const vals = { '#h-score': s.points.toLocaleString(), '#h-coins': (c.HALLOWINU + c.USDC + c.SOLANA).toLocaleString(), '#h-best': best.toLocaleString(),
+    '#h-ch': c.HALLOWINU, '#h-cu': c.USDC, '#h-cs': c.SOLANA, '#h-dist': Math.floor(s.pz).toLocaleString(), '#h-speed': `${s.speed.toFixed(1)} M/S` };
   for (const k in vals) if (hudCache[k] !== vals[k]) { $(k).textContent = vals[k]; hudCache[k] = vals[k]; }
 }
 

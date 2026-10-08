@@ -158,17 +158,7 @@ kbd{display:inline-block;min-width:28px;padding:5px 6px 4px;margin-right:6px;fon
 
 /* ---------- HUD ---------- */
 .hud{position:absolute;inset:0;z-index:12;pointer-events:none;padding:calc(10px + var(--safe-t)) calc(12px + var(--safe-r)) 0 calc(12px + var(--safe-l))}
-.hud-score{position:absolute;left:calc(12px + var(--safe-l));top:calc(10px + var(--safe-t));padding:10px 14px 10px 12px;background:rgba(10,5,22,.7);box-shadow:0 0 0 3px var(--orange),0 0 18px rgba(255,122,26,.35)}
-.hud-score .lbl{display:block;font:8px var(--f-pixel);color:var(--pumpkin)}
-.hud-score>b{display:block;font:26px/1.1 var(--f-pixel);color:#fff;text-shadow:0 0 12px rgba(255,180,80,.6)}
-.hud-coins{display:flex;gap:10px;margin-top:6px}
-.hud-coins span{display:flex;align-items:center;font:9px var(--f-pixel)}
-.hud-coins .coin{width:13px;height:13px;margin-right:4px;vertical-align:0}
-.hud-dist{position:absolute;right:calc(70px + var(--safe-r));top:calc(10px + var(--safe-t));text-align:right;padding:10px 12px;background:rgba(10,5,22,.7);box-shadow:0 0 0 3px var(--neon)}
-.hud-dist b{font:20px var(--f-pixel)}.hud-dist span{font:10px var(--f-pixel);color:var(--neon);margin-left:4px}
-.hud-dist small{display:block;font:8px var(--f-pixel);color:var(--muted);margin-top:6px}
-.hud-pause{position:absolute;right:calc(12px + var(--safe-r));top:calc(10px + var(--safe-t));width:48px;height:48px;border:0;pointer-events:auto;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(23,10,43,.9);box-shadow:0 0 0 3px var(--neon);touch-action:manipulation}
-.hud-pause i{width:6px;height:18px;background:#fff}
+.hud-dist span{font:10px var(--f-pixel);color:var(--neon);margin-left:4px}
 .biome{position:absolute;left:50%;top:22%;transform:translateX(-50%);font:clamp(20px,3.4vw,34px)/1 var(--f-horror);letter-spacing:.08em;color:#ffe2b8;text-shadow:0 0 18px rgba(196,92,255,.9),0 3px 0 #250842;opacity:0;white-space:nowrap}
 .biome.show{animation:biome 2.6s steps(12) forwards}
 @keyframes biome{0%{opacity:0;transform:translate(-50%,10px)}15%,75%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
@@ -245,8 +235,7 @@ kbd{display:inline-block;min-width:28px;padding:5px 6px 4px;margin-right:6px;fon
   .s-menu .logo{text-align:center}
   .earn-note{font-size:12px}
   .controls{gap:8px}.cbtn{width:68px;height:64px}.cbtn.wide{width:104px}
-  .hud-score>b{font-size:20px}.hud-dist b{font-size:16px}
-  .guest-tag{top:calc(96px + var(--safe-t))}
+    .guest-tag{top:calc(96px + var(--safe-t))}
   .char-strip{gap:8px;flex-wrap:nowrap}.cc{width:78px;height:92px;padding:4px}.cc img{width:60px;height:60px}.cc span{font-size:6px}
 }
 @media (max-height:520px) and (orientation:landscape){
@@ -267,3 +256,51 @@ kbd{display:inline-block;min-width:28px;padding:5px 6px 4px;margin-right:6px;fon
   .sel-info{padding:10px}.sel-blurb{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition:none!important}}
+
+/* ===== reference look: logo + HUD panels ===== */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ett-logo,.hud-logo{display:grid;justify-items:center;line-height:.86;text-align:center;width:max-content}
+.ett-logo .l1,.hud-logo .l1{font:clamp(30px,4.6vw,56px)/.9 var(--f-horror);letter-spacing:.03em;color:#f4f0ff;
+  text-shadow:0 0 0 #000,3px 3px 0 #3b1c66,-2px -2px 0 #3b1c66,2px -2px 0 #3b1c66,-2px 2px 0 #3b1c66,0 6px 0 #1c0a33,0 0 22px rgba(196,92,255,.55)}
+.ett-logo .l2,.hud-logo .l2{position:relative;font:clamp(44px,7vw,88px)/.9 var(--f-horror);letter-spacing:.02em;
+  background:linear-gradient(180deg,#ffd27a 0%,#ff9a2e 40%,#f0620c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(3px 3px 0 #3d1200) drop-shadow(-2px -2px 0 #3d1200) drop-shadow(0 5px 0 #1f0800) drop-shadow(0 0 14px rgba(255,122,26,.65))}
+.ett-logo .l2 i,.hud-logo .l2 i{position:absolute;font-style:normal;font-size:.42em;right:38%;top:-.35em;-webkit-text-fill-color:initial;filter:drop-shadow(0 0 8px rgba(255,140,40,.9))}
+.ett-logo .l3,.hud-logo .l3{margin-top:6px;font:clamp(9px,1.1vw,13px)/1 var(--f-pixel);letter-spacing:.45em;color:#f4f0ff;text-shadow:2px 2px 0 #3b1c66}
+.s-menu .ett-logo{justify-self:center}
+.s-loading .ett-logo .l2{font-size:clamp(48px,9vw,96px)}
+.hud-logo{position:absolute;left:calc(14px + var(--safe-l));top:calc(10px + var(--safe-t));transform:scale(.58);transform-origin:left top}
+.hud-pause{position:absolute;left:calc(14px + var(--safe-l));top:calc(112px + var(--safe-t));width:46px;height:46px;border:0;pointer-events:auto;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+  background:rgba(18,10,34,.78);border-radius:10px;box-shadow:inset 0 0 0 2px rgba(203,184,240,.35),0 6px 18px rgba(0,0,0,.4);touch-action:manipulation}
+.hud-pause i{width:6px;height:18px;background:#fff;border-radius:2px}
+.hud-panels{position:absolute;right:calc(14px + var(--safe-r));top:calc(10px + var(--safe-t));display:grid;gap:8px;justify-items:end}
+.hp{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:10px;min-width:220px;padding:8px 14px;background:linear-gradient(180deg,rgba(28,16,48,.86),rgba(14,8,28,.86));
+  border-radius:12px;box-shadow:inset 0 0 0 2px rgba(203,184,240,.28),inset 0 2px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.45)}
+.hp .lbl{font:9px/1 var(--f-pixel);color:#ffcf6a;letter-spacing:.05em}
+.hp>b{justify-self:end;font:18px/1 var(--f-pixel);color:#fff;text-shadow:0 2px 0 #1c0a33}
+.hp.big{min-width:250px;padding:10px 16px}.hp.big>b{font-size:26px}.hp.big .lbl{font-size:10px}
+.hico{font-style:normal;font-size:22px;line-height:1;filter:drop-shadow(0 0 6px rgba(255,140,40,.7))}
+.hp.big .hico{font-size:30px}
+.c-g{width:22px;height:22px;margin:0;background:radial-gradient(circle at 35% 35%,#fff3b0,#ffc93a 45%,#c98a12);box-shadow:0 0 12px rgba(255,201,58,.85),inset 0 0 0 2px #ffe9a0}
+.hud-coins{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;margin-top:2px}
+.hud-coins span{display:flex;align-items:center;font:8px var(--f-pixel);color:#e8dcff}
+.hud-coins .coin{width:11px;height:11px;margin-right:4px;vertical-align:0}
+.hp.dist{min-width:0;grid-template-columns:auto auto auto;padding:6px 12px;gap:6px}
+.hp.dist>b{font-size:14px}.hp.dist small{font:8px var(--f-pixel);color:var(--muted)}
+.mbtn{border-radius:10px}.mbtn.primary{box-shadow:0 -3px 0 0 var(--b),0 3px 0 0 var(--b),-3px 0 0 0 var(--b),3px 0 0 0 var(--b),inset 0 -4px 0 rgba(0,0,0,.35),0 0 24px rgba(255,140,40,.45)}
+@media (max-width:860px){
+  .hud-logo{transform:scale(.4)}
+  .hud-pause{top:calc(76px + var(--safe-t));width:40px;height:40px}
+  .hp{min-width:150px;padding:6px 10px;gap:8px}.hp.big{min-width:170px}.hp.big>b{font-size:20px}.hp>b{font-size:14px}
+  .hp .lbl{font-size:7px}.hico{font-size:16px}.hp.big .hico{font-size:22px}.c-g{width:16px;height:16px}
+  .hud-coins{gap:6px}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .hud-logo{transform:scale(.38)}.hud-pause{top:calc(66px + var(--safe-t))}
+  .hud-panels{gap:5px}.hp{min-width:140px;padding:4px 10px}.hp.big{min-width:160px}.hp.big>b{font-size:18px}.hp>b{font-size:13px}.hud-coins{display:none}
+  .ett-logo .l1{font-size:24px}.ett-logo .l2{font-size:36px}.ett-logo .l3{font-size:8px}
+}
+@media (max-width:860px) and (orientation:portrait){
+  .ett-logo .l1{font-size:30px}.ett-logo .l2{font-size:46px}
+  .guest-tag{top:auto;bottom:calc(92px + var(--safe-b))}
+}

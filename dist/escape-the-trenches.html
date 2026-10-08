@@ -18,7 +18,7 @@
 <link rel="preload" href="/fonts/creepster.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="/fonts/press-start.woff" as="font" type="font/woff" crossorigin>
 <link rel="modulepreload" href="/ett/vendor/three.bundle.js">
-<link rel="stylesheet" href="/ett/ett.css?v=1">
+<link rel="stylesheet" href="/ett/ett.css?v=2">
 </head>
 <body>
 <div id="ett" class="ett is-loading" data-screen="loading">
@@ -28,7 +28,7 @@
 
   <!-- ===== LOADING ===== -->
   <section class="screen s-loading" id="s-loading" aria-live="polite">
-    <div class="logo"><span class="wm"><span class="o">HALLOW</span><span class="p">INU</span></span><h1>ESCAPE <em>THE</em> TRENCHES</h1></div>
+    <div class="logo ett-logo"><span class="l1">ESCAPE THE</span><span class="l2">TRENCHES<i aria-hidden="true">🎃</i></span><span class="l3">HALLOWINU</span><h1 class="sr">HALLOWINU — Escape The Trenches</h1></div>
     <div class="bar"><i id="load-bar"></i></div>
     <p id="load-text">Summoning the haunted world…</p>
     <noscript><p>This game needs JavaScript and WebGL.</p></noscript>
@@ -51,7 +51,7 @@
   <!-- ===== MAIN MENU ===== -->
   <section class="screen s-menu" id="s-menu" hidden>
     <div class="menu-col">
-      <div class="logo"><span class="wm"><span class="o">HALLOW</span><span class="p">INU</span></span><h1>ESCAPE <em>THE</em> TRENCHES</h1></div>
+      <div class="logo ett-logo"><span class="l1">ESCAPE THE</span><span class="l2">TRENCHES<i aria-hidden="true">🎃</i></span><span class="l3">HALLOWINU</span><h1 class="sr">HALLOWINU — Escape The Trenches</h1></div>
       <nav class="menu-buttons" aria-label="Game menu">
         <button class="mbtn primary" type="button" data-act="play">▶ PLAY</button>
         <button class="mbtn" type="button" data-go="select">SELECT CHARACTER</button>
@@ -205,11 +205,15 @@
 
   <!-- ===== HUD ===== -->
   <div class="hud" id="hud" hidden>
-    <div class="hud-score"><span class="lbl">SCORE</span><b id="h-score">0</b>
-      <div class="hud-coins"><span><i class="coin c-h"></i><b id="h-ch">0</b></span><span><i class="coin c-u"></i><b id="h-cu">0</b></span><span><i class="coin c-s"></i><b id="h-cs">0</b></span></div>
-    </div>
-    <div class="hud-dist"><b id="h-dist">0</b><span>M</span><small id="h-speed">13 M/S</small></div>
+    <div class="hud-logo" aria-hidden="true"><span class="l1">ESCAPE THE</span><span class="l2">TRENCHES<i>🎃</i></span><span class="l3">HALLOWINU</span></div>
     <button class="hud-pause" type="button" data-act="pause" aria-label="Pause (P)"><i></i><i></i></button>
+    <div class="hud-panels">
+      <div class="hp big"><i class="hico">🎃</i><span class="lbl">SCORE</span><b id="h-score">0</b></div>
+      <div class="hp"><i class="coin c-g"></i><span class="lbl">COINS</span><b id="h-coins">0</b>
+        <div class="hud-coins"><span><i class="coin c-h"></i><b id="h-ch">0</b></span><span><i class="coin c-u"></i><b id="h-cu">0</b></span><span><i class="coin c-s"></i><b id="h-cs">0</b></span></div></div>
+      <div class="hp"><i class="hico">👑</i><span class="lbl">BEST SCORE</span><b id="h-best">0</b></div>
+      <div class="hp dist"><b id="h-dist">0</b><span class="lbl">M</span><small id="h-speed">13 M/S</small></div>
+    </div>
     <div class="biome" id="h-biome" aria-live="polite"></div>
     <div class="hud-msg" id="h-msg"></div>
     <div class="guest-tag" id="h-guest" hidden>GUEST RUN · NOT EARNING</div>
@@ -237,6 +241,6 @@
   </dialog>
 </div>
 <script src="/wallet.js?v=47"></script>
-<script type="module" src="/ett/game.js?v=1"></script>
+<script type="module" src="/ett/game.js?v=2"></script>
 </body>
 </html>
