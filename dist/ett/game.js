@@ -22,7 +22,7 @@ const BAD = { MISMATCH: 'the run could not be reproduced', TOO_FAST: 'uploaded f
 /* ---------------- settings ---------------- */
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (isTouch && Math.min(screen.width, screen.height) < 820);
-const DEFAULTS = { music: 55, sfx: 80, muted: false, quality: 'auto', perf: isMobile, buttons: 'on', keys: { left: null, right: null, jump: null, duck: null } };
+const DEFAULTS = { music: 55, sfx: 80, muted: false, quality: 'auto', perf: false, buttons: 'on', keys: { left: null, right: null, jump: null, duck: null } };
 const S = Object.assign({}, DEFAULTS, store.get('ett.settings', {}));
 S.keys = Object.assign({}, DEFAULTS.keys, S.keys || {});
 const saveSettings = () => store.set('ett.settings', S);
@@ -202,7 +202,7 @@ function updateSel() {
 function applySettings() {
   audio.setVolumes({ music: S.music / 100, sfx: S.sfx / 100, muted: S.muted });
   root.classList.toggle('is-muted', S.muted);
-  const q = S.quality === 'auto' ? (S.perf || isMobile ? 'low' : 'medium') : S.quality;
+  const q = S.quality === 'auto' ? (S.perf ? 'low' : 'medium') : S.quality;
   if (world && world.qualityName !== q) world.setQuality(q);
   $('#controls').hidden = !(G.screen === 'run' && S.buttons !== 'off');
 }
@@ -356,7 +356,9 @@ function chooseChar() {
 }
 function checkRotate() {
   const portraitPhone = isMobile && innerHeight > innerWidth;
-  $('#rotate-hint').hidden = !(portraitPhone && G.screen === 'run' && !store.get('ett.rotateDismissed', false));
+  const show = portraitPhone && G.screen === 'run' && !store.get('ett.rotateDismissed', false) && !G.rotateShown;
+  $('#rotate-hint').hidden = !show;
+  if (show) { G.rotateShown = true; setTimeout(() => { $('#rotate-hint').hidden = true; }, 3500); }
 }
 
 /* ---------------- run lifecycle ---------------- */
@@ -398,7 +400,7 @@ function startSim(seed, run) {
   show('run');
   $('#h-guest').hidden = run.earning;
   audio.music(true, 0); audio.sfx('bark'); setTimeout(() => audio.sfx('rattle'), 250);
-  hudMsg('RUN! THE SKELETONS ARE COMING!');
+  hudMsg('RUN!');
   checkRotate();
 }
 function pause() {
@@ -438,7 +440,7 @@ function handleEvents() {
         break;
       }
       case 'nearmiss': audio.sfx('nearmiss'); if (Math.random() < 0.35) hudMsg(['CLOSE CALL!', 'NICE DODGE!', 'TOO EASY'][Math.floor(Math.random() * 3)]); break;
-      case 'stumble': audio.sfx('stumble'); audio.sfx('bark'); hudMsg('STUMBLED! THEY’RE RIGHT BEHIND YOU!', true); break;
+      case 'stumble': audio.sfx('stumble'); audio.sfx('bark'); hudMsg('WATCH OUT!', true); break;
       case 'dead': break;
     }
   }

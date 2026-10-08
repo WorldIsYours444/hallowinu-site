@@ -24,121 +24,108 @@ const PAL = {
 };
 
 function part(builder, x, y, z) { const m = builder.mesh(0.1, { shadow: true }); return at(G(m), x, y, z); }
+const V = 0.1;   // metres per voxel
 
-/* Builds a chibi upright voxel Inu. Returns { root, parts }. Pivots: hip (0,0.4,0). */
+/* Chibi upright voxel Inu, reference style: round shiba head with triangle ears, caped back with a
+   glowing pumpkin emblem, white rump + socks, curled white-tipped tail.
+   Facing +z. Every part pivots at its joint; feet touch y = 0 in the rest pose. */
 export function buildInu(id) {
   const P = PAL[id] || PAL['shiba-inu'];
   const robot = id === 'artificial-inu', hero = id === 'super-inu', hallow = id === 'hallow-inu';
   const NEON = '#2ef2ff', VIOLET = '#a855f7';
+  const fur = robot ? '#5b6378' : P.fur, furD = robot ? '#3c4254' : P.furDark, cream = robot ? '#9aa3b8' : P.cream;
+  const suit = hero ? '#233a8a' : fur;
+  const HIP = 4.0, SHOULDER = 7.5, NECK = 8.2;
 
-  // ---- legs (pivot at hip, extend down) ----
+  // legs: pivot at the hip; thigh+shin and a foot pointing forward
   const leg = side => {
     const b = new VB();
-    const suit = hero ? '#233a8a' : robot ? '#3c4254' : P.fur;
-    b.c(0, -4, -1, 2, 3.2, 2, suit);
-    b.c(0, -4.6, -1.1, 2.3, 1, 2.8, hero ? '#f2b632' : robot ? '#2a2f3d' : P.paw);   // paw / boot
-    if (robot) b.c(0, -2.2, 1.01, 1.2, 0.6, 0.1, VIOLET, true);
-    if (hero) b.c(0, -1.8, -1.05, 2.1, 0.5, 2.1, '#f2b632');
-    return part(b, side * 1.4, 0.46, 0);
+    b.c(0, -3.3, -0.9, 1.9, 3.6, 1.8, suit);
+    b.c(0, -4.0, -1.0, 2.0, 0.8, 2.5, hero ? '#f2b632' : robot ? '#2a2f3d' : cream);       // foot / boot / white sock
+    if (!hero && !robot) b.c(0, -3.2, -0.95, 1.95, 0.6, 1.9, cream);
+    if (robot) b.c(0, -2, 0.91, 1.1, 0.5, 0.1, VIOLET, true);
+    if (hero) b.c(0, -1.6, -0.95, 1.95, 0.5, 1.9, '#f2b632');
+    return part(b, side * 1.2 * V, HIP * V, 0);
   };
-  // ---- torso ----
+  // torso: pivot at the hip
   const tb = new VB();
-  const body = hero ? '#233a8a' : robot ? '#5b6378' : P.fur;
-  tb.c(0, 0, -1.7, 5, 4.6, 3.4, body);
-  tb.c(0, 0.4, 1.7, 3.2, 3.4, 0.25, hero ? '#2c48a8' : robot ? '#3c4254' : P.cream);          // belly / chest plate
-  if (hero) { tb.c(0, 1.7, 1.95, 1.6, 1.8, 0.2, '#f2b632', true); tb.c(0, 0, -1.75, 5.1, 0.6, 3.5, '#f2b632'); }   // emblem + belt
-  if (robot) { tb.c(0, 1.6, 1.95, 1.4, 1.4, 0.2, NEON, true); tb.c(0, 1, -2.4, 3, 3, 0.8, '#3c4254'); tb.c(-0.9, 1.4, -2.5, 0.6, 2, 0.2, '#3b82f6', true); tb.c(0.9, 1.4, -2.5, 0.6, 2, 0.2, '#3b82f6', true); }
-  if (hallow) tb.c(0, 2, 1.95, 1.4, 1.4, 0.2, '#ff8a1f', true);
-  if (!hero && !robot) { tb.c(0, 0, -1.95, 3.6, 2.2, 0.3, P.cream); tb.c(0, 0.2, -2.05, 2.4, 1.4, 0.2, P.cream); }   // white rump (seen from behind)
-  if (id === 'shiba-inu') { tb.c(0, 4.1, -1.8, 5.2, 0.6, 3.6, '#d62f3a'); tb.c(0, 3.3, 1.85, 0.8, 0.8, 0.3, '#ffc44d', true); }
-  const torso = part(tb, 0, 0.46, 0);
-
-  // ---- arms (pivot at shoulder) ----
+  tb.c(0, -0.4, -1.8, 5.0, 4.9, 3.6, suit);
+  tb.c(0, 0.2, 1.8, 3.2, 3.6, 0.25, hero ? '#2c48a8' : robot ? '#3c4254' : cream);            // chest / belly
+  if (!hero && !robot) { tb.c(0, -0.4, -2.0, 3.4, 2.4, 0.3, cream); tb.c(0, -0.2, -2.15, 2.4, 1.6, 0.2, '#fff8ec'); }   // white rump
+  if (hero) { tb.c(0, 1.8, 2.05, 1.6, 1.8, 0.2, '#f2b632', true); tb.c(0, -0.2, -1.85, 5.1, 0.6, 3.7, '#f2b632'); }
+  if (robot) { tb.c(0, 1.8, 2.05, 1.4, 1.4, 0.2, NEON, true); tb.c(0, 0.8, -2.6, 3.2, 3.0, 0.9, '#3c4254'); tb.c(-0.9, 1.2, -2.75, 0.6, 2.2, 0.2, '#3b82f6', true); tb.c(0.9, 1.2, -2.75, 0.6, 2.2, 0.2, '#3b82f6', true); }
+  if (id === 'shiba-inu') { tb.c(0, 3.8, -1.9, 5.2, 0.7, 3.8, '#d62f3a'); tb.c(0, 3.0, 1.95, 0.9, 0.9, 0.3, '#ffc44d', true); }
+  if (hallow) tb.c(0, 2.2, 1.95, 1.3, 1.3, 0.2, '#ff8a1f', true);
+  const torso = part(tb, 0, HIP * V, 0);
+  // arms: pivot at the shoulder
   const arm = side => {
     const b = new VB();
-    b.c(0, -3.4, -0.8, 1.6, 3.4, 1.6, hero ? '#233a8a' : robot ? '#3c4254' : P.fur);
-    b.c(0, -3.9, -0.9, 1.8, 1, 1.8, hero ? '#f2b632' : robot ? '#2a2f3d' : P.paw);
-    if (robot) b.c(side * 0.81, -2, -0.3, 0.1, 1, 0.6, NEON, true);
-    return part(b, side * 3.2, 0.46 + 0.42, 0);
+    b.c(0, -3.0, -0.7, 1.4, 3.2, 1.4, suit);
+    b.c(0, -3.6, -0.8, 1.6, 0.9, 1.6, hero ? '#f2b632' : robot ? '#2a2f3d' : cream);
+    if (robot) b.c(side * 0.71, -1.8, -0.3, 0.1, 0.9, 0.6, NEON, true);
+    return part(b, side * 3.4 * V, SHOULDER * V, 0);
   };
-
-  // ---- head (pivot at neck) ----
+  // head: pivot at the neck
   const hb = new VB();
-  const fur = P.fur, cream = P.cream;
-  hb.c(0, 0, -3, 7.2, 5.2, 6, fur);
-  hb.c(0, 5.2, -2.6, 6.4, 1, 5.2, fur);                  // rounded crown
-  hb.c(0, -0.4, -2.6, 6.2, 0.4, 5.2, fur);
-  for (const s of [-1, 1]) hb.c(s * 3.75, 0.2, -2.4, 0.5, 4, 4.8, fur);   // puffy cheeks
-  hb.c(0, 0, 2.6, 6.4, 2.6, 0.6, cream);                 // lower face / cheeks
-  hb.c(0, 0.5, 3, 3.4, 2.2, 1.8, cream);                 // snout
-  hb.c(0, 2.1, 4.6, 1.3, 0.9, 0.4, '#1a0f0a');           // nose
-  hb.c(0, 0.4, 4.7, 1.6, 0.35, 0.2, '#5a1d14');          // mouth
-  if (!robot) {
-    for (const s of [-1, 1]) {
-      hb.c(s * 1.7, 3, 3, 1.1, 1.3, 0.25, '#120a08');      // eyes
-      hb.c(s * 1.7 - 0.25, 3.8, 3.2, 0.4, 0.4, 0.1, '#ffffff');
-      hb.c(s * 2.4, 4.3, 2.85, 1.2, 0.35, 0.2, P.furDark);  // brows
-      hb.c(s * 2.5, 6, -1.2, 2.2, 1.2, 2, fur);             // ears
-      hb.c(s * 2.6, 7.2, -0.9, 1.5, 1, 1.4, fur);
-      hb.c(s * 2.7, 8.2, -0.6, 0.8, 0.9, 0.8, fur);
-      hb.c(s * 2.5, 6.2, 0.81, 1.2, 1.6, 0.1, cream);       // inner ear
-    }
+  hb.c(0, 0, -2.6, 6.4, 4.4, 5.2, fur);
+  hb.c(0, 4.4, -2.2, 5.4, 0.8, 4.4, fur);                                // rounded crown
+  hb.c(0, -0.4, -2.2, 5.4, 0.4, 4.4, fur);
+  for (const s of [-1, 1]) hb.c(s * 3.4, 0.4, -2.0, 0.6, 3.2, 4.0, fur);    // cheek fluff
+  hb.c(0, 0, 2.4, 5.6, 2.2, 0.5, cream);                                 // lower face
+  hb.c(0, 0.4, 2.6, 2.8, 1.8, 1.5, cream);                               // snout
+  hb.c(0, 1.6, 4.0, 1.1, 0.8, 0.3, '#1a0f0a');                           // nose
+  hb.c(0, 0.3, 4.05, 1.3, 0.3, 0.15, '#5a1d14');                         // mouth
+  if (!robot) for (const s of [-1, 1]) {
+    hb.c(s * 1.5, 2.3, 2.6, 1.0, 1.2, 0.25, '#120a08'); hb.c(s * 1.5 - 0.2, 3.0, 2.82, 0.35, 0.35, 0.1, '#ffffff');
+    hb.c(s * 1.9, 3.5, 2.55, 1.1, 0.3, 0.15, furD);
+    hb.c(s * 2.2, 0.6, 2.62, 1.0, 0.6, 0.1, '#ffb3a6');                   // blush
+  }
+  for (const s of [-1, 1]) {
+    const ec = robot ? '#3c4254' : fur;
+    hb.c(s * 2.0, 4.8, -1.0, 2.2, 1.2, 1.8, ec); hb.c(s * 2.1, 6.0, -0.8, 1.6, 1.0, 1.4, ec); hb.c(s * 2.2, 7.0, -0.6, 0.9, 0.9, 1.0, ec);
+    if (robot) hb.c(s * 2.2, 7.9, -0.5, 0.7, 0.7, 0.7, VIOLET, true);
+    else hb.c(s * 2.05, 5.0, 0.81, 1.2, 1.6, 0.1, cream);
+    hb.c(s * 1.5, 0.6, -2.75, 1.4, 3.2, 0.2, furD);                       // darker fur on the back of the head
   }
   if (robot) {
-    hb.c(0, 2.6, 2.95, 6.6, 1.5, 0.3, '#1b1f2a');
-    hb.c(-1.7, 2.9, 3.2, 1.8, 0.9, 0.2, NEON, true);
-    hb.c(1.7, 2.9, 3.2, 1.8, 0.9, 0.2, NEON, true);
-    hb.c(0, 5.9, -2.5, 6.2, 0.4, 5, '#3c4254');
-    for (const s of [-1, 1]) {
-      hb.c(s * 2.5, 6, -1.2, 2.2, 1.4, 2, '#3c4254'); hb.c(s * 2.6, 7.4, -0.9, 1.4, 1, 1.4, '#5b6378');
-      hb.c(s * 2.7, 8.4, -0.6, 0.7, 0.7, 0.7, VIOLET, true);
-      hb.c(s * 3.55, 1.5, -1, 0.2, 2.5, 2.5, '#2a2f3d'); hb.c(s * 3.6, 2.3, -0.2, 0.15, 0.8, 0.8, '#3b82f6', true);
-    }
-    hb.c(0.8, 6, 0, 0.4, 2.4, 0.4, '#2a2f3d'); hb.c(0.8, 8.4, 0, 0.8, 0.8, 0.8, NEON, true);   // antenna
-    hb.c(0, 0.5, -3.05, 4, 4, 0.2, '#3c4254'); hb.c(0, 2, -3.1, 2, 1, 0.1, VIOLET, true);
+    hb.c(0, 1.9, 2.65, 5.8, 1.4, 0.3, '#1b1f2a');
+    hb.c(-1.5, 2.2, 2.9, 1.7, 0.8, 0.2, NEON, true); hb.c(1.5, 2.2, 2.9, 1.7, 0.8, 0.2, NEON, true);
+    for (const s of [-1, 1]) { hb.c(s * 3.25, 1.4, -1, 0.2, 2.4, 2.4, '#2a2f3d'); hb.c(s * 3.35, 2.2, -0.2, 0.15, 0.8, 0.8, '#3b82f6', true); }
+    hb.c(0.8, 5.2, 0, 0.4, 2.4, 0.4, '#2a2f3d'); hb.c(0.8, 7.6, 0, 0.8, 0.8, 0.8, NEON, true);
+    hb.c(0, 0.8, -2.85, 3.6, 3.0, 0.2, '#3c4254'); hb.c(0, 2.0, -2.95, 1.8, 0.8, 0.1, VIOLET, true);
   }
-  if (hero) {
-    hb.c(0, 2.6, 2.9, 6.8, 1.6, 0.3, '#14224f');            // domino mask
-    for (const s of [-1, 1]) { hb.c(s * 1.7, 2.9, 3.15, 1.3, 1, 0.15, '#ffffff'); hb.c(s * 1.6, 3.0, 3.25, 0.6, 0.6, 0.1, '#14224f'); }
-  }
-  if (hallow) {   // little dark hood-collar the cape hangs from
-    hb.c(0, -0.6, -3.2, 7.4, 1.2, 6.2, '#2b1840');
-  }
-  const head = part(hb, 0, 0.46 + 0.45, 0);
-
-  // ---- tail (pivot at lower back) ----
+  if (hero) { hb.c(0, 2.0, 2.55, 6.2, 1.5, 0.3, '#14224f'); for (const s of [-1, 1]) { hb.c(s * 1.5, 2.3, 2.8, 1.2, 0.9, 0.15, '#ffffff'); hb.c(s * 1.4, 2.4, 2.9, 0.55, 0.55, 0.1, '#14224f'); } }
+  if (hallow) hb.c(0, -0.6, -2.8, 6.6, 1.0, 5.6, '#2b1840');            // dark collar the cape hangs from
+  const head = part(hb, 0, NECK * V, 0.1 * V);
+  // curled tail with a white tip: pivot at the lower back
   const tl = new VB();
-  if (robot) { tl.c(0, 0, -1.6, 1.2, 1.2, 1.6, '#3c4254'); tl.c(0, 0.8, -2.6, 1, 1, 1.2, '#5b6378'); tl.c(0, 1.6, -3, 0.9, 0.9, 0.9, NEON, true); }
-  else { tl.c(0, 0, -1.6, 1.8, 1.6, 1.8, fur); tl.c(0, 1.2, -2.5, 1.6, 1.8, 1.4, fur); tl.c(0, 2.6, -2.3, 1.5, 1.2, 1.4, cream); tl.c(0, 3.3, -1.6, 1.2, 0.9, 1, cream); }
-  const tail = part(tl, 0, 0.46 + 0.15, -0.17);
-
-  // ---- cape (pivot at shoulders, hangs down the back) ----
+  if (robot) { tl.c(0, 0, -1.4, 1.2, 1.2, 1.4, '#3c4254'); tl.c(0, 0.8, -2.4, 1, 1, 1.2, '#5b6378'); tl.c(0, 1.6, -2.8, 0.9, 0.9, 0.9, NEON, true); }
+  else { tl.c(0, 0, -1.2, 1.6, 1.4, 1.4, fur); tl.c(0, 0.8, -2.2, 1.6, 1.4, 1.2, fur); tl.c(0, 1.7, -2.5, 1.5, 1.1, 1.1, cream); tl.c(-0.3, 2.3, -2.0, 1.1, 0.8, 1.0, '#fff8ec'); }
+  const tail = part(tl, 0, (HIP - 2.2) * V, -1.4 * V);   // peeks out under the cape hem
+  // cape: pivot at the back of the neck, hangs down the back
   let cape = null;
   if (hallow || hero) {
     const cb = new VB();
-    const main = hallow ? '#2b1840' : '#c4162b', lining = hallow ? '#4a2470' : '#f2b632';
-    cb.c(0, -7, -0.6, 7.6, 7, 0.6, main);
-    cb.c(0, -7, -0.05, 7.4, 7, 0.1, lining);
-    cb.c(-3.9, -6.6, -0.5, 0.6, 6, 0.5, lining); cb.c(3.9, -6.6, -0.5, 0.6, 6, 0.5, lining);
-    for (let i = -3.5; i <= 2.5; i += 2) cb.b(i, -8, -0.6, 1, 1, 0.6, main);   // jagged hem
-    cb.c(0, -0.2, -0.7, 6.6, 0.6, 0.8, lining);
-    if (hallow) {   // glowing jack-o'-lantern emblem on the back (visible from the camera)
-      cb.c(0, -5.6, -0.75, 3.6, 3, 0.15, '#ff8a1f', true);
-      cb.c(0, -2.6, -0.75, 0.6, 0.6, 0.15, '#4caf50');
-      cb.c(-0.9, -3.9, -0.85, 0.8, 0.7, 0.12, '#2a1640'); cb.c(0.9, -3.9, -0.85, 0.8, 0.7, 0.12, '#2a1640');
-      cb.c(0, -5.0, -0.85, 2.2, 0.5, 0.12, '#2a1640');
-    } else {
-      cb.c(0, -5, -0.75, 2, 2.6, 0.15, '#f2b632', true);
-    }
-    cape = part(cb, 0, 0.46 + 0.42, -0.17);
+    const main = hallow ? '#2b1840' : '#c4162b', fold = hallow ? '#3a2056' : '#a5101f', lining = hallow ? '#4a2470' : '#f2b632';
+    cb.c(0, -5.0, -0.5, 5.8, 5.4, 0.5, main);
+    for (const x of [-1.8, 0, 1.8]) cb.c(x, -4.8, -0.55, 0.5, 4.6, 0.1, fold);
+    cb.c(0, -5.0, -0.05, 5.6, 5.2, 0.1, lining);
+    for (let i = -2.4; i <= 2.4; i += 1.2) cb.b(i - 0.5, -5.6 - (Math.round(i * 4) % 2 ? 0 : 0.3), -0.5, 1.0, 0.8, 0.5, main);   // ragged hem
+    cb.c(0, -0.3, -0.6, 5.6, 0.7, 0.8, lining);
+    if (hallow) {
+      cb.c(0, -3.6, -0.62, 3.0, 2.4, 0.15, '#ff8a1f', true);
+      cb.c(0, -1.2, -0.62, 0.5, 0.5, 0.15, '#4caf50');
+      cb.c(-0.75, -2.1, -0.72, 0.6, 0.6, 0.12, '#2a1640'); cb.c(0.75, -2.1, -0.72, 0.6, 0.6, 0.12, '#2a1640');
+      cb.c(0, -3.0, -0.72, 1.8, 0.4, 0.12, '#2a1640');
+    } else cb.c(0, -3.2, -0.62, 1.6, 2.0, 0.15, '#f2b632', true);
+    cape = part(cb, 0, (NECK + 0.2) * V, -2.0 * V);
   }
   let extra = null;
-  if (robot) {   // floating holo ring
+  if (robot) {
     const rb = new VB();
     for (let a = 0; a < 12; a++) { const t = (a / 12) * Math.PI * 2; rb.c(Math.cos(t) * 4.2, 0, Math.sin(t) * 4.2, 0.7, 0.2, 0.7, a % 2 ? NEON : VIOLET, true); }
     extra = at(G(rb.mesh(0.1)), 0, 0.15, 0);
   }
-
   const legL = leg(-1), legR = leg(1), armL = arm(-1), armR = arm(1);
   const hip = G(torso, head, armL, armR, legL, legR, tail, cape);
   const root = G(hip, extra);
@@ -151,57 +138,70 @@ export function buildInu(id) {
    ========================================================= */
 const BONE = '#ece5cf', BONE_D = '#bdb59b', SOCKET = '#130a14', SPOOK = '#7dff6a';
 
+/* Lanky, slightly goofy skeleton with a tilted top hat and a lantern. ~1.85 m. Facing +z. */
 export function buildSkeleton() {
-  const skullB = new VB();
-  skullB.c(0, 0, -2.4, 5, 4.6, 4.8, BONE);
-  skullB.c(0, -1.2, -1.8, 3.8, 1.3, 3.8, BONE_D);                     // jaw
-  for (let i = -1.5; i <= 1.5; i += 1) skullB.c(i, -0.4, 2.2, 0.6, 0.6, 0.3, '#ffffff');   // teeth
-  for (const s of [-1, 1]) { skullB.c(s * 1.2, 2, 2.3, 1.5, 1.5, 0.3, SOCKET); skullB.c(s * 1.2, 2.3, 2.45, 0.6, 0.6, 0.2, SPOOK, true); }
-  skullB.c(0, 1.2, 2.35, 0.6, 0.7, 0.2, SOCKET);
-  // floppy witch-hat-ish crooked top hat (funny)
-  skullB.c(0, 4.4, -2.6, 6, 0.5, 5.2, '#2a1640'); skullB.c(0, 4.9, -1.6, 3.4, 2.6, 3.2, '#2a1640'); skullB.c(0, 5, -1.65, 3.5, 0.6, 3.3, '#ff7a1a');
-  const head = at(G(skullB.mesh(0.1, { shadow: true })), 0, 1.45, 0);
+  // skull (pivot at the neck)
+  const s = new VB();
+  s.c(0, 0.8, -2.0, 4.4, 3.4, 4.2, BONE); s.c(0, 4.2, -1.6, 3.6, 0.7, 3.4, BONE);           // cranium
+  s.c(0, 0, 0.6, 3.4, 1.4, 1.6, BONE);                                                     // upper jaw
+  s.c(0, -0.9, -0.6, 3.0, 0.9, 2.6, BONE_D);                                               // lower jaw
+  for (let i = -1.2; i <= 1.2; i += 0.8) s.c(i, 0.0, 2.1, 0.5, 0.6, 0.2, '#ffffff');        // teeth
+  for (const k of [-1, 1]) { s.c(k * 1.0, 2.0, 2.05, 1.3, 1.3, 0.3, SOCKET); s.c(k * 1.0, 2.3, 2.25, 0.55, 0.55, 0.15, SPOOK, true); }
+  s.c(0, 1.2, 2.15, 0.6, 0.6, 0.2, SOCKET);
+  // crooked top hat
+  const hat = new VB(); hat.c(0, 0, -2.4, 5.6, 0.5, 4.8, '#2a1640'); hat.c(0, 0.5, -1.5, 3.4, 3.0, 3.0, '#2a1640'); hat.c(0, 0.6, -1.55, 3.5, 0.6, 3.1, '#ff7a1a');
+  const hatG = at(G(hat.mesh(0.1)), 0.05, 0.47, -0.02); hatG.rotation.z = -0.22;
+  const head = at(G(s.mesh(0.1, { shadow: true }), hatG), 0, 1.5, 0.02);
+  // ribcage + spine + pelvis (pivot at the pelvis)
   const tb = new VB();
-  tb.c(0, 0, -0.5, 1, 6, 1, BONE_D);                                   // spine
-  for (let r = 0; r < 4; r++) { tb.c(0, 2 + r * 1.05, -1.3, 4.6 - r * 0.3, 0.55, 0.4, BONE); tb.c(0, 2 + r * 1.05, 1.0, 4.6 - r * 0.3, 0.55, 0.4, BONE); tb.c(-2.2 + r * 0.15, 2 + r * 1.05, -1.3, 0.5, 0.55, 2.7, BONE); tb.c(2.2 - r * 0.15, 2 + r * 1.05, -1.3, 0.5, 0.55, 2.7, BONE); }
-  tb.c(0, 6.2, -0.5, 5, 0.7, 1, BONE);                                 // collarbone
-  tb.c(0, -0.6, -0.9, 4, 1.2, 1.8, BONE);                              // pelvis
-  tb.c(0, 5, 0.9, 5.4, 1, 0.6, '#5b2a86'); tb.c(1.8, 3.4, 1.1, 1.2, 2.2, 0.5, '#5b2a86');   // tattered scarf
+  tb.c(0, 0, -0.4, 0.8, 5.6, 0.8, BONE_D);                                                 // spine
+  for (let r = 0; r < 4; r++) { const y = 2.2 + r * 0.9, w = 4.0 - r * 0.25; tb.c(0, y, 0.6, w, 0.45, 0.4, BONE); tb.c(-w / 2 + 0.2, y, -1.0, 0.4, 0.45, 1.9, BONE); tb.c(w / 2 - 0.2, y, -1.0, 0.4, 0.45, 1.9, BONE); }
+  tb.c(0, 5.6, -0.5, 4.6, 0.6, 1.0, BONE);                                                 // collarbones
+  tb.c(0, -0.6, -0.8, 3.0, 1.0, 1.6, BONE);                                                // pelvis
+  tb.c(0, 4.5, 0.8, 4.8, 0.9, 0.5, '#5b2a86'); tb.c(1.6, 3.0, 1.0, 1.0, 1.8, 0.4, '#5b2a86');   // tattered scarf
   const torso = at(G(tb.mesh(0.1, { shadow: true })), 0, 0.9, 0);
-  const limb = (len, w, lantern) => {
+  // limbs: pivot at the joint, upper + lower bone with a knobbly joint
+  const limb = (len, w, extra) => {
     const b = new VB();
-    b.c(0, -len / 2, -w / 2, w, len / 2, w, BONE); b.c(0, -len / 2 - 0.4, -w / 2 - 0.1, w + 0.4, 0.6, w + 0.2, BONE_D);
-    b.c(0, -len, -w / 2, w * 0.9, len / 2 - 0.2, w * 0.9, BONE); b.c(0, -len - 0.8, -0.6, 1.4, 0.8, 1.6, BONE);
-    if (lantern) { b.c(0, -len - 3.4, -0.9, 1.8, 2.4, 1.8, '#2b1a10'); b.c(0, -len - 3.1, -0.7, 1.4, 1.8, 1.4, '#ffb347', true); b.c(0, -len - 1.2, -0.1, 0.2, 0.6, 0.2, '#2b1a10'); }
+    b.c(0, -len / 2, -w / 2, w, len / 2, w, BONE); b.c(0, -len / 2 - 0.3, -w / 2 - 0.1, w + 0.3, 0.6, w + 0.2, BONE_D);
+    b.c(0, -len, -w / 2, w * 0.9, len / 2 - 0.2, w * 0.9, BONE);
+    if (extra === 'foot') b.c(0, -len - 0.5, -0.6, 1.3, 0.5, 2.0, BONE_D);
+    if (extra === 'hand') b.c(0, -len - 0.6, -0.4, 0.9, 0.7, 0.8, BONE_D);
+    if (extra === 'lantern') { b.c(0, -len - 0.6, -0.4, 0.9, 0.7, 0.8, BONE_D); b.c(0, -len - 1.6, -0.1, 0.2, 1.0, 0.2, '#2b1a10'); b.c(0, -len - 3.8, -0.9, 1.8, 2.2, 1.8, '#2b1a10'); b.c(0, -len - 3.5, -0.7, 1.4, 1.6, 1.4, '#ffb347', true); }
     return b;
   };
-  const armL = at(G(limb(6, 0.8).mesh(0.1)), -2.8, 1.5, 0);
-  const armR = at(G(limb(6, 0.8, true).mesh(0.1)), 2.8, 1.5, 0);
-  const legL = at(G(limb(8.5, 1).mesh(0.1)), -1.1, 0.95, 0);
-  const legR = at(G(limb(8.5, 1).mesh(0.1)), 1.1, 0.95, 0);
+  const armL = at(G(limb(5.6, 0.7, 'hand').mesh(0.1)), -2.4 * V, 1.45, 0);
+  const armR = at(G(limb(5.6, 0.7, 'lantern').mesh(0.1)), 2.4 * V, 1.45, 0);
+  const legL = at(G(limb(8.4, 0.9, 'foot').mesh(0.1)), -1.0 * V, 0.89, 0);
+  const legR = at(G(limb(8.4, 0.9, 'foot').mesh(0.1)), 1.0 * V, 0.89, 0);
   const hip = G(torso, head, armL, armR, legL, legR);
-  const root = G(hip);
-  return { root, parts: { hip, torso, head, armL, armR, legL, legR } };
+  return { root: G(hip), parts: { hip, torso, head, armL, armR, legL, legR } };
 }
 
+/* Four-legged bone dog: elongated skull with glowing eyes, spine, ribs, pelvis, jointed legs. Facing +z. */
 export function buildBoneDog() {
+  const H = 5.4;                       // spine height (voxels): legs are exactly this long
   const hb = new VB();
-  hb.c(0, 0, -1.5, 3.6, 3, 3.4, BONE);
-  hb.c(0, 0, 1.9, 2.2, 1.6, 2.2, BONE);                                 // snout
-  hb.c(0, -0.7, 1.4, 2, 0.7, 2.4, BONE_D);                              // jaw
-  for (const s of [-1, 1]) { hb.c(s * 0.9, 1.6, 1.85, 1.2, 1, 0.2, SOCKET); hb.c(s * 0.9, 1.75, 1.95, 0.6, 0.6, 0.15, '#ff5c3a', true); hb.c(s * 1.3, 3, -1, 0.9, 1.6, 1, BONE_D); }
-  hb.c(0, 1.2, 4.1, 0.9, 0.6, 0.2, SOCKET);
-  const head = at(G(hb.mesh(0.1, { shadow: true })), 0, 0.62, 0.55);
+  hb.c(0, 0, -1.4, 3.0, 2.6, 2.8, BONE);                                                   // cranium
+  hb.c(0, 0.2, 1.4, 1.8, 1.4, 2.4, BONE);                                                  // snout
+  hb.c(0, -0.5, 1.0, 1.6, 0.5, 2.6, BONE_D);                                               // jaw
+  for (const z of [1.6, 2.4, 3.2]) { hb.c(-0.55, -0.1, z, 0.3, 0.4, 0.3, '#ffffff'); hb.c(0.55, -0.1, z, 0.3, 0.4, 0.3, '#ffffff'); }
+  for (const k of [-1, 1]) { hb.c(k * 0.8, 1.3, 1.32, 1.0, 0.9, 0.2, SOCKET); hb.c(k * 0.8, 1.45, 1.45, 0.5, 0.5, 0.15, '#ff5c3a', true); hb.c(k * 1.0, 2.6, -1.1, 0.7, 1.3, 0.8, BONE_D); }
+  hb.c(0, 0.9, 3.85, 0.7, 0.5, 0.2, SOCKET);
+  const head = at(G(hb.mesh(0.1, { shadow: true })), 0, (H + 1.0) * V, 3.6 * V);
   const bb = new VB();
-  for (let i = 0; i < 6; i++) bb.c(0, 0, -3 + i * 1.05, 0.9, 0.9, 0.8, i % 2 ? BONE : BONE_D);   // spine
-  for (let r = 0; r < 3; r++) { const z = -0.6 + r * 1.1; bb.c(-1.1, -1.6, z, 0.4, 1.8, 0.5, BONE); bb.c(1.1, -1.6, z, 0.4, 1.8, 0.5, BONE); bb.c(0, -1.9, z, 2.6, 0.4, 0.5, BONE); }
-  bb.c(0, -0.6, -3.4, 2.2, 1, 1.2, BONE_D);                             // hips
-  const body = at(G(bb.mesh(0.1, { shadow: true })), 0, 0.55, 0);
-  const legB = () => { const b = new VB(); b.c(0, -2.4, -0.3, 0.6, 2.4, 0.6, BONE); b.c(0, -2.9, -0.4, 0.8, 0.5, 1.1, BONE_D); return b; };
-  const mk = (x, z) => at(G(legB().mesh(0.1)), x, 0.5, z);
-  const legFL = mk(-0.7, 0.25), legFR = mk(0.7, 0.25), legBL = mk(-0.7, -0.3), legBR = mk(0.7, -0.3);
-  const tb = new VB(); for (let i = 0; i < 4; i++) tb.c(0, i * 0.7, -1 - i * 0.5, 0.5, 0.6, 0.6, BONE);
-  const tail = at(G(tb.mesh(0.1)), 0, 0.58, -0.32);
+  for (let i = 0; i < 7; i++) bb.c(0, -0.4, -3.2 + i * 0.95, 0.8, 0.8, 0.7, i % 2 ? BONE : BONE_D);    // spine
+  bb.c(0, 0, 2.9, 0.7, 1.4, 0.7, BONE_D);                                                  // neck
+  for (let r = 0; r < 3; r++) { const z = 0.4 + r * 0.9; bb.c(-0.95, -2.0, z, 0.35, 1.8, 0.45, BONE); bb.c(0.95, -2.0, z, 0.35, 1.8, 0.45, BONE); bb.c(0, -2.2, z, 2.2, 0.35, 0.45, BONE); }
+  bb.c(0, -0.9, -3.6, 2.0, 1.0, 1.4, BONE_D);                                              // pelvis
+  const body = at(G(bb.mesh(0.1, { shadow: true })), 0, H * V, 0);
+  const legB = front => { const b = new VB();
+    b.c(0, -H / 2, -0.3, 0.6, H / 2, 0.6, BONE); b.c(0, -H / 2 - 0.3, -0.4, 0.8, 0.6, 0.8, BONE_D);
+    b.c(0, -H + 0.4, -0.25, 0.5, H / 2 - 0.4, 0.5, BONE); b.c(0, -H, front ? -0.3 : -0.5, 0.8, 0.45, 1.1, BONE_D); return b; };
+  const mk = (x, z, f) => at(G(legB(f).mesh(0.1)), x * V, H * V, z * V);
+  const legFL = mk(-0.9, 2.3, true), legFR = mk(0.9, 2.3, true), legBL = mk(-0.9, -2.9, false), legBR = mk(0.9, -2.9, false);
+  const tb = new VB(); for (let i = 0; i < 5; i++) tb.c(0, i * 0.6, -0.6 - i * 0.45, 0.45, 0.55, 0.55, BONE);
+  const tail = at(G(tb.mesh(0.1)), 0, (H + 0.1) * V, -3.9 * V);
   const hip = G(body, head, legFL, legFR, legBL, legBR, tail);
   return { root: G(hip), parts: { hip, body, head, legFL, legFR, legBL, legBR, tail } };
 }
@@ -383,7 +383,7 @@ function disk(b, R, fill, rim, depth = 1.2, g = false) {
 }
 export function coinGeometries(type) {
   const lit = new VB(), glow = new VB();
-  disk(glow, 4.6, '#ffc93a', '#ffe9a0', 1.4, true);                         // gold coin + light rim
+  disk(glow, 4.6, '#e9a925', '#ffd76a', 1.4, true);                         // gold coin + light rim
   const face = { HALLOWINU: '#ff7a1a', USDC: '#2f7bff', SOLANA: '#1a0d33' }[type];
   const inner = new VB(); disk(inner, 3.4, face, face, 1.9, true);
   for (const bx of inner.glow) glow.glow.push(bx);
@@ -538,7 +538,7 @@ export function propGeometries() {
     b.c(0, 1.5, -5.15, 6.4, 1.3, 0.3, '#ffd34d', true); b.c(-1.6, 2.8, -5.15, 1, 0.6, 0.3, '#ffd34d', true); b.c(1.6, 2.8, -5.15, 1, 0.6, 0.3, '#ffd34d', true);
     put('pumpkinL', b); }
   // cute floating ghost (bright)
-  { const b = new VB(); const W = '#d9d2ea';
+  { const b = new VB(); const W = '#bdb5d6';
     b.c(0, 2, -3, 8, 7, 6, W, true); b.c(0, 9, -2.6, 6.6, 1.4, 5.2, W, true); b.c(0, 10.4, -1.8, 4.4, 0.8, 3.6, W, true);
     for (let i = 0; i < 4; i++) b.b(-4 + i * 2, 0.4 + (i % 2), -3, 2, 1.8 - (i % 2), 6, '#c9c0e0', true);
     b.c(-4.4, 5, -1, 1, 2.4, 2, W, true); b.c(4.4, 5, -1, 1, 2.4, 2, W, true);

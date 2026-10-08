@@ -11,7 +11,7 @@
    ========================================================= */
 
 export const ETT = Object.freeze({
-  version: 1,                     // bump when gameplay rules change (old runs keep their own version)
+  version: 2,                     // bump when gameplay rules change (v2: rarer USDC/SOLANA)
 
   /* ---------- simulation ---------- */
   tickRate: 60,                   // fixed simulation steps per second (render is interpolated)
@@ -70,9 +70,9 @@ export const ETT = Object.freeze({
 
   /* ---------- collectible coins ---------- */
   COINS: {
-    HALLOWINU: { value: 1,  weight: 85, label: 'HALLOWINU' },
-    USDC:      { value: 5,  weight: 12, label: 'USDC' },
-    SOLANA:    { value: 10, weight: 3,  label: 'SOLANA' },
+    HALLOWINU: { value: 1,  weight: 98.3, label: 'HALLOWINU' },
+    USDC:      { value: 5,  weight: 1.5, label: 'USDC' },
+    SOLANA:    { value: 10, weight: 0.2, label: 'SOLANA' },
   },
   coinOrder: ['HALLOWINU', 'USDC', 'SOLANA'],
   coins: {
@@ -83,8 +83,8 @@ export const ETT = Object.freeze({
     lowHeight: 0.42,              // under chains/branches (slide to collect)
     pickupRadiusX: 1.0, pickupRadiusZ: 0.95, pickupHalfHeight: 0.5,
     arcChance: 0.5,               // coin arc over a jumpable obstacle
-    bonusChance: 0.16,            // per row: a single bonus coin in a harder spot
-    bonusWeights: { USDC: 80, SOLANA: 20 },   // which rare coin a bonus spot holds
+    bonusChance: 0.02,            // per row: a single bonus coin in a harder spot
+    bonusWeights: { USDC: 88, SOLANA: 12 },   // which rare coin a bonus spot holds
   },
 
   /* ---------- verification sanity limits (server) ---------- */

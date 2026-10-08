@@ -106,9 +106,10 @@ test('sim: coin rarity follows the configured weights (HALLOWINU > USDC > SOLANA
   const total = count.HALLOWINU + count.USDC + count.SOLANA;
   const pct = k => (100 * count[k]) / total;
   assert.ok(count.HALLOWINU > count.USDC && count.USDC > count.SOLANA, JSON.stringify(count));
-  assert.ok(Math.abs(pct('HALLOWINU') - 85) < 4, 'HALLOWINU ' + pct('HALLOWINU'));
-  assert.ok(Math.abs(pct('USDC') - 12) < 3, 'USDC ' + pct('USDC'));
-  assert.ok(pct('SOLANA') > 1.5 && pct('SOLANA') < 6, 'SOLANA ' + pct('SOLANA'));
+  const W = ETT.COINS, tot = W.HALLOWINU.weight + W.USDC.weight + W.SOLANA.weight;
+  assert.ok(Math.abs(pct('HALLOWINU') - 100 * W.HALLOWINU.weight / tot) < 3, 'HALLOWINU ' + pct('HALLOWINU'));
+  assert.ok(Math.abs(pct('USDC') - 100 * W.USDC.weight / tot) < 2.5, 'USDC ' + pct('USDC'));
+  assert.ok(pct('SOLANA') > 0.05 && pct('SOLANA') < 1, 'SOLANA ' + pct('SOLANA'));
   // points use the configured values
   const s = new Sim('pts'); s.stats.coins = { HALLOWINU: 42, USDC: 8, SOLANA: 3 };
   assert.equal(s.points, 112);

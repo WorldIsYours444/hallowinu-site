@@ -46,7 +46,7 @@ Browser  dist/escape-the-trenches.html + dist/ett/*            Worker  worker/ga
   of that group stays passable; moving wagons keep their lane clear; coins are never inside solids or in a
   wagon's path. `npm test` checks this on long generated worlds and lets a look-ahead bot run 3.5 km on
   several seeds.
-* Coins: **HALLOWINU +1** (weight 85), **USDC +5** (weight 12), **SOLANA +10** (weight 3), plus occasional
+* Coins: **HALLOWINU +1** (weight 98.3), **USDC +5** (weight 1.5, ≈3 per km), **SOLANA +10** (weight 0.2, ≈1 per 2 km), plus rare
   bonus spots (arc apex over a jump, under a chain, beside a wagon) that hold USDC/SOLANA. Weights are
   relative, not a per-run guarantee. Distance never adds redeemable points.
 * Characters are cosmetic only: identical speed, jump and hitbox.

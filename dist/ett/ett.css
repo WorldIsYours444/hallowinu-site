@@ -304,3 +304,18 @@ kbd{display:inline-block;min-width:28px;padding:5px 6px 4px;margin-right:6px;fon
   .ett-logo .l1{font-size:30px}.ett-logo .l2{font-size:46px}
   .guest-tag{top:auto;bottom:calc(92px + var(--safe-b))}
 }
+
+/* compact phone HUD (portrait) */
+@media (max-width:860px) and (orientation:portrait){
+  .hud-panels{gap:5px}
+  .hp{min-width:0;grid-template-columns:auto auto auto;padding:5px 9px;gap:6px;border-radius:9px}
+  .hp.big{min-width:0;padding:6px 10px}.hp.big>b{font-size:17px}.hp>b{font-size:12px}.hp .lbl{font-size:6px}
+  .hico{font-size:13px}.hp.big .hico{font-size:17px}.c-g{width:13px;height:13px}
+  .hud-coins{display:none}
+  .hp.dist>b{font-size:11px}.hp.dist small{font-size:6px}
+  .hud-logo{transform:scale(.36)}
+  .hud-pause{top:calc(62px + var(--safe-t));width:38px;height:38px}
+  .guest-tag{top:calc(108px + var(--safe-t));left:calc(12px + var(--safe-l));transform:none;bottom:auto;font-size:6px}
+  .hud-msg{font-size:14px}
+}
+.hud-msg{white-space:normal;max-width:90vw}

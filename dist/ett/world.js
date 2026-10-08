@@ -13,11 +13,11 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 /* Biomes: the haunted world changes as you run. */
 export const BIOMES = [
-  { id: 'forest', name: 'HAUNTED FOREST', fog: '#2a1144', hemi: '#7a4cc2', ground: '#120c1a', tint: '#2a1440' },
-  { id: 'graveyard', name: 'GRAVEYARD OF REKT', fog: '#221540', hemi: '#6b5ad0', ground: '#10121a', tint: '#1d1636' },
-  { id: 'village', name: 'HALLOW VILLAGE', fog: '#341438', hemi: '#a35acf', ground: '#160d14', tint: '#3a1630' },
-  { id: 'bridge', name: 'GOTHIC BRIDGES', fog: '#1d1544', hemi: '#5b62d8', ground: '#0e0d1c', tint: '#18143a' },
-  { id: 'trenches', name: 'THE CRYPTO TRENCHES', fog: '#3a0e24', hemi: '#c04a7a', ground: '#170a10', tint: '#3a0f22' },
+  { id: 'forest', name: 'HAUNTED FOREST', fog: '#26103e', hemi: '#7a4cc2', ground: '#120c1a', tint: '#2a1440' },
+  { id: 'graveyard', name: 'GRAVEYARD OF REKT', fog: '#1f1240', hemi: '#6b5ad0', ground: '#10121a', tint: '#1d1636' },
+  { id: 'village', name: 'HALLOW VILLAGE', fog: '#2c1036', hemi: '#a35acf', ground: '#160d14', tint: '#3a1630' },
+  { id: 'bridge', name: 'GOTHIC BRIDGES', fog: '#1b1442', hemi: '#5b62d8', ground: '#0e0d1c', tint: '#18143a' },
+  { id: 'trenches', name: 'THE CRYPTO TRENCHES', fog: '#320c26', hemi: '#c04a7a', ground: '#170a10', tint: '#3a0f22' },
 ];
 export const BIOME_LEN = 850;
 export const biomeAt = z => Math.floor(Math.max(0, z) / BIOME_LEN) % BIOMES.length;
@@ -74,7 +74,7 @@ export class World {
     this.renderer.setPixelRatio(pr);
     this.renderer.shadowMap.enabled = this.Q.shadows;
     this.moonLight.castShadow = this.Q.shadows;
-    this.scene.fog.near = 30; this.scene.fog.far = this.Q.far;
+    this.scene.fog.near = 40; this.scene.fog.far = this.Q.far + 15;
     if (this.Q.bloom && !this.composer) this._buildComposer();
     this.resize();
     this.scene.traverse(o => { if (o.isMesh && o.material) o.material.needsUpdate = true; });
@@ -91,7 +91,7 @@ export class World {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     // portrait screens need a wider view so all three lanes stay visible
-    this.camera.fov = w / h < 0.8 ? 78 : w / h < 1.2 ? 70 : 62;
+    this.camera.fov = w / h < 0.8 ? 74 : w / h < 1.2 ? 68 : 60;
     this.camera.updateProjectionMatrix();
     if (this.composer) { this.composer.setSize(w, h); this.composer.setPixelRatio(this.renderer.getPixelRatio()); }
     this.portrait = w / h < 0.8; this.w = w;
@@ -99,7 +99,7 @@ export class World {
 
   /* ---------------- sky / moon / stars ---------------- */
   _buildSky() {
-    this.scene.fog = new THREE.Fog('#2a1144', 30, 175);
+    this.scene.fog = new THREE.Fog('#26103e', 40, 190);
     this.skyGroup = new THREE.Group(); this.scene.add(this.skyGroup);
     const skyMat = new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false, fog: false,
@@ -173,18 +173,18 @@ export class World {
   }
 
   _buildLights() {
-    this.hemi = new THREE.HemisphereLight('#9a6ad8', '#3a2030', 2.0);
-    this.moonLight = new THREE.DirectionalLight('#ffb070', 2.3);
+    this.hemi = new THREE.HemisphereLight('#a884ec', '#40243a', 2.4);
+    this.moonLight = new THREE.DirectionalLight('#ffbe80', 2.6);
     this.moonLight.position.set(-8, 14, 30);
     this.moonLight.shadow.mapSize.set(1024, 1024);
     Object.assign(this.moonLight.shadow.camera, { left: -10, right: 10, top: 10, bottom: -6, near: 1, far: 70 });
     this.moonLight.shadow.bias = -0.0015;
     this.fill = new THREE.DirectionalLight('#b59bff', 1.5); this.fill.position.set(4, 8, -12);
     this.scene.add(this.hemi, this.moonLight, this.moonLight.target, this.fill, this.fill.target);
-    this.playerGlow = new THREE.PointLight('#ff9a3c', 6, 9, 1.6); this.scene.add(this.playerGlow);
+    this.playerGlow = new THREE.PointLight('#ffc89a', 3.5, 2.6, 1.5); this.scene.add(this.playerGlow);
     // warm pools of light under the nearest roadside lanterns
     this.lanternLights = [];
-    for (let i = 0; i < 4; i++) { const l = new THREE.PointLight('#ffa340', 5, 9, 1.6); l.position.set(0, -50, 0); this.scene.add(l); this.lanternLights.push(l); }
+    for (let i = 0; i < 6; i++) { const l = new THREE.PointLight('#ffa340', 5, 9, 1.6); l.position.set(0, -50, 0); this.scene.add(l); this.lanternLights.push(l); }
   }
 
   _buildGround() {
@@ -203,21 +203,21 @@ export class World {
   /* Cobblestone path (pixel texture) with chunky stone kerbs. 20 m segments recycled. */
   _buildRoad() {
     const SEG = 20;
-    const tex = canvasTex(256, 512, (g, w, h) => {
+    const tex = canvasTex(512, 1024, (g, w, h) => {
       const r = crand(12);
-      g.fillStyle = '#231b2c'; g.fillRect(0, 0, w, h);                 // grout
+      g.fillStyle = '#1b1824'; g.fillRect(0, 0, w, h);                 // grout
       let y = 0;
       while (y < h) {
-        const rh = 22 + Math.floor(r() * 3) * 6; let x = -Math.floor(r() * 30);
+        const rh = 18 + Math.floor(r() * 3) * 5; let x = -Math.floor(r() * 30);
         while (x < w) {
-          const sw = 26 + Math.floor(r() * 4) * 8;
-          const v = 92 + r() * 46, tint = r() < 0.12 ? 18 : 0;
-          const lane = Math.abs((x + sw / 2) - w / 3) < 14 || Math.abs((x + sw / 2) - (2 * w) / 3) < 14;
-          const base = lane ? v + 14 : v;
-          g.fillStyle = `rgb(${base * 0.92 + tint},${base * 0.86},${base + tint})`; g.fillRect(x + 2, y + 2, sw - 4, rh - 4);
-          g.fillStyle = `rgba(255,240,255,${0.07 + r() * 0.06})`; g.fillRect(x + 2, y + 2, sw - 4, 4);           // top highlight
-          g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x + 2, y + rh - 6, sw - 4, 4);
-          if (r() < 0.06) { g.fillStyle = 'rgba(60,110,50,.55)'; g.fillRect(x + 4, y + rh - 8, 8, 6); }
+          const sw = 24 + Math.floor(r() * 4) * 7;
+          const v = 96 + r() * 52, warm = r() < 0.1;
+          g.fillStyle = warm ? `rgb(${v * 1.02},${v * 0.86},${v * 0.8})` : `rgb(${v * 0.84},${v * 0.86},${v * 1.0})`;
+          g.fillRect(x + 3, y + 3, sw - 6, rh - 6);
+          g.fillRect(x + 5, y + 2, sw - 10, rh - 4);                      // chamfered corners
+          g.fillStyle = 'rgba(255,245,255,.13)'; g.fillRect(x + 5, y + 3, sw - 10, 3);
+          g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x + 5, y + rh - 6, sw - 10, 3);
+          if (r() < 0.07) { g.fillStyle = 'rgba(70,120,60,.6)'; g.fillRect(x + 2, y + rh - 6, 10, 5); }
           x += sw;
         }
         y += rh;
@@ -225,7 +225,7 @@ export class World {
     });
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.magFilter = THREE.NearestFilter; tex.repeat.set(1, 1);
     const roadMat = new THREE.MeshLambertMaterial({ map: tex });
-    const roadGeo = new THREE.PlaneGeometry(7.8, SEG); roadGeo.rotateX(-Math.PI / 2); roadGeo.translate(0, 0.02, SEG / 2);
+    const roadGeo = new THREE.PlaneGeometry(7.8, SEG); roadGeo.rotateX(-Math.PI / 2); roadGeo.translate(0, 0.02, SEG / 2);   // texture: 512 px across 7.8 m
     // kerb stones + mossy verge
     const variants = [0, 1, 2].map(vi => {
       const b = new VB(); const r = crand(40 + vi);
@@ -257,7 +257,7 @@ export class World {
   _buildProps() {
     const geos = propGeometries();
     const M = materials();
-    const caps = { tree: 80, pine: 110, cross: 40, grave: 40, fenceW: 130, lampW: 24, candles: 60, rip: 40, rune: 40, barrel: 30, pumpkinL: 40, pumpkinS: 50, signHaunt: 6, signTrench: 6, ghostC: 24, gate: 3, house: 20, mausoleum: 10, arch: 6, candleRed: 24, candleGreen: 24, rock: 40, bush: 50, bones: 30, chartSign: 16 };
+    const caps = { tree: 80, pine: 110, cross: 40, grave: 40, fenceW: 130, lampW: 60, candles: 110, rip: 70, rune: 60, barrel: 50, pumpkinL: 70, pumpkinS: 50, signHaunt: 6, signTrench: 6, ghostC: 24, gate: 3, house: 20, mausoleum: 10, arch: 6, candleRed: 24, candleGreen: 24, rock: 40, bush: 50, bones: 30, chartSign: 16 };
     this.props = {};
     for (const [name, cap] of Object.entries(caps)) {
       const g = geos[name];
@@ -285,18 +285,18 @@ export class World {
     // ---- the reference look: fences, lanterns, candles, graves and rune stones hugging the path ----
     for (const s of [-1, 1]) {
       for (let z = 2; z < 20; z += 4) if (r() < 0.8) add('fenceW', s * 6.4, z, 0, 1);
-      if ((t + (s > 0 ? 1 : 0)) % 2 === 0) add('lampW', s * 4.7, 8, s > 0 ? Math.PI : 0, 1);
-      const nNear = 1 + Math.floor(r() * 3 * dens);
+      add('lampW', s * 4.7, s > 0 ? 3 : 13, s > 0 ? Math.PI : 0, 1);
+      const nNear = 3 + Math.floor(r() * 4 * dens);
       for (let i = 0; i < nNear; i++) {
-        const q = r(), x = s * (4.5 + r() * 1.4), z = r() * 20, tilt = -s * (0.2 + r() * 0.4);
+        const q = r(), x = s * (4.5 + r() * 1.6), z = (i + r()) * (20 / nNear), tilt = -s * (0.2 + r() * 0.4);
         const type = q < 0.3 ? 'candles' : q < 0.48 ? 'rip' : q < 0.64 ? 'rune' : q < 0.78 ? 'pumpkinL' : q < 0.88 ? 'barrel' : 'candles';
         add(type, x, z, tilt, type === 'candles' ? 1 : 0.85 + r() * 0.3);
       }
       // second row behind the fence
-      const nBack = Math.round((2 + r() * 3) * dens);
+      const nBack = Math.round((5 + r() * 4) * dens);
       for (let i = 0; i < nBack; i++) {
-        const q = r(), x = s * (8 + r() * 10), z = r() * 20;
-        const type = q < 0.3 ? 'rip' : q < 0.5 ? 'tree' : q < 0.62 ? 'pumpkinL' : q < 0.74 ? 'rune' : q < 0.86 ? 'candles' : 'cross';
+        const q = r(), x = s * (7.5 + r() * 9), z = r() * 20;
+        const type = q < 0.24 ? 'rip' : q < 0.4 ? 'tree' : q < 0.56 ? 'pumpkinL' : q < 0.68 ? 'rune' : q < 0.84 ? 'candles' : q < 0.92 ? 'lampW' : 'cross';
         add(type, x, z, type === 'tree' ? r() * TAU : -s * r() * 0.6, 0.8 + r() * 0.5);
       }
     }
@@ -381,8 +381,8 @@ export class World {
     const haloTex = canvasTex(64, 64, (g, w) => { const grd = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.3, 'rgba(255,255,255,.45)'); grd.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = grd; g.fillRect(0, 0, w, w); });
     this.haloTex = haloTex;
     this.coinHalos = [];
-    for (let i = 0; i < 24; i++) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: '#a855f7', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: true }));
+    for (let i = 0; i < 40; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, opacity: 0.55, color: '#a855f7', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: true }));
       sp.scale.set(2.2, 2.2, 1); sp.visible = false; this.scene.add(sp); this.coinHalos.push(sp);
     }
     this.pops = [];   // collected-coin pop animations
@@ -446,15 +446,15 @@ export class World {
       if (n >= C.cap) continue;
       const spin = time * (c.type === 'SOLANA' ? 4.2 : 3) + c.z * 0.3;
       e.set(0, spin, 0); q.setFromEuler(e);
-      const sc = c.type === 'HALLOWINU' ? 1 : 1.15;
+      const sc = c.type === 'HALLOWINU' ? 1.0 : 1.2;
       v.set(c.x, c.y + Math.sin(time * 4 + c.z) * 0.08, c.z); s.set(sc, sc, sc);
       m4.compose(v, q, s);
       if (C.lit) C.lit.setMatrixAt(n, m4); if (C.glow) C.glow.setMatrixAt(n, m4);
       counts[c.type]++;
-      if (c.type !== 'HALLOWINU' && halo < this.coinHalos.length && c.z < pz + 90) {
+      if (halo < this.coinHalos.length && c.z < pz + 70) {
         const h = this.coinHalos[halo++]; h.visible = true; h.position.set(c.x, c.y, c.z - 0.1);
-        h.material.color.set(c.type === 'SOLANA' ? '#b05cff' : '#3d8bff');
-        const pulse = 1.8 + Math.sin(time * 6 + c.z) * 0.35; h.scale.set(pulse, pulse, 1);
+        h.material.color.set(c.type === 'SOLANA' ? '#b05cff' : c.type === 'USDC' ? '#3d8bff' : '#ffb52e');
+        const pulse = (c.type === 'HALLOWINU' ? 1.3 : 1.9) + Math.sin(time * 6 + c.z) * 0.2; h.scale.set(pulse, pulse, 1); h.material.opacity = c.type === 'HALLOWINU' ? 0.18 : 0.5;
       }
     }
     for (let i = halo; i < this.coinHalos.length; i++) this.coinHalos[i].visible = false;
@@ -476,9 +476,10 @@ export class World {
     this.skeleton = buildSkeleton(); this.boneDog = buildBoneDog();
     this.scene.add(this.skeleton.root, this.boneDog.root);
     const blob = canvasTex(64, 64, (g, w) => { const grd = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); grd.addColorStop(0, 'rgba(0,0,0,.6)'); grd.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = grd; g.fillRect(0, 0, w, w); });
-    const mk = s => { const m = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: blob, transparent: true, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.y = 0.21; this.scene.add(m); return m; };
+    const mk = s => { const m = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: blob, transparent: true, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.y = 0.04; this.scene.add(m); return m; };
     this.shadowP = mk(1.6); this.shadowS = mk(1.6); this.shadowD = mk(1.4);
     this.anim = { state: 'idle', t: 0, lean: 0, stumbleT: 0 };
+    this.trail = [];
   }
   setCharacter(id) {
     if (!this.characters[id]) this.characters[id] = buildInu(id);
@@ -491,50 +492,48 @@ export class World {
   _poseInu(P, st, time, dt) {
     const p = P.parts, a = this.anim;
     const run = st.speed / ETT.speed.start;
-    const cyc = time * (9 + run * 3.2);
-    const sw = Math.sin(cyc), sw2 = Math.sin(cyc * 2);
-    let hipY = 0, hipRotX = 0, legA = 0, armA = 0, headX = 0, capeX = -0.25, tailZ = Math.sin(time * 14) * 0.5;
-    if (a.state === 'run' || a.state === 'stumble') {
-      legA = sw * 0.95; armA = -sw * 0.9; hipY = Math.abs(sw2) * 0.06; hipRotX = 0.12; capeX = -0.55 - Math.abs(sw2) * 0.25; headX = -0.05 + sw2 * 0.03;
-    }
-    if (a.state === 'idle' || a.state === 'select') {
-      legA = 0; armA = Math.sin(time * 2) * 0.08; hipY = Math.sin(time * 2) * 0.02; headX = Math.sin(time * 1.3) * 0.06; capeX = -0.12 + Math.sin(time * 1.7) * 0.05; tailZ = Math.sin(time * 6) * 0.6;
-    }
-    if (st.air) {   // jump: tuck
-      legA = 0; p.legL.rotation.x = -0.9; p.legR.rotation.x = -0.6; armA = 2.6; hipRotX = -0.15; capeX = -1.0; headX = -0.2;
-    }
-    if (st.slide) { hipRotX = -1.15; hipY = -0.42; legA = 0; armA = -0.4; headX = 0.95; capeX = -1.4; }
-    if (a.state === 'crash') { const t = clamp(a.t / 0.45, 0, 1); hipRotX = -1.5 * t; hipY = lerp(0, -0.35, t); armA = 2.6 * t; legA = 0.5; headX = 0.6 * t; }
-    if (a.state === 'victory') { const j = Math.abs(Math.sin(a.t * 6)); hipY = j * 0.5; armA = 2.8; legA = 0; headX = -0.2; }
-    if (!st.air) { p.legL.rotation.x = legA; p.legR.rotation.x = -legA; }
-    p.armL.rotation.x = armA; p.armR.rotation.x = st.air || st.slide || a.state !== 'run' ? armA : -armA;
-    p.armL.rotation.z = st.air ? -0.4 : 0; p.armR.rotation.z = st.air ? 0.4 : 0;
-    p.hip.position.y = hipY; p.hip.rotation.x = hipRotX;
+    const cyc = time * (8.5 + run * 3);
+    const sw = Math.sin(cyc), bob = Math.abs(Math.cos(cyc));
+    let hipY = 0, lean = 0, lL = 0, lR = 0, aL = 0, aR = 0, armZ = 0, headX = 0, capeX = 0.12, tailZ = Math.sin(time * 12) * 0.4;
+    const running = a.state === 'run' || a.state === 'stumble';
+    if (running) { lL = sw * 0.85; lR = -sw * 0.85; aL = -Math.max(-0.3, sw) * 0.75; aR = -Math.max(-0.3, -sw) * 0.75; hipY = bob * 0.05; lean = 0.1; headX = -0.06; capeX = 0.18 + bob * 0.12; }
+    if (a.state === 'idle' || a.state === 'select') { aL = Math.sin(time * 2) * 0.08; aR = -aL; hipY = Math.sin(time * 2) * 0.012; headX = Math.sin(time * 1.3) * 0.06; capeX = 0.06 + Math.sin(time * 1.7) * 0.04; tailZ = Math.sin(time * 6) * 0.6; }
+    if (st.air) { lL = -1.1; lR = -0.35; aL = aR = -2.3; armZ = 0.25; lean = 0.05; capeX = 0.75; headX = -0.15; hipY = 0; }
+    if (st.slide) { lean = 1.22; hipY = 0.05; lL = 0.1; lR = -0.1; aL = aR = -1.6; armZ = 0.15; headX = -0.95; capeX = -0.1; }
+    if (a.state === 'crash') { const t = clamp(a.t / 0.4, 0, 1); lean = -1.35 * t; hipY = 0.05 * t; aL = aR = -2.4 * t; lL = -0.9 * t; lR = -1.3 * t; headX = 0.35 * t; capeX = -0.2; }
+    if (a.state === 'victory') { hipY = Math.abs(Math.sin(a.t * 6)) * 0.45; aL = aR = -2.9; lL = lR = 0; lean = 0; headX = -0.15; capeX = 0.5; }
+    p.legL.rotation.x = lL; p.legR.rotation.x = lR;
+    p.armL.rotation.x = aL; p.armR.rotation.x = aR; p.armL.rotation.z = -armZ; p.armR.rotation.z = armZ;
+    p.hip.position.y = hipY; p.hip.rotation.x = lean;
     p.head.rotation.x = headX;
     p.tail.rotation.z = tailZ;
-    if (p.cape) p.cape.rotation.x = capeX + Math.sin(time * 18) * 0.06;
+    if (p.cape) p.cape.rotation.x = capeX + Math.sin(time * 16) * 0.04;
     if (p.extra) { p.extra.rotation.y = time * 2; p.extra.position.y = 0.15 + Math.sin(time * 3) * 0.05; }
   }
 
   _poseSkeleton(time, running, excited) {
-    const p = this.skeleton.parts, c = time * 10, s = Math.sin(c);
-    p.legL.rotation.x = running ? s * 0.8 : 0; p.legR.rotation.x = running ? -s * 0.8 : 0;
-    p.armL.rotation.x = running ? -s * 0.9 : excited ? -2.6 + Math.sin(time * 12) * 0.3 : 0;
-    p.armR.rotation.x = running ? -1.2 + s * 0.3 : excited ? -2.4 : -0.6;
-    p.hip.position.y = running ? Math.abs(Math.sin(c * 2)) * 0.08 : 0;
-    p.head.rotation.z = Math.sin(time * 7) * (excited ? 0.25 : 0.1);
-    p.head.position.y = 1.45 + (excited ? Math.abs(Math.sin(time * 14)) * 0.06 : 0);   // jaw-rattle bob
+    const p = this.skeleton.parts, c = time * 9.5, s = Math.sin(c);
+    p.legL.rotation.x = running ? s * 0.6 : 0; p.legR.rotation.x = running ? -s * 0.6 : 0;
+    p.armL.rotation.x = running ? -s * 0.6 : excited ? -2.7 + Math.sin(time * 12) * 0.3 : Math.sin(time * 2) * 0.1;
+    p.armR.rotation.x = running ? 0.15 + s * 0.25 : excited ? -2.4 : -0.1;
+    p.armL.rotation.z = excited ? -0.3 : 0;
+    p.hip.position.y = running ? Math.abs(Math.cos(c)) * 0.06 : excited ? Math.abs(Math.sin(time * 9)) * 0.08 : 0;
+    p.hip.rotation.x = running ? 0.08 : 0;
+    p.head.rotation.z = Math.sin(time * 7) * (excited ? 0.25 : 0.08);
+    p.head.rotation.x = running ? Math.sin(c * 2) * 0.05 : 0;
   }
   _poseDog(time, running, excited) {
-    const p = this.boneDog.parts, c = time * 15, s = Math.sin(c);
-    const a = running ? 0.9 : 0;
+    const p = this.boneDog.parts, c = time * 13, s = Math.sin(c);
+    const a = running ? 0.45 : excited ? 0.2 : 0.04;
+    // trot: diagonal pairs move together
     p.legFL.rotation.x = s * a; p.legBR.rotation.x = s * a; p.legFR.rotation.x = -s * a; p.legBL.rotation.x = -s * a;
-    p.tail.rotation.y = Math.sin(time * 20) * 0.7;
-    p.head.rotation.x = running ? Math.sin(c * 2) * 0.08 : Math.sin(time * 9) * 0.2;
-    p.hip.position.y = running ? Math.abs(Math.sin(c)) * 0.12 : excited ? Math.abs(Math.sin(time * 9)) * 0.55 : 0;
+    p.tail.rotation.y = Math.sin(time * 18) * 0.6;
+    p.head.rotation.x = running ? Math.sin(c * 2) * 0.06 : Math.sin(time * 9) * 0.15;
+    p.hip.position.y = running ? Math.abs(Math.sin(c)) * 0.06 : excited ? Math.abs(Math.sin(time * 9)) * 0.45 : 0;
+    p.hip.rotation.x = running ? Math.sin(c) * 0.04 : 0;
   }
 
-  /* ---------------- low rolling mist (soft sprite cards) ---------------- */
+    /* ---------------- low rolling mist (soft sprite cards) ---------------- */
   _buildMist() {
     const tex = canvasTex(128, 64, (g, w, h) => {
       const r = crand(8);
@@ -545,7 +544,7 @@ export class World {
     this.mist = [];
     const r = crand(66);
     for (let i = 0; i < 34; i++) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: i > 20 ? 0.5 : 0.28, color: i % 3 ? '#cdb6ff' : '#ffc8a8' }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: i > 20 ? 0.24 : 0.16, color: i % 3 ? '#cdb6ff' : '#ffc8a8' }));
       const far = i > 20;
       const sx = far ? 70 + r() * 60 : 14 + r() * 14;
       sp.scale.set(sx, sx * 0.35, 1);
@@ -572,7 +571,7 @@ export class World {
     g.setAttribute('position', new THREE.BufferAttribute(this.pPos, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(this.pCol, 3).setUsage(THREE.DynamicDrawUsage));
     const tex = canvasTex(32, 32, (c, w) => { c.fillStyle = '#fff'; c.fillRect(8, 8, 16, 16); c.fillStyle = 'rgba(255,255,255,.4)'; c.fillRect(4, 4, 24, 24); });
-    this.points = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.28, map: tex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    this.points = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.16, map: tex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.points.frustumCulled = false;
     this.scene.add(this.points);
     for (let i = 0; i < N; i++) this.pPos[i * 3 + 1] = -100;
@@ -621,7 +620,7 @@ export class World {
     if (ev.t === 'land') { for (let i = 0; i < 8; i++) this.emit('dust', st.px, 0.1, st.pz, 1); }
     if (ev.t === 'slide') { for (let i = 0; i < 10; i++) this.emit('dust', st.px, 0.1, st.pz + 0.4, 1, '#b04cff'); }
     if (ev.t === 'lane') a.lean = ev.dir;
-    if (ev.t === 'stumble') { a.stumbleT = 0.55; this.shake = 0.45; this.chase.target = 2.3; this.chase.visibleT = 6; for (let i = 0; i < 10; i++) this.emit('spark', st.px, 1, st.pz + 0.5, 1, '#ffd34d'); }
+    if (ev.t === 'stumble') { a.stumbleT = 0.55; this.shake = 0.45; this.chase.target = 2.8; this.chase.visibleT = 6; for (let i = 0; i < 10; i++) this.emit('spark', st.px, 1, st.pz + 0.5, 1, '#ffd34d'); }
     if (ev.t === 'nearmiss') { this.chase.target = Math.min(this.chase.target, 7); this.chase.visibleT = Math.max(this.chase.visibleT, 1.2); }
     if (ev.t === 'dead') { a.state = 'crash'; a.t = 0; this.shake = 0.8; for (let i = 0; i < 16; i++) this.emit('spark', st.px, 1, st.pz + 0.6, 1, i % 2 ? '#ff7a1a' : '#ffd34d'); }
   }
@@ -634,15 +633,16 @@ export class World {
     a.t += dt;
     const v = st;
     // ----- player -----
-    this.player.position.set(v.px, v.y, v.pz);
+    this.player.position.set(v.px, v.y, v.pz - (a.state === 'crash' ? 0.75 * clamp(a.t / 0.3, 0, 1) : 0));   // bounce back off the obstacle
+    this.player.scale.setScalar(this.mode === 'run' || this.mode === 'over' ? 1.2 : 1);
     a.lean = damp(a.lean, 0, 8, dt);
     if (a.stumbleT > 0) a.stumbleT -= dt;
     if (this.mode === 'run' && a.state !== 'crash') a.state = a.stumbleT > 0 ? 'stumble' : 'run';
     this.player.rotation.z = -a.lean * 0.22 + (a.stumbleT > 0 ? Math.sin(time * 40) * 0.12 : 0);
     this.player.rotation.y = this.mode === 'select' || this.mode === 'menu' ? this.dragYaw + (this.mode === 'select' ? time * 0.6 : Math.PI - 0.45 + Math.sin(time * 0.5) * 0.25) : a.lean * 0.25;
     this._poseInu(this.current, { speed: v.speed, air: v.y > 0.05 && a.state !== 'crash', slide: v.slide && a.state !== 'crash' }, time, dt);
-    this.shadowP.position.set(v.px, 0.21, v.pz); const sh = clamp(1 - v.y * 0.3, 0.4, 1); this.shadowP.scale.set(sh, sh, sh);
-    this.playerGlow.position.set(v.px, 2.4, v.pz - 1.5);
+    this.shadowP.position.set(v.px, 0.04, v.pz); const sh = clamp(1 - v.y * 0.3, 0.4, 1); this.shadowP.scale.set(sh, sh, sh);
+    this.playerGlow.position.set(v.px, 1.5, v.pz + (this.mode === 'run' || this.mode === 'over' ? -0.9 : 1.8));
 
     // ----- pursuers -----
     const ch = this.chase;
@@ -651,27 +651,35 @@ export class World {
       if (ch.visibleT <= 0) ch.target = 16;
       ch.gap = damp(ch.gap, ch.target, ch.target < ch.gap ? 2.5 : 0.7, dt);
     }
-    const skZ = v.pz - ch.gap, side = v.px > 0.5 ? -1 : 1;
-    ch.x = damp(ch.x, clamp(v.px + side * 1.5, -3.2, 3.2), 3, dt);
+    // pursuers follow the runner's own recent path (so they jump/duck where the runner did, never through obstacles)
+    if (this.mode === 'run') {
+      const tr = this.trail; tr.push({ z: v.pz, x: v.px, y: v.y, sl: v.slide });
+      while (tr.length > 2 && tr[0].z < v.pz - 40) tr.shift();
+    }
+    const skZ = v.pz - ch.gap, dgZ = skZ + 0.9;
+    const sk = this._trailAt(skZ, v), dg = this._trailAt(dgZ, v);
     const running = this.mode === 'run' || (this.mode === 'over' && this.overT < 1.2);
     const excited = this.mode === 'over' && this.overT >= 1.2;
     if (this.mode === 'over') {
       const t = clamp(this.overT / 1.2, 0, 1);
-      this.skeleton.root.position.set(lerp(ch.x, v.px - 1.3, t), 0, lerp(skZ, v.pz - 1.5, t));
-      this.boneDog.root.position.set(lerp(ch.x + 1, v.px + 1.3, t), 0, lerp(skZ + 1, v.pz - 0.8, t));
-      this.skeleton.root.rotation.y = t > 0.9 ? 0.6 : 0; this.boneDog.root.rotation.y = t > 0.9 ? -0.7 : 0;
+      this.skeleton.root.position.set(lerp(sk.x - 0.5, v.px - 0.95, t), 0, lerp(skZ, v.pz - 2.2, t));
+      this.boneDog.root.position.set(lerp(dg.x + 0.6, v.px + 1.0, t), 0, lerp(dgZ, v.pz - 1.7, t));
+      this.skeleton.root.rotation.y = t > 0.9 ? 0.35 : 0; this.boneDog.root.rotation.y = t > 0.9 ? -0.45 : 0;
+      this.skeleton.root.scale.set(1, 1, 1); this.boneDog.root.scale.set(1, 1, 1);
     } else if (this.mode === 'menu' || this.mode === 'select') {
       this.skeleton.root.position.set(2.9, 0, v.pz + 6.5); this.skeleton.root.rotation.y = Math.PI + 0.35;
       this.boneDog.root.position.set(1.6, 0, v.pz + 5.2); this.boneDog.root.rotation.y = Math.PI + 0.2;
+      this.skeleton.root.scale.set(1, 1, 1); this.boneDog.root.scale.set(1, 1, 1);
     } else {
-      this.skeleton.root.position.set(ch.x, 0, skZ); this.skeleton.root.rotation.y = 0;
-      this.boneDog.root.position.set(clamp(ch.x + (side > 0 ? 1.2 : -1.2), -3.4, 3.4), 0, skZ + 1.2); this.boneDog.root.rotation.y = 0;
+      this.skeleton.root.position.set(sk.x - 0.55, Math.min(sk.y, 0.5), skZ); this.skeleton.root.rotation.y = 0;
+      this.boneDog.root.position.set(dg.x + 0.55, Math.min(dg.y, 0.6), dgZ); this.boneDog.root.rotation.y = 0;
+      this.skeleton.root.scale.set(0.7, sk.sl ? 0.4 : 0.7, 0.7); this.boneDog.root.scale.set(0.8, dg.sl ? 0.5 : 0.8, 0.8);
     }
     this._poseSkeleton(time, running, excited || this.mode === 'menu');
     this._poseDog(time, running, excited);
-    this.shadowS.position.set(this.skeleton.root.position.x, 0.21, this.skeleton.root.position.z);
-    this.shadowD.position.set(this.boneDog.root.position.x, 0.21, this.boneDog.root.position.z);
-    const showChasers = this.mode !== 'run' || ch.gap < 12;
+    this.shadowS.position.set(this.skeleton.root.position.x, 0.04, this.skeleton.root.position.z);
+    this.shadowD.position.set(this.boneDog.root.position.x, 0.04, this.boneDog.root.position.z);
+    const showChasers = this.mode !== 'run' || ch.gap < 3.8;
     this.skeleton.root.visible = this.boneDog.root.visible = this.shadowS.visible = this.shadowD.visible = showChasers;
 
     // ----- world -----
@@ -703,7 +711,7 @@ export class World {
 
     // ----- camera -----
     this._camera(dt, v, time);
-    if (this.bloom) this.bloom.strength = 0.68 + this.flash;
+    if (this.bloom) this.bloom.strength = 0.55 + this.flash;
     if (this.composer && this.Q.bloom) this.composer.render(dt); else this.renderer.render(this.scene, this.camera);
   }
 
@@ -719,14 +727,16 @@ export class World {
       tx = 1.0; ty = 1.35; tz = v.pz + 3.7; lx = 1.1; ly = 0.9; lz = v.pz; k = 4;
       if (this.w < 860) { tx = 0; lx = 0; tz = v.pz + 5.2; ty = 1.6; ly = 1.25; }
     } else if (this.mode === 'over') {
-      const t = clamp(this.overT / 1.6, 0, 1), e = t * t * (3 - 2 * t);
-      const side = this.portrait ? 0 : 2.3;
-      tx = lerp(v.px * 0.6, v.px + 1.0 + side * 0.4, e); ty = lerp(3.1, 2.2, e); tz = lerp(v.pz - 6, v.pz + 5.2, e);
-      lx = lerp(v.px, v.px + side, e); ly = lerp(1.2, 0.75, e); lz = lerp(v.pz + 8, v.pz - 0.8, e); k = 4;
+      // rise up behind the runner, inside its own lane (never inside a neighbouring wagon):
+      // shows the crash and the skeleton crew arriving from behind
+      const t = clamp(this.overT / 1.4, 0, 1), e = t * t * (3 - 2 * t), port = this.portrait;
+      const off = port ? 0 : -1.1;   // camera looks along +z, so -x moves the scene to the left of the results card
+      tx = lerp(v.px * 0.8, v.px + off, e); ty = lerp(3.7, 3.4, e); tz = lerp(v.pz - 5.0, v.pz - 5.0, e);
+      lx = lerp(v.px * 0.85, v.px + off * 2.4, e); ly = lerp(0.5, 0.4, e); lz = lerp(v.pz + 9, v.pz + 0.6, e); k = 4;
     } else {
       const port = this.portrait;
-      tx = v.px * 0.75; ty = (port ? 3.9 : 3.05) + v.y * 0.35; tz = v.pz - (port ? 6.8 : 5.9);
-      lx = v.px * 0.85; ly = 1.25 + v.y * 0.2; lz = v.pz + (port ? 10 : 9); k = 9;
+      tx = v.px * 0.8; ty = (port ? 4.3 : 3.7) + v.y * 0.3; tz = v.pz - (port ? 5.6 : 5.0);
+      lx = v.px * 0.85; ly = 0.5 + v.y * 0.2; lz = v.pz + (port ? 8 : 9); k = 9;
       if (this.introT > 0) { this.introT -= dt; }
     }
     if (this.snap) { this.snap = false; cp.set(tx, ty, tz); cl.set(lx, ly, lz); }
@@ -738,13 +748,22 @@ export class World {
     this.camera.lookAt(cl);
   }
 
+  _trailAt(z, v) {
+    const tr = this.trail;
+    if (!tr.length || z >= v.pz) return { x: v.px, y: v.y, sl: v.slide };
+    if (z <= tr[0].z) return { x: tr[0].x, y: tr[0].y, sl: tr[0].sl };
+    let i = tr.length - 1; while (i > 0 && tr[i - 1].z > z) i--;
+    const a = tr[i - 1] || tr[i], b = tr[i], k = b.z > a.z ? (z - a.z) / (b.z - a.z) : 0;
+    return { x: a.x + (b.x - a.x) * k, y: Math.max(0, a.y + (b.y - a.y) * k), sl: k < 0.5 ? a.sl : b.sl };
+  }
+
   /* snap the camera (no lerp) — used when a run starts */
-  snapCamera(v) { this.camPos.set(v.px * 0.75, 3.05, v.pz - 5.9); this.camLook.set(0, 1.25, v.pz + 9); }
+  snapCamera(v) { this.camPos.set(v.px * 0.8, this.portrait ? 4.3 : 3.7, v.pz - (this.portrait ? 5.6 : 5.0)); this.camLook.set(0, 0.5, v.pz + (this.portrait ? 8 : 9)); }
 
   setMode(mode) {
     const prevMode = this.mode;
     this.mode = mode;
-    if (mode === 'run') { this.anim.state = 'run'; this.chase.gap = 2.2; this.chase.target = 2.2; this.chase.visibleT = 2.6; this.introT = 1; }
+    if (mode === 'run') { this.trail = []; this.anim.state = 'run'; this.chase.gap = 2.7; this.chase.target = 2.7; this.chase.visibleT = 2.6; this.introT = 1; }
     if (mode === 'over') { this.overT = 0; }
     if ((mode === 'menu' || mode === 'select') && prevMode !== mode) this.snap = true;
     if (mode === 'menu' || mode === 'select') { this.anim.state = mode === 'select' ? 'select' : 'idle'; this.resetRun(); this.anim.state = mode === 'select' ? 'select' : 'idle'; }
