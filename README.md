@@ -34,3 +34,8 @@ Losstaande 3D voxel-runner op `/escape-the-trenches` (knop "ESCAPE THE TRENCHES"
 Niet onderdeel van de Arcade; punten gaan wel naar dezelfde ledger (server herspeelt elke run, automatische inwisseling bij de volgende run).
 Zie **docs/ESCAPE_TRENCHES.md**. Spelregels/munten: `dist/ett/config.js` · beloningsregels: `worker/config.js` (`escapeTrenches`).
 - E2E: `NODE_PATH=$(npm root -g) node test/e2e-ett.mjs` (met de dev server aan)
+
+## Telegram bot API (read-only)
+De officiële Telegram-bot leest de publieke leaderboards (`/api/ett/leaderboard`, `/api/leaderboard`, `/api/haunt/leaderboard`), `/api/season`, `site-config.js` en `launch-config.js`.
+Optioneel: `GET /api/bot/rank?telegram_id=<id>` met header `Authorization: Bearer <BOT_API_TOKEN>` geeft naam + ranks van een speler die zélf zijn Telegram heeft gekoppeld (opt-in). Nooit wallets of interne ids.
+Aanzetten: zet het Worker-secret `BOT_API_TOKEN` (min. 24 tekens) en dezelfde waarde als Railway-variabele `BOT_API_TOKEN` bij de bot. Zonder secret antwoordt het endpoint `503`.

@@ -159,6 +159,9 @@ async function route(request, env, url) {
     return json({ ok: true, ...(await leaderboard(env, player, url.searchParams.get('scope') === 'all' ? 'all' : 'season')) });
   }
   if (path === '/api/season' && m === 'GET') return json({ ok: true, ...(await seasonDetails(env)) });
+
+  // ---- Telegram bot (read-only, shared secret BOT_API_TOKEN; never exposes wallets) ----
+  if (path === '/api/bot/rank' && m === 'GET') return json({ ok: true, ...(await botRank(env, request, url)) });
   if (path === '/api/pool' && m === 'GET') return json({ ok: true, ...(await POOL.publicPool(env)) });
 
   // ---- authenticated player routes ----
@@ -356,6 +359,37 @@ async function leaderboard(env, player, scope) {
   let me = null;
   if (player && !rows.some(r => r.me)) { const pr = await profile(env, player); if (pr.seasonRank) me = { rank: pr.seasonRank, points: pr.seasonPoints, name: pr.displayName }; }
   return { scope, season: { id: season.id, name: season.name, status: season.status, phase: seasonPhase(season) }, rows, me };
+}
+
+/* Rank lookup for the official Telegram bot. A player only appears here after they
+   linked their Telegram themselves (Telegram Login Widget + group membership, opt-in).
+   Returns display name + ranks only — no wallet, no identities, no internal ids. */
+async function botRank(env, request, url) {
+  const secret = String(env.BOT_API_TOKEN || '');
+  if (secret.length < 24) throw new ApiError(503, 'BOT_API_DISABLED', 'Bot API is not configured.');
+  const auth = request.headers.get('authorization') || '';
+  const given = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (!given || !(await timingSafeEqualStr(given, secret))) throw new ApiError(401, 'UNAUTHORIZED', 'Unauthorized.');
+  const tid = String(url.searchParams.get('telegram_id') || '');
+  if (!/^\d{1,20}$/.test(tid)) throw new ApiError(400, 'BAD_TELEGRAM_ID', 'telegram_id must be numeric.');
+  const link = await env.DB.prepare("SELECT player_id FROM player_identities WHERE provider = 'telegram' AND provider_user_id = ?").bind(tid).first();
+  if (!link) return { linked: false };
+  const player = await env.DB.prepare('SELECT * FROM players WHERE id = ?').bind(link.player_id).first();
+  if (!player || player.status !== 'active' || !player.name_set_at) return { linked: false };
+  const pr = await profile(env, player);
+  const ett = await ETTG.leaderboard(env, player, 'all', 'best');
+  const mine = ett.rows.find(r => r.me) || ett.me;
+  const haunt = await env.DB.prepare('SELECT haunt_xp, haunt_last_at FROM players WHERE id = ?').bind(player.id).first();
+  const hauntRank = haunt.haunt_xp > 0 ? (await env.DB.prepare(
+    `SELECT COUNT(*) + 1 AS r FROM players p WHERE ${RANKED} AND (p.haunt_xp > ?1 OR (p.haunt_xp = ?1 AND p.haunt_last_at < ?2))`)
+    .bind(haunt.haunt_xp, haunt.haunt_last_at ?? 0).first()).r : null;
+  return {
+    linked: true,
+    player: { name: pr.displayName, level: pr.level, title: pr.title },
+    arcade: { seasonRank: pr.seasonRank, seasonPoints: pr.seasonPoints, allTimeRank: pr.allTimeRank, totalPoints: pr.totalPoints },
+    ett: mine ? { rank: mine.rank, best: mine.best } : { rank: null, best: 0 },
+    haunt: { rank: hauntRank, xp: haunt.haunt_xp },
+  };
 }
 
 async function seasonDetails(env) {
