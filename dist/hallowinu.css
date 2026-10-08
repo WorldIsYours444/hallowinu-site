@@ -652,3 +652,14 @@ button{font:inherit;color:inherit}
 .ps-bar i{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(90deg,var(--orange) 0 10px,var(--pumpkin) 10px 12px);box-shadow:0 0 12px rgba(255,122,26,.5)}
 .ps-legend{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .ps-legend b{font:10px var(--f-pixel);color:var(--amber);font-weight:400}
+
+/* ---------- ESCAPE THE TRENCHES nav button (standalone 3D game, opens in a new tab) ---------- */
+.ett-btn{--b:#ffd27a;box-shadow:0 -3px 0 0 var(--b),0 3px 0 0 var(--b),-3px 0 0 0 var(--b),3px 0 0 0 var(--b),inset 0 -4px 0 rgba(0,0,0,.35),0 0 18px rgba(255,122,26,.55);animation:ettGlow 1.6s steps(4) infinite alternate}
+.ett-btn .label{font-size:9px}
+@keyframes ettGlow{to{box-shadow:0 -3px 0 0 var(--b),0 3px 0 0 var(--b),-3px 0 0 0 var(--b),3px 0 0 0 var(--b),inset 0 -4px 0 rgba(0,0,0,.35),0 0 26px rgba(196,92,255,.75)}}
+.mobile-menu .ett-link{color:var(--pumpkin)!important;text-shadow:0 0 12px rgba(255,122,26,.6)}
+@media (max-width:1340px){.ett-btn .label{font-size:8px}.hud-actions .buy-top .soon{display:none}.nav-links a{padding-inline:8px;white-space:nowrap}.hud-bar{gap:14px}}
+@media (min-width:1021px) and (max-width:1540px){.hud-actions .socials-hud{display:none}}
+.ett-btn{padding-inline:12px;gap:8px}
+@media (max-width:1020px){.ett-btn .label{display:none}.ett-btn{min-width:46px;padding:0 10px}}
+@media (prefers-reduced-motion:reduce){.ett-btn{animation:none}}

@@ -133,6 +133,34 @@ export const CONFIG = {
     },
   },
 
+  /* =========================================================
+     ESCAPE THE TRENCHES — standalone 3D runner (/escape-the-trenches).
+     Gameplay numbers (coin values, rarity, speed, obstacles) live in dist/ett/config.js,
+     which the browser and this Worker share. Here: reward rules only.
+     ========================================================= */
+  escapeTrenches: {
+    id: 'escape-the-trenches',
+    name: 'Escape The Trenches',
+    rewardsEnabled: true,            // false = runs are still verified and ranked, but no points are credited
+    // Season SOL prizes: OFF by default. Runner points go to lifetime Arcade Points + the runner's own
+    // leaderboard. Turn on (admin setting ett.seasonCredit) only after you accept the anti-cheat limits (docs/ESCAPE_TRENCHES.md).
+    seasonCredit: false,
+    dailyCap: 1000,                  // max points credited per player per UTC day (unlimited PLAYS, capped CREDIT)
+    xpPerPoint: 1,                   // XP = credited points (levels are cosmetic)
+    finishGraceMs: 2500,             // network/rounding allowance in the real-time pacing check
+    lateFinishMs: 7 * 86400_000,     // a run whose upload failed can still be submitted for 7 days
+    abandonAfterMs: 8 * 86400_000,   // never-finished runs are marked ABANDONED by the cron after this
+    minSecondsForRateCheck: 8,
+    maxCharacters: ['hallow-inu', 'super-inu', 'artificial-inu', 'shiba-inu'],
+    rateLimits: {
+      starts: { limit: 90, windowMs: 60 * 60_000 },     // runs per player per hour (D1 cost guard, not a play limit for humans)
+      reads: { limit: 120, windowMs: 60_000 },
+    },
+    review: { scorePerMinute: 260, longRunMetres: 20000 },   // flagged for admin review (still validated)
+    leaderboardSize: 50,
+    historySize: 25,
+  },
+
   /* XP & levels: xp needed to REACH level n = 100*(n-1) + 25*(n-1)*(n-2) */
   levels: {
     max: 50,
@@ -244,6 +272,9 @@ export const OVERRIDABLE_SETTINGS = {
   'games.pumpkin-hunt.dailyLimit': 'int',
   'games.quiz.dailyLimit': 'int',
   'haunt.enabled': 'boolean',
+  'ett.rewardsEnabled': 'boolean',
+  'ett.seasonCredit': 'boolean',
+  'ett.dailyCap': 'int',
   'haunt.dailyBudgetCents': 'int',
 };
 

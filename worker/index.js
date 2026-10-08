@@ -17,6 +17,7 @@ import * as TOT from './games/trick-or-treat.js';
 import * as HUNT from './games/pumpkin-hunt.js';
 import * as SPIN from './games/daily-spin.js';
 import * as QUIZ from './games/quiz.js';
+import * as ETTG from './games/escape-the-trenches.js';
 import * as HAUNT from './haunt/engine.js';
 import * as POOL from './pool/ledger.js';
 import { xConfigured } from './haunt/xclient.js';
@@ -57,6 +58,7 @@ export async function cron(env) {
   await cleanupRateLimits(env);
   try { await HAUNT.retryPending(env); } catch (e) { console.error('haunt_retry_cron', e.message); }
   try { await POOL.scan(env); } catch (e) { console.error('pool_scan_cron', e.message); }
+  try { await ETTG.cron(env); } catch (e) { console.error('ett_cron', e.message); }
 }
 
 /* ---------- request guards ---------- */
@@ -171,6 +173,30 @@ async function route(request, env, url) {
     const body = await readJson(request);
     await setPlayerName(env, player, body.displayName);
     return json({ ok: true, ...(await accountView(env, player, true)) });
+  }
+
+  // ---- ESCAPE THE TRENCHES (standalone runner, not an Arcade cabinet) ----
+  if (path === '/api/ett/me' && m === 'GET') {
+    const s = await getSession(env, request);
+    const acc = await accountView(env, s ? s.player : null);
+    const player = s && s.player.name_set_at && s.player.status === 'active' ? s.player : null;
+    if (player) await rateLimit(env, `ettread:${player.id}`, CONFIG.escapeTrenches.rateLimits.reads);
+    return json({ ok: true, serverNow: now(), access: acc.access, profile: acc.player ? { displayName: acc.player.displayName, level: acc.player.level, title: acc.player.title, totalPoints: acc.player.totalPoints } : null,
+      ...(player ? await ETTG.me(env, player) : { rules: ETTG.publicRules(await ETTG.settingsFor(env)) }) });
+  }
+  if (path === '/api/ett/leaderboard' && m === 'GET') {
+    const player = await getSessionPlayer(env, request);
+    const range = ['today', 'week', 'all'].includes(url.searchParams.get('range')) ? url.searchParams.get('range') : 'all';
+    return json({ ok: true, ...(await ETTG.leaderboard(env, player, range, url.searchParams.get('metric'))) });
+  }
+  if (path === '/api/ett/start' && m === 'POST') {
+    const p = await requirePlayer(env, request);
+    return json({ ok: true, ...(await ETTG.start(env, p, await readJson(request))) });
+  }
+  if (path === '/api/ett/finish' && m === 'POST') {
+    const p = await requirePlayer(env, request);
+    await rateLimit(env, `act:${p.id}`, RL.gameActions);
+    return json({ ok: true, ...(await ETTG.finish(env, p, await readJson(request, 262144))) });
   }
 
   const gm = path.match(/^\/api\/games\/([a-z-]+)\/([a-z]+)$/);
@@ -565,6 +591,14 @@ async function admin(request, env, url, sub) {
     return json({ ok: true });
   }
   if (sub === 'cron' && m === 'POST') { await cron(env); return json({ ok: true }); }
+
+  // ESCAPE THE TRENCHES
+  if (sub === 'ett/runs' && m === 'GET') return json({ ok: true, ...(await ETTG.adminRuns(env, url)) });
+  if (seg[0] === 'ett' && seg[1] === 'runs' && seg[3] === 'reject' && m === 'POST') {
+    const reason = str(body.reason, { min: 3, max: 200 });
+    if (!reason) throw new ApiError(400, 'BAD_REQUEST', 'A reason is required.');
+    return json(await ETTG.adminReject(env, actor, seg[2], reason));
+  }
 
   // THE HAUNT
   if (sub === 'haunt' && m === 'GET') return json({ ok: true, ...(await HAUNT.adminOverview(env, url)) });

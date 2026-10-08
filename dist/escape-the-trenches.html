@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<title>Escape The Trenches — HALLOWINU 3D runner</title>
+<meta name="description" content="HALLOWINU — ESCAPE THE TRENCHES. A 3D voxel Halloween endless runner: three lanes, haunted wagons, a skeleton and his bone dog on your tail. Collect HALLOWINU, USDC and SOLANA coins.">
+<meta name="theme-color" content="#06030c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="canonical" href="https://hallowinu.xyz/escape-the-trenches">
+<meta property="og:title" content="HALLOWINU — Escape The Trenches">
+<meta property="og:description" content="Run. Dodge haunted wagons. Outrun the skeleton and his bone dog.">
+<meta property="og:image" content="https://hallowinu.xyz/img/og.jpg">
+<link rel="icon" href="/favicon.ico?v=40" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=40">
+<link rel="preload" href="/fonts/creepster.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="/fonts/press-start.woff" as="font" type="font/woff" crossorigin>
+<link rel="modulepreload" href="/ett/vendor/three.bundle.js">
+<link rel="stylesheet" href="/ett/ett.css?v=1">
+</head>
+<body>
+<div id="ett" class="ett is-loading" data-screen="loading">
+  <canvas id="ett-canvas" aria-label="Escape The Trenches 3D game view"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="danger" aria-hidden="true"></div>
+
+  <!-- ===== LOADING ===== -->
+  <section class="screen s-loading" id="s-loading" aria-live="polite">
+    <div class="logo"><span class="wm"><span class="o">HALLOW</span><span class="p">INU</span></span><h1>ESCAPE <em>THE</em> TRENCHES</h1></div>
+    <div class="bar"><i id="load-bar"></i></div>
+    <p id="load-text">Summoning the haunted world…</p>
+    <noscript><p>This game needs JavaScript and WebGL.</p></noscript>
+  </section>
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="topbar">
+    <a class="tb-btn back" href="/" data-back><span aria-hidden="true">‹</span> HALLOWINU</a>
+    <div class="acct" id="acct" hidden>
+      <span class="acct-name" id="acct-name">GUEST</span>
+      <span class="acct-pts" id="acct-pts"></span>
+      <button class="tb-btn sm" type="button" id="acct-connect">CONNECT PHANTOM</button>
+    </div>
+    <div class="tb-right">
+      <button class="tb-btn icon" type="button" id="btn-mute" aria-label="Mute sound" title="Sound (M)"><span class="ico-snd" aria-hidden="true"></span></button>
+      <button class="tb-btn" type="button" data-fullscreen aria-label="Fullscreen"><span class="ico-fs" aria-hidden="true"></span><span class="fs-label">FULLSCREEN</span></button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN MENU ===== -->
+  <section class="screen s-menu" id="s-menu" hidden>
+    <div class="menu-col">
+      <div class="logo"><span class="wm"><span class="o">HALLOW</span><span class="p">INU</span></span><h1>ESCAPE <em>THE</em> TRENCHES</h1></div>
+      <nav class="menu-buttons" aria-label="Game menu">
+        <button class="mbtn primary" type="button" data-act="play">▶ PLAY</button>
+        <button class="mbtn" type="button" data-go="select">SELECT CHARACTER</button>
+        <button class="mbtn" type="button" data-go="board">LEADERBOARD</button>
+        <button class="mbtn" type="button" data-go="how">HOW TO PLAY</button>
+        <button class="mbtn" type="button" data-go="settings">SETTINGS</button>
+        <button class="mbtn" type="button" data-fullscreen><span class="fs-label">FULLSCREEN</span></button>
+        <a class="mbtn ghost" href="/" data-back>BACK TO HALLOWINU</a>
+      </nav>
+      <div class="earn-note" id="earn-note"></div>
+    </div>
+    <div class="menu-side">
+      <div class="char-name" id="menu-char-name">HALLOW INU</div>
+      <p class="drag-hint">Drag to rotate</p>
+    </div>
+    <div class="char-strip" id="menu-strip" role="radiogroup" aria-label="Choose your Inu"></div>
+  </section>
+
+  <!-- ===== CHARACTER SELECT ===== -->
+  <section class="screen s-select" id="s-select" hidden>
+    <div class="sel-head"><h2>CHOOSE YOUR INU</h2><p>All four Inus run, jump and slide exactly the same — looks only, never pay-to-win.</p></div>
+    <button class="arrow left" type="button" data-sel="-1" aria-label="Previous character">‹</button>
+    <button class="arrow right" type="button" data-sel="1" aria-label="Next character">›</button>
+    <div class="sel-info px-panel">
+      <div class="sel-name" id="sel-name">HALLOW INU</div>
+      <div class="sel-tag" id="sel-tag"></div>
+      <p class="sel-blurb" id="sel-blurb"></p>
+      <div class="sel-actions">
+        <button class="mbtn primary" type="button" data-act="choose">SELECT</button>
+        <button class="mbtn" type="button" data-act="back">BACK</button>
+      </div>
+    </div>
+    <div class="char-strip" id="sel-strip" role="radiogroup" aria-label="Characters"></div>
+  </section>
+
+  <!-- ===== HOW TO PLAY ===== -->
+  <section class="screen s-panel" id="s-how" hidden>
+    <div class="panel px-panel">
+      <h2>HOW TO PLAY</h2>
+      <p class="lead">Run through the haunted trenches on <b>three lanes</b>. Switch lanes, jump and slide past haunted wagons, graves and cursed candles. A skeleton and his bone dog are right behind you — bump into something twice and they catch you.</p>
+      <div class="how-grid">
+        <div><h3>CONTROLS</h3>
+          <ul class="keys">
+            <li><kbd>←</kbd> Move left</li><li><kbd>→</kbd> Move right</li><li><kbd>SPACE</kbd> Jump</li><li><kbd>↓</kbd> Duck / slide</li>
+            <li><kbd>P</kbd>/<kbd>ESC</kbd> Pause</li><li>Mobile: swipe ← → ↑ ↓ or tap the buttons</li>
+          </ul></div>
+        <div><h3>COINS</h3>
+          <ul class="coins">
+            <li><i class="coin c-h"></i><b>HALLOWINU</b> +1 point · most common</li>
+            <li><i class="coin c-u"></i><b>USDC</b> +5 points · rarer, harder spots</li>
+            <li><i class="coin c-s"></i><b>SOLANA</b> +10 points · very rare, tricky to reach</li>
+          </ul></div>
+        <div><h3>OBSTACLES</h3>
+          <ul class="obs">
+            <li><b>Graves, pumpkins, low walls, mine carts</b> → JUMP or switch</li>
+            <li><b>Chains, branches, floating ghosts</b> → SLIDE or switch</li>
+            <li><b>Haunted wagons &amp; bear candles</b> → SWITCH LANE</li>
+            <li><b>Moving wagons</b> drive towards you — react fast!</li>
+          </ul></div>
+        <div><h3>POINTS</h3>
+          <p>Your coin points are verified by the server. They become <b>pending</b> when a run ends and are <b>redeemed automatically</b> into your HALLOWINU account when you start your next run. Unlimited runs, no energy, no tickets. Connect Phantom to earn.</p></div>
+      </div>
+      <button class="mbtn primary" type="button" data-act="back">GOT IT</button>
+    </div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section class="screen s-panel" id="s-settings" hidden>
+    <div class="panel px-panel">
+      <h2>SETTINGS</h2>
+      <div class="set-grid">
+        <label class="set"><span>MUSIC</span><input type="range" min="0" max="100" id="set-music"></label>
+        <label class="set"><span>SOUND FX</span><input type="range" min="0" max="100" id="set-sfx"></label>
+        <label class="set chk"><input type="checkbox" id="set-mute"><span>MUTE ALL</span></label>
+        <label class="set"><span>GRAPHICS</span>
+          <select id="set-quality"><option value="auto">AUTO</option><option value="low">LOW</option><option value="medium">MEDIUM</option><option value="high">HIGH</option></select></label>
+        <label class="set chk"><input type="checkbox" id="set-perf"><span>MOBILE PERFORMANCE MODE</span></label>
+        <label class="set"><span>ON-SCREEN BUTTONS</span>
+          <select id="set-buttons"><option value="on">SHOW</option><option value="off">HIDE</option></select></label>
+        <div class="set full"><span>FULLSCREEN</span><button class="mbtn sm" type="button" data-fullscreen><span class="fs-label">FULLSCREEN</span></button></div>
+      </div>
+      <h3>CONTROLS <small>(default keys always work — add an extra key if you like)</small></h3>
+      <div class="remap" id="remap"></div>
+      <button class="mbtn primary" type="button" data-act="back">DONE</button>
+    </div>
+  </section>
+
+  <!-- ===== LEADERBOARD ===== -->
+  <section class="screen s-panel" id="s-board" hidden>
+    <div class="panel px-panel wide">
+      <h2>LEADERBOARD</h2>
+      <div class="tabs" role="tablist" id="lb-range">
+        <button type="button" data-range="today">TODAY</button><button type="button" data-range="week">THIS WEEK</button><button type="button" data-range="all" class="on">ALL-TIME</button><button type="button" data-range="mine">MY RUNS</button>
+      </div>
+      <div class="tabs small" role="tablist" id="lb-metric">
+        <button type="button" data-metric="best" class="on">BEST RUN</button><button type="button" data-metric="total">TOTAL SCORE</button><button type="button" data-metric="distance">LONGEST DISTANCE</button>
+      </div>
+      <div class="lb-body" id="lb-body"><p class="muted">Loading…</p></div>
+      <p class="muted tiny">Only server-verified runs are ranked. Daily resets at 00:00 UTC, weekly on Monday 00:00 UTC.</p>
+      <button class="mbtn primary" type="button" data-act="back">BACK</button>
+    </div>
+  </section>
+
+  <!-- ===== PAUSE ===== -->
+  <section class="screen s-panel s-pause" id="s-pause" hidden>
+    <div class="panel px-panel narrow">
+      <h2>PAUSED</h2>
+      <button class="mbtn primary" type="button" data-act="resume">RESUME</button>
+      <button class="mbtn" type="button" data-act="pause-char">SWITCH CHARACTER</button>
+      <button class="mbtn" type="button" data-go="settings">SETTINGS</button>
+      <button class="mbtn" type="button" data-fullscreen><span class="fs-label">FULLSCREEN</span></button>
+      <button class="mbtn ghost" type="button" data-act="quit">END RUN</button>
+    </div>
+  </section>
+
+  <!-- ===== GAME OVER ===== -->
+  <section class="screen s-over" id="s-over" hidden>
+    <div class="over-card px-panel">
+      <div class="over-top">
+        <h2>GAME OVER <span aria-hidden="true">💀</span></h2>
+        <p class="over-msg" id="over-msg">THE TRENCHES WIN AGAIN.</p>
+        <div class="pb" id="over-pb" hidden>NEW PERSONAL BEST!</div>
+      </div>
+      <div class="over-score"><span>TOTAL SCORE</span><b id="o-score">0</b><small>POINTS</small></div>
+      <div class="over-coins">
+        <div class="oc"><i class="coin c-h"></i><span>HALLOWINU</span><b><span id="o-ch">0</span> × 1 = <span id="o-ph">0</span></b></div>
+        <div class="oc"><i class="coin c-u"></i><span>USDC</span><b><span id="o-cu">0</span> × 5 = <span id="o-pu">0</span></b></div>
+        <div class="oc"><i class="coin c-s"></i><span>SOLANA</span><b><span id="o-cs">0</span> × 10 = <span id="o-ps">0</span></b></div>
+      </div>
+      <dl class="over-stats">
+        <div><dt>CHARACTER</dt><dd id="o-char">—</dd></div>
+        <div><dt>DISTANCE</dt><dd id="o-dist">0 M</dd></div>
+        <div><dt>DURATION</dt><dd id="o-dur">00:00</dd></div>
+        <div><dt>TOP SPEED</dt><dd id="o-speed">0</dd></div>
+        <div><dt>JUMPS</dt><dd id="o-jumps">0</dd></div>
+        <div><dt>SLIDES</dt><dd id="o-slides">0</dd></div>
+        <div><dt>LEFT SWITCHES</dt><dd id="o-left">0</dd></div>
+        <div><dt>RIGHT SWITCHES</dt><dd id="o-right">0</dd></div>
+        <div><dt>TOTAL COINS</dt><dd id="o-coins">0</dd></div>
+        <div><dt>PERSONAL BEST</dt><dd id="o-best">—</dd></div>
+      </dl>
+      <div class="over-status" id="o-status"><span class="pill">…</span><p>Checking your run…</p></div>
+      <div class="over-actions">
+        <button class="mbtn primary" type="button" data-act="play">▶ PLAY AGAIN</button>
+        <button class="mbtn" type="button" data-go="select">CHANGE CHARACTER</button>
+        <button class="mbtn" type="button" data-go="board">LEADERBOARD</button>
+        <button class="mbtn" type="button" data-act="menu">MAIN MENU</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HUD ===== -->
+  <div class="hud" id="hud" hidden>
+    <div class="hud-score"><span class="lbl">SCORE</span><b id="h-score">0</b>
+      <div class="hud-coins"><span><i class="coin c-h"></i><b id="h-ch">0</b></span><span><i class="coin c-u"></i><b id="h-cu">0</b></span><span><i class="coin c-s"></i><b id="h-cs">0</b></span></div>
+    </div>
+    <div class="hud-dist"><b id="h-dist">0</b><span>M</span><small id="h-speed">13 M/S</small></div>
+    <button class="hud-pause" type="button" data-act="pause" aria-label="Pause (P)"><i></i><i></i></button>
+    <div class="biome" id="h-biome" aria-live="polite"></div>
+    <div class="hud-msg" id="h-msg"></div>
+    <div class="guest-tag" id="h-guest" hidden>GUEST RUN · NOT EARNING</div>
+  </div>
+
+  <!-- ===== ON-SCREEN CONTROLS ===== -->
+  <div class="controls" id="controls" hidden aria-label="Game controls">
+    <button type="button" class="cbtn" data-input="left" aria-label="Move left"><span class="k">←</span><span class="l">LEFT</span></button>
+    <button type="button" class="cbtn" data-input="duck" aria-label="Duck or slide"><span class="k">↓</span><span class="l">DUCK</span></button>
+    <button type="button" class="cbtn wide" data-input="jump" aria-label="Jump"><span class="k">SPACE</span><span class="l">JUMP</span></button>
+    <button type="button" class="cbtn" data-input="right" aria-label="Move right"><span class="k">→</span><span class="l">RIGHT</span></button>
+  </div>
+
+  <div class="rotate-hint" id="rotate-hint" hidden><span>↻</span> Landscape plays best <button type="button" aria-label="Dismiss">✕</button></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <dialog class="name-dlg px-panel" id="name-dlg">
+    <form method="dialog" id="name-form">
+      <h2>CHOOSE YOUR PLAYER NAME</h2>
+      <p>Shown on the leaderboards. 3–16 letters, numbers, space, - _ .</p>
+      <input id="name-input" maxlength="16" minlength="3" autocomplete="off" required placeholder="GhostRunner">
+      <p class="err" id="name-err"></p>
+      <div class="row"><button class="mbtn primary" value="ok">SAVE</button><button class="mbtn" value="cancel" formnovalidate>LATER</button></div>
+    </form>
+  </dialog>
+</div>
+<script src="/wallet.js?v=47"></script>
+<script type="module" src="/ett/game.js?v=1"></script>
+</body>
+</html>

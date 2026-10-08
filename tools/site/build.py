@@ -13,7 +13,7 @@ import json, re, random, html, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 P = lambda *a: os.path.join(ROOT, *a)
-V = '47'
+V = '48'
 
 icons = json.load(open(P('tools/site/icons.json')))
 site = json.load(open(P('tools/site/site.json')))
