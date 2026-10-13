@@ -10,10 +10,10 @@ const MID = S01_START + 3 * 86400_000 + 10 * 3600_000; // inside Season 01, 10:0
 
 async function newPlayer(env, opts) { return walletPlayer(env, opts); }
 let fundSeq = 0;
-/* Credits the season pool the only way that exists now: a verified maker-reward event (80% → pool). */
+/* Credits the season pool the only way that exists now: a verified maker-reward event (50% → pool). */
 async function fundPool(env, communityLamports) {
   const { recordEvent } = await import('../worker/pool/ledger.js');
-  const gross = (BigInt(communityLamports) * 10000n) / 8000n;
+  const gross = (BigInt(communityLamports) * 10000n) / 5000n;
   const sig = String(++fundSeq).padStart(4, '0') + 'F'.repeat(84);
   const r = await recordEvent(env, { source: 'solana_transfer', externalId: sig, gross, receiver: 'Creator1111111111111111111111111111111111111' }, 'test');
   assert.equal(r.created, true);
@@ -608,7 +608,7 @@ describe('seasons, funding, finalization', () => {
     assert.equal(sp.points, r.points);
   });
 
-  test('pool = 80% of verified maker rewards only; manual funding + announced pool retired; frontend cannot add', async () => {
+  test('pool = 50% of verified maker rewards only; manual funding + announced pool retired; frontend cannot add', async () => {
     const env = makeEnv();
     const a = adminClient(env);
     let s = await client(env).get('/api/season');

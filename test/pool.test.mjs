@@ -35,11 +35,11 @@ function installRpc() {
 }
 
 describe('community pool — split math', () => {
-  test('80/20 exact integer split, floor to the pool, remainder outside', () => {
-    assert.deepEqual(split(1_000_000_000n), { gross: 1_000_000_000n, community: 800_000_000n, remaining: 200_000_000n });
+  test('50/50 exact integer split, floor to the pool, remainder outside', () => {
+    assert.deepEqual(split(1_000_000_000n), { gross: 1_000_000_000n, community: 500_000_000n, remaining: 500_000_000n });
     assert.deepEqual(split(1n), { gross: 1n, community: 0n, remaining: 1n });
-    assert.deepEqual(split(7n), { gross: 7n, community: 5n, remaining: 2n });            // 5.6 → 5, never over-credit
-    assert.deepEqual(split(123_456_789n), { gross: 123_456_789n, community: 98_765_431n, remaining: 24_691_358n });
+    assert.deepEqual(split(7n), { gross: 7n, community: 3n, remaining: 4n });            // 3.5 → 3, never over-credit
+    assert.deepEqual(split(123_456_789n), { gross: 123_456_789n, community: 61_728_394n, remaining: 61_728_395n });
     for (const g of [1n, 3n, 9n, 999_999_999n, 9_007_199_254_740_991n]) { const r = split(g); assert.equal(r.community + r.remaining, g); }
     assert.throws(() => split(0)); assert.throws(() => split(-5));
   });
@@ -78,25 +78,25 @@ describe('community pool — ledger + API', () => {
     assert.equal((await client(env2).get('/api/pool')).state, 'WAITING_FOR_FIRST_REWARD');
   });
 
-  test('valid reward via admin verify → 80% into the open season pool, 20% recorded outside; replay refused', async () => {
+  test('valid reward via admin verify → 50% into the open season pool, 50% recorded outside; replay refused', async () => {
     const env = makeEnv(PENV);
     const a = adminClient(env);
     const s = sig(); txs.set(s, tx({ gross: 2_500_000_000 }));
     const r = await a.post('pool/verify', { signature: s });
     assert.equal(r.ok, true, JSON.stringify(r));
-    assert.equal(r.event.grossSol, '2.5'); assert.equal(r.event.communitySol, '2'); assert.equal(r.event.remainingSol, '0.5');
+    assert.equal(r.event.grossSol, '2.5'); assert.equal(r.event.communitySol, '1.25'); assert.equal(r.event.remainingSol, '1.25');
     assert.equal(r.event.seasonId, 's01');
     const season = await client(env).get('/api/season');
-    assert.equal(season.current.pool.totalSol, '2');
-    assert.equal(season.current.pool.makerLamports, '2000000000');
+    assert.equal(season.current.pool.totalSol, '1.25');
+    assert.equal(season.current.pool.makerLamports, '1250000000');
     // replay (same signature) — refused, nothing changes
     assert.equal((await a.post('pool/verify', { signature: s })).error, 'ALREADY_PROCESSED');
     await cron(env);                                   // scanner sees the same signature → skipped
-    assert.equal((await client(env).get('/api/season')).current.pool.totalSol, '2');
+    assert.equal((await client(env).get('/api/season')).current.pool.totalSol, '1.25');
     const pub = await client(env).get('/api/pool');
     assert.equal(pub.state, 'LIVE');
-    assert.equal(pub.totals.receivedSol, '2.5'); assert.equal(pub.totals.communitySol, '2'); assert.equal(pub.totals.outsideSol, '0.5');
-    assert.equal(pub.season.poolSol, '2'); assert.equal(pub.recent.length, 1); assert.equal(pub.recent[0].signature, s);
+    assert.equal(pub.totals.receivedSol, '2.5'); assert.equal(pub.totals.communitySol, '1.25'); assert.equal(pub.totals.outsideSol, '1.25');
+    assert.equal(pub.season.poolSol, '1.25'); assert.equal(pub.recent.length, 1); assert.equal(pub.recent[0].signature, s);
     const rec = await a.get('pool');
     assert.equal(rec.ok, true); assert.deepEqual(rec.issues, []);
     const audit = await env.DB.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'pool.maker_reward'").first();
@@ -121,7 +121,7 @@ describe('community pool — ledger + API', () => {
     txs.set(unconfirmed, tx({ gross: 1_000 }));
     clock.advance(11 * 60_000);
     await cron(env);
-    assert.equal((await client(env).get('/api/season')).current.pool.totalLamports, '800');
+    assert.equal((await client(env).get('/api/season')).current.pool.totalLamports, '500');
   });
 
   test('cron scan: multiple events, each credited once, rounding exact', async () => {
@@ -131,9 +131,9 @@ describe('community pool — ledger + API', () => {
     await cron(env);
     await cron(env); clock.advance(30 * 60_000); await cron(env);
     const ev = (await env.DB.prepare('SELECT gross_base_units g, community_base_units c, remaining_base_units r FROM maker_reward_events ORDER BY gross_base_units').all()).results;
-    assert.deepEqual(ev.map(e => [e.g, e.c, e.r]), [[7, 5, 2], [333_333_333, 266_666_666, 66_666_667], [1_000_000_001, 800_000_000, 200_000_001]]);
+    assert.deepEqual(ev.map(e => [e.g, e.c, e.r]), [[7, 3, 4], [333_333_333, 166_666_666, 166_666_667], [1_000_000_001, 500_000_000, 500_000_001]]);
     const pool = (await client(env).get('/api/season')).current.pool.totalLamports;
-    assert.equal(pool, String(5 + 266_666_666 + 800_000_000));
+    assert.equal(pool, String(3 + 166_666_666 + 500_000_000));
     assert.equal((await adminClient(env).get('pool')).ok, true);
     const counts = Object.fromEntries((await env.DB.prepare('SELECT result, COUNT(*) n FROM maker_reward_scan GROUP BY result').all()).results.map(r => [r.result, r.n]));
     assert.equal(counts.PROCESSED, 3); assert.equal(counts.NOT_A_REWARD, 1);
@@ -147,7 +147,7 @@ describe('community pool — ledger + API', () => {
     assert.equal(out.filter(o => o.status === 'fulfilled' && o.value.created).length, 1);
     assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM maker_reward_events').first()).n, 1);
     assert.equal((await env.DB.prepare("SELECT COUNT(*) AS n FROM prize_pool_transactions WHERE source = 'MAKER_REWARD'").first()).n, 1);
-    assert.equal((await client(env).get('/api/season')).current.pool.totalSol, '0.8');
+    assert.equal((await client(env).get('/api/season')).current.pool.totalSol, '0.5');
   });
 
   test('adjustments: admin-only, reason + confirmation required, labelled, cannot go negative; void reverses', async () => {
@@ -164,11 +164,11 @@ describe('community pool — ledger + API', () => {
     const ok = await a.post('pool/adjustments', { seasonId: 's01', amountLamports: '-100000000', reason: 'duplicate payout correction', confirm: 'I CONFIRM THIS ADJUSTMENT' });
     assert.equal(ok.ok, true, JSON.stringify(ok));
     let season = (await client(env).get('/api/season')).current;
-    assert.equal(season.pool.totalSol, '0.7');
-    assert.equal(season.pool.makerLamports, '800000000', 'adjustments never count as maker revenue');
+    assert.equal(season.pool.totalSol, '0.4');
+    assert.equal(season.pool.makerLamports, '500000000', 'adjustments never count as maker revenue');
     assert.equal(season.pool.adjustmentLamports, '-100000000');
     const pub = await client(env).get('/api/pool');
-    assert.equal(pub.totals.communitySol, '0.8', 'public maker totals are untouched by adjustments');
+    assert.equal(pub.totals.communitySol, '0.5', 'public maker totals are untouched by adjustments');
     // void the event: needs a reason; would go negative after the adjustment → refused; after reversing the adjustment it works
     assert.equal((await a.post(`pool/events/${ev.id}/void`, { reason: 'x' })).error, 'REASON_REQUIRED');
     assert.equal((await a.post(`pool/events/${ev.id}/void`, { reason: 'reward clawed back by launchpad' })).error, 'NEGATIVE_POOL');
@@ -188,13 +188,13 @@ describe('community pool — ledger + API', () => {
     const s = sig(); txs.set(s, tx({ gross: 500_000_000 }));
     const r = await adminClient(env).post('pool/verify', { signature: s });
     assert.equal(r.event.seasonId, null);
-    assert.equal((await adminClient(env).get('pool')).totals.unassigned, '400000000');
+    assert.equal((await adminClient(env).get('pool')).totals.unassigned, '250000000');
     const st = S01_END + 7 * 86400_000;
     const c = await adminClient(env).post('seasons', { id: 's02', name: 'SEASON 02', startsAt: st, endsAt: st + 14 * 86400_000 });
     assert.equal(c.ok, true, JSON.stringify(c));
     await cron(env); await cron(env);
     const rows = (await env.DB.prepare("SELECT season_id, amount_lamports FROM prize_pool_transactions WHERE source = 'MAKER_REWARD'").all()).results;
-    assert.deepEqual(rows, [{ season_id: 's02', amount_lamports: 400_000_000 }]);
+    assert.deepEqual(rows, [{ season_id: 's02', amount_lamports: 250_000_000 }]);
     const s1 = await env.DB.prepare("SELECT frozen_pool_lamports FROM seasons WHERE id = 's01'").first();
     assert.equal(s1.frozen_pool_lamports, 0, 'frozen season untouched');
     assert.equal((await adminClient(env).get('pool')).ok, true);

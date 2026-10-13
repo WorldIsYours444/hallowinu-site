@@ -1,14 +1,14 @@
-# Community reward pool — 80% of verified maker rewards
+# Community reward pool — 50% of verified maker rewards
 
 Code: `worker/pool/ledger.js` (accounting) + `worker/pool/solana-adapter.js` (reward source). Schema: `migrations/0005_haunt_types_and_pool.sql`.
-Config: `CONFIG.communityPool` (`communityBps: 8000`, asset SOL / lamports, commitment `finalized`).
+Config: `CONFIG.communityPool` (`communityBps: 5000`, asset SOL / lamports, commitment `finalized`).
 
 ## Flow
 ```
 creator wallet RECEIVES a maker/creator reward on-chain (finalized)
   → adapter 'solana_transfer' verifies it (cron scan every 10 min, or admin "Verify & credit")
   → maker_reward_events  (UNIQUE source + external_id → idempotent)
-      community = floor(gross × 8000 / 10000)   → prize_pool_transactions MAKER_REWARD VERIFIED → open Season → Top 10
+      community = floor(gross × 5000 / 10000)   → prize_pool_transactions MAKER_REWARD VERIFIED → open Season → Top 10
       remaining = gross − community             → recorded only, stays OUTSIDE the pool
 ```
 One atomic D1 batch writes the event, the pool row and the scan row (plus audit). A replay, a second cron run or two
@@ -44,7 +44,7 @@ new money. If no season is open, the event is held **unassigned** and attached e
 
 ## Admin (`/admin.html` → Community reward pool)
 * Verify & credit a signature now · Scan wallet now
-* Reconciliation: totals (received, 80%, 20%, unassigned, adjustments, paid out, owed) + automatic checks (split, bps, pool row per event, totals) → "Reconciliation OK" or the exact issue
+* Reconciliation: totals (received, 50%, 50%, unassigned, adjustments, paid out, owed) + automatic checks (split, bps, pool row per event, totals) → "Reconciliation OK" or the exact issue
 * Labelled adjustment (lamports, reason ≥ 10 chars, confirmation `I CONFIRM THIS ADJUSTMENT`, never shown as maker revenue, pool can't go negative, refused on frozen seasons)
 * Void an event (reward clawed back) → reverses its community share via a labelled `EVENT_VOID` adjustment
 * Manual funding (`POST /api/admin/funding`) and the announced pool are **retired** (410).
@@ -54,5 +54,5 @@ new money. If no season is open, the event is held **unassigned** and attached e
 Shown on `/leaderboard#pool`, in the Arcade prize panel and on `/token` (model explanation).
 
 ## Tests
-`test/pool.test.mjs`: 80/20 integer split + rounding, adapter rules, awaiting state, valid / invalid / unconfirmed / failed / foreign tx,
+`test/pool.test.mjs`: 50/50 integer split + rounding, adapter rules, awaiting state, valid / invalid / unconfirmed / failed / foreign tx,
 replay, multiple events via cron, concurrency, adjustments (auth, reason, confirmation, negative guard), void, unassigned → next season, reconciliation.

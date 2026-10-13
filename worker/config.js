@@ -238,11 +238,11 @@ export const CONFIG = {
   },
 
   /* =========================================================
-     COMMUNITY REWARD POOL — 80% of VERIFIED, RECEIVED maker/creator rewards.
+     COMMUNITY REWARD POOL — 50% of VERIFIED, RECEIVED maker/creator rewards.
      The pool is an accounting ledger (no automatic on-chain transfers, no keys on the server).
      ========================================================= */
   communityPool: {
-    communityBps: 8000,                // 80.00% to the community pool, the remaining 20% stays outside
+    communityBps: 5000,                // 50.00% to the community pool, the remaining 50% stays outside
     asset: 'SOL', decimals: 9,         // the Solana adapter measures the creator wallet's SOL balance delta (lamports)
     scan: { limit: 40, retryPendingMs: 10 * 60_000, maxAttempts: 12 },
     commitment: 'finalized',

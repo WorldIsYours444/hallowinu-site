@@ -92,7 +92,7 @@
     const t = p.totals;
     body.innerHTML = `<dl class="pool-stats">
         <div><dt>Season pool now</dt><dd>◎ ${esc(p.season ? p.season.poolSol : '0')}</dd></div>
-        <div><dt>Community share received (80%)</dt><dd>◎ ${esc(t.communitySol)}</dd></div>
+        <div><dt>Community share received (50%)</dt><dd>◎ ${esc(t.communitySol)}</dd></div>
         <div><dt>Paid out to winners</dt><dd>◎ ${esc(t.distributedSol)}</dd></div>
         <div><dt>Verified reward events</dt><dd>${fmt(t.events)}</dd></div>
       </dl>
