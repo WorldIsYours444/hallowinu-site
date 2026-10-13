@@ -20,9 +20,9 @@
 
 <link rel="preload" href="fonts/creepster.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="fonts/press-start.woff" as="font" type="font/woff" crossorigin>
-<link rel="stylesheet" href="hallowinu.css?v=49">
-<link rel="stylesheet" href="arcade.css?v=49">
-<link rel="stylesheet" href="leaderboard.css?v=49">
+<link rel="stylesheet" href="hallowinu.css?v=50">
+<link rel="stylesheet" href="arcade.css?v=50">
+<link rel="stylesheet" href="leaderboard.css?v=50">
 <script>document.documentElement.classList.replace('no-js','js')</script>
 </head>
 <body>
@@ -72,22 +72,25 @@
     <div class="section-head center reveal">
       <p class="eyebrow">Graveyard rankings</p>
       <h1 class="neon-sign" id="lb-title"><span class="o">LEADER</span><span class="p">BOARD</span></h1>
-      <p class="lead">The top haunters and arcade players of the pack. Live data only — every point here was earned and verified.</p>
+      <p class="lead">The Season Top 10 that shares the SOL prize pool, plus the rankings of The Haunt and Escape The Trenches. Live data only — every point here was earned and verified.</p>
     </div>
 
     <div class="lb-controls px-frame hud-glass reveal">
       <div class="lb-ctl">
         <span class="lb-ctl-label">BOARD</span>
         <div class="ax-tabs" role="tablist" aria-label="Leaderboard">
-          <button type="button" role="tab" aria-selected="true" data-board="haunt">Haunt XP</button>
-          <button type="button" role="tab" aria-selected="false" data-board="arcade">Arcade</button>
+          <button type="button" role="tab" aria-selected="true" data-board="season">Season Top 10</button>
+          <button type="button" role="tab" aria-selected="false" data-board="haunt">The Haunt</button>
+          <button type="button" role="tab" aria-selected="false" data-board="ett">Escape The Trenches</button>
         </div>
       </div>
-      <div class="lb-ctl">
+      <div class="lb-ctl" data-range-ctl>
         <span class="lb-ctl-label">PERIOD</span>
         <div class="ax-tabs" role="tablist" aria-label="Period" data-ranges></div>
       </div>
     </div>
+
+    <div class="lb-prize px-frame is-orange hud-glass" data-prize hidden></div>
 
     <div class="lb-me px-frame is-orange hud-glass" data-me aria-live="polite" hidden></div>
 
@@ -113,6 +116,7 @@
     <div class="lb-cta reveal">
       <a class="btn btn-primary" href="/haunt"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-ghost"/></svg>Enter The Haunt</a>
       <a class="btn btn-purple" href="/arcade"><svg class="px-icon" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><use href="#i-pumpkin"/></svg>Play the Arcade</a>
+      <a class="btn btn-orange" href="/escape-the-trenches" target="_blank" rel="noopener">Escape The Trenches</a>
     </div>
   </div>
 </section>
@@ -159,10 +163,10 @@
   </div>
 </dialog>
 
-<script src="site-config.js?v=49"></script>
-<script src="launch-config.js?v=49"></script>
-<script src="hallowinu.js?v=49" defer></script>
-<script src="leaderboard.js?v=49" defer></script>
-<script src="launch.js?v=49" defer></script>
+<script src="site-config.js?v=50"></script>
+<script src="launch-config.js?v=50"></script>
+<script src="hallowinu.js?v=50" defer></script>
+<script src="leaderboard.js?v=50" defer></script>
+<script src="launch.js?v=50" defer></script>
 </body>
 </html>

@@ -83,3 +83,22 @@
 .pd-2{grid-column:1;grid-row:1}.pd-1{grid-column:2;grid-row:1}.pd-3{grid-column:3;grid-row:1}
 @media (max-width:760px){ .lb-me{flex-direction:column;align-items:flex-start;gap:8px} }
 @media (max-width:760px){ .pd-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;font-size:8px;line-height:1.5} }
+
+/* season prize panel: pool value + split per position */
+.lb-prize{padding:18px 20px;margin-bottom:22px;display:grid;gap:16px}
+.pz-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.pz-head{display:grid;gap:6px;min-width:0}
+.pz-l{font:8px/1.5 var(--f-pixel);color:var(--muted);letter-spacing:.06em}
+.pz-pool{font:24px/1.1 var(--f-pixel);color:var(--amber);font-weight:400;text-shadow:0 0 12px rgba(255,196,77,.45);overflow-wrap:anywhere}
+.pz-sub{color:var(--lavender);font-size:14px}
+.pz-link{color:var(--neon-soft);font-size:14px}
+.pz-split{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.pz-split li{display:grid;gap:4px;padding:10px;background:#0b0516;box-shadow:inset 0 0 0 2px #2f1a52;min-width:0;text-align:center}
+.pz-split li:first-child{box-shadow:inset 0 0 0 2px var(--orange)}
+.pz-r{font:8px/1 var(--f-pixel);color:var(--muted)}
+.pz-p{font:12px/1.2 var(--f-pixel);color:var(--ghost)}
+.pz-s{color:var(--green);font-variant-numeric:tabular-nums;font-size:13px;overflow-wrap:anywhere}
+.pd-prize{font-size:13px;color:var(--green);font-variant-numeric:tabular-nums}
+.lb-row.is-open{opacity:.6}
+.lb-row.is-open .c-nm b{color:var(--muted);font-style:italic}
+@media (max-width:760px){ .pz-split{grid-template-columns:repeat(2,minmax(0,1fr))} .pz-pool{font-size:18px} }
