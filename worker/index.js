@@ -446,9 +446,9 @@ async function admin(request, env, url, sub) {
 
   // Funding: add (PENDING) -> verify (onchain|manual) / reject
   if (sub === 'funding' && m === 'POST') {
-    // Retired: the prize pool is funded ONLY by 80% of verified maker rewards (POST pool/verify or the cron scan).
+    // Retired: the prize pool is funded ONLY by 50% of verified maker rewards (POST pool/verify or the cron scan).
     // Corrections go through POST pool/adjustments (reason + confirmation, audited).
-    throw new ApiError(410, 'MANUAL_FUNDING_RETIRED', 'Manual pool funding is retired. The pool is funded automatically by 80% of verified maker rewards; use Pool → Adjustment for corrections.');
+    throw new ApiError(410, 'MANUAL_FUNDING_RETIRED', 'Manual pool funding is retired. The pool is funded automatically by 50% of verified maker rewards; use Pool → Adjustment for corrections.');
   }
   // Legacy PENDING rows (if any) can still be verified/rejected below.
   if (seg[0] === 'funding' && seg[2] && m === 'POST') {
@@ -485,7 +485,7 @@ async function admin(request, env, url, sub) {
     }
   }
 
-  // Community reward pool (80% of verified maker rewards)
+  // Community reward pool (50% of verified maker rewards)
   if (sub === 'pool' && m === 'GET') return json({ ok: true, ...(await POOL.reconciliation(env)) });
   if (sub === 'pool/verify' && m === 'POST') {
     const event = await POOL.processSignature(env, body.signature, actor);

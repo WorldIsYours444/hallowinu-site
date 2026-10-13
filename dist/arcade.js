@@ -216,7 +216,7 @@
       : waiting ? (S.poolInfo.state === 'AWAITING_REWARD_SOURCE' ? 'AWAITING REWARD SOURCE' : 'WAITING FOR FIRST MAKER REWARD')
       : 'Current verified pool';
     ann.hidden = false;
-    ann.textContent = '80% of verified maker rewards';
+    ann.textContent = '50% of verified maker rewards';
     // "pool increased" banner: only for real, verified maker-reward records
     const lm = s.pool && s.pool.latestMaker;
     if (!lm && store.get('hw-seen-maker') == null) store.set('hw-seen-maker', '0');
@@ -812,12 +812,12 @@
         <p><b style="color:var(--ghost)">${esc(c.name)}</b><br>${fmtD(c.startsAt)} → ${fmtD(c.endsAt)}</p>
         <h4>PRIZE POOL</h4>
         <dl class="pool-break">
-          <div><dt>Community share of maker rewards (80%)</dt><dd>◎ ${sol(pool.makerLamports)}</dd></div>
+          <div><dt>Community share of maker rewards (50%)</dt><dd>◎ ${sol(pool.makerLamports)}</dd></div>
           ${BigInt(pool.initialLamports) > 0n ? `<div><dt>Verified earlier funding</dt><dd>◎ ${sol(pool.initialLamports)}</dd></div>` : ''}
           ${BigInt(pool.adjustmentLamports) !== 0n ? `<div><dt>Labelled admin adjustments</dt><dd>◎ ${sol(pool.adjustmentLamports)}</dd></div>` : ''}
           <div class="tot"><dt>Current verified pool</dt><dd>◎ ${sol(pool.totalLamports)}</dd></div>
         </dl>
-        <p class="ax-fine">The pool is funded automatically: 80% of every maker/creator reward that the project wallet actually receives on-chain goes to this Season's Top 10. The other 20% stays outside the pool. Estimated or unclaimed rewards never count. ${S.poolInfo && S.poolInfo.state === 'AWAITING_REWARD_SOURCE' ? '<b>Status: AWAITING REWARD SOURCE</b> — the token is not live yet, so no rewards have been received.' : ''} <a href="/leaderboard#pool" style="color:var(--neon-soft)">Pool details</a></p>
+        <p class="ax-fine">The pool is funded automatically: 50% of every maker/creator reward that the project wallet actually receives on-chain goes to this Season's Top 10. The other 50% stays outside the pool. Estimated or unclaimed rewards never count. ${S.poolInfo && S.poolInfo.state === 'AWAITING_REWARD_SOURCE' ? '<b>Status: AWAITING REWARD SOURCE</b> — the token is not live yet, so no rewards have been received.' : ''} <a href="/leaderboard#pool" style="color:var(--neon-soft)">Pool details</a></p>
         ${c.funding?.length ? `<ul class="hist">${c.funding.map(f => `<li><span>${esc(f.source.replace('_', ' '))}${f.txSignature ? ` · <a href="https://solscan.io/tx/${encodeURIComponent(f.txSignature)}" target="_blank" rel="noopener noreferrer" style="color:var(--neon-soft)">tx</a>` : ''}<br><small style="color:var(--muted)">verified ${new Date(f.verifiedAt).toLocaleDateString()}</small></span><b>◎ ${sol(f.lamports)}</b></li>`).join('')}</ul>` : ''}
         <h4>TOP 10 PRIZES</h4>
         <table class="dist"><thead><tr><th>Prize</th><th class="r">Share</th><th class="r">Now (verified)</th></tr></thead><tbody>

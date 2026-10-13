@@ -45,12 +45,12 @@
       <h2 style="margin-top:18px">CREATE SEASON</h2>
       <form class="row" id="seasonNew"><label>Id<input name="id" placeholder="s02" required></label><label>Name<input name="name" placeholder="SEASON 02" required></label><label>Starts (UTC)<input name="startsAt" type="datetime-local" required></label><label>Ends (UTC)<input name="endsAt" type="datetime-local" required></label><button class="btn btn-purple btn-sm">Create</button></form>
     </section>
-    <section class="card px-frame is-orange hud-glass" id="poolCard"><h2>COMMUNITY REWARD POOL (80% OF VERIFIED MAKER REWARDS)</h2>
+    <section class="card px-frame is-orange hud-glass" id="poolCard"><h2>COMMUNITY REWARD POOL (50% OF VERIFIED MAKER REWARDS)</h2>
       <p class="ax-fine" id="poolCfg"></p>
       <div class="stats" id="poolStats"></div>
       <p class="ax-fine" id="poolIssues"></p>
       <h2 style="margin-top:18px">VERIFY A REWARD TRANSACTION NOW</h2>
-      <p class="ax-fine">Paste the Solana signature of a transaction in which the creator wallet RECEIVED maker/creator rewards. The server checks it on-chain (finalized, succeeded, creator wallet balance up, recognized reward source) and credits 80% exactly once. The cron does the same automatically every 10 minutes.</p>
+      <p class="ax-fine">Paste the Solana signature of a transaction in which the creator wallet RECEIVED maker/creator rewards. The server checks it on-chain (finalized, succeeded, creator wallet balance up, recognized reward source) and credits 50% exactly once. The cron does the same automatically every 10 minutes.</p>
       <form class="row" id="poolVerify"><label>Transaction signature<input name="signature" required></label><button class="btn btn-primary btn-sm">Verify &amp; credit</button><button class="btn btn-purple btn-sm" type="button" data-poolscan="1">Scan wallet now</button></form>
       <h2 style="margin-top:18px">REWARD EVENTS</h2><div class="scroll"><table id="poolEvents"></table></div>
       <h2 style="margin-top:18px">SEASON POOL LEDGER (VERIFIED ROWS)</h2><div class="scroll"><table id="funding"></table></div>
@@ -94,6 +94,6 @@
     <section class="card px-frame hud-glass"><h2>AUDIT LOG (LATEST 40)</h2><div class="scroll"><table id="audit"></table></div></section>
   </div>
 </main>
-<script src="admin.js?v=46" defer></script>
+<script src="admin.js?v=47" defer></script>
 </body>
 </html>
