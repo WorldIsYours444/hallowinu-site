@@ -116,8 +116,8 @@
     ett: () => 'No runs ' + (S.range === 'today' ? 'today yet' : S.range === 'week' ? 'this week yet' : 'yet') + '. Escape the trenches first.',
   };
   const NOTE = {
-    season: d => d.season ? `${d.season.name}: the Top 10 prize-eligible players (wallet + X + Telegram verified) share the pool by the percentages above. Points come from the Arcade games. SOL values grow with the pool and are final when the season ends.` : 'No season is running right now.',
-    haunt: () => 'Haunt XP: verified X replies, posts, memes and reviewed TikToks. Separate from the SOL pool. Today/Week reset at 00:00 UTC (week starts Monday).',
+    season: d => d.season ? `${d.season.name}: the Top 10 prize-eligible players (wallet + X + Telegram verified) share the pool by the percentages above. Season points = Arcade + The Haunt + Escape The Trenches. SOL values grow with the pool and are final when the season ends.` : 'No season is running right now.',
+    haunt: () => 'Haunt XP: verified X replies, posts, memes and reviewed TikToks. Also counts as Season points. Today/Week reset at 00:00 UTC (week starts Monday).',
     ett: () => 'Best verified run per runner. Every run is replayed on the server before it counts. Today/Week reset at 00:00 UTC.',
   };
 

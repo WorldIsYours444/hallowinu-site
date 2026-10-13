@@ -189,7 +189,9 @@ test('api: run is replayed server-side, stays pending, and is auto-redeemed exac
   assert.equal(ledger.results.length, 1);
   assert.equal(ledger.results[0].reference_id, 'ett:' + st.run.id);
   assert.equal(ledger.results[0].currency, 'ARCADE_POINTS');
-  assert.equal(ledger.results[0].season_id, null, 'season credit is off by default');
+  assert.ok(ledger.results[0].season_id, 'runner points count for the season by default');
+  const sps = await env.DB.prepare('SELECT points FROM season_player_stats WHERE season_id=?').bind(ledger.results[0].season_id).first();
+  assert.equal(sps.points, sim.points, 'season points = credited runner points');
 
   // a third start does not redeem it again
   const st3 = await c.post('/api/ett/start', { idem: idem() });

@@ -77,9 +77,9 @@ States per run: `state` ACTIVE/FINISHED/ABANDONED · `verification` PENDING/VALI
 |---|---|---|
 | `ett.rewardsEnabled` | `true` | `false` = runs are still verified and ranked, but nothing is credited |
 | `ett.dailyCap` | `1000` | max points credited per player per UTC day (plays stay unlimited) |
-| `ett.seasonCredit` | **`false`** | `true` = runner points also count for the Season SOL prize ranking |
+| `ett.seasonCredit` | **`true`** | runner points also count for the Season SOL prize ranking (`false` switches it off) |
 
-Runner points always count for **lifetime Arcade Points**; Season credit (= real SOL prizes) is **off by default**.
+Runner points always count for **lifetime Arcade Points** and, by default, also for the **Season Top 10** (= real SOL prizes).
 
 ### Admin review
 * `GET /api/admin/ett/runs?filter=flagged|rejected` — recent runs with flags (`HIGH_RATE`, `LONG_RUN`, `DAILY_CAP`, `TRAILING_INPUTS`).
@@ -90,7 +90,7 @@ Runner points always count for **lifetime Arcade Points**; Season credit (= real
 
 * The seed is known to the browser while playing (it has to render the world). A scripted bot that plays in real
   time with perfect reactions produces a *valid* run. Replay verification stops forged scores, speed-hacks and
-  tampered logs — not a perfect bot. That is why Season credit is opt-in, credit is capped per day and long or
+  tampered logs — not a perfect bot. That is why credit is capped per day and long or
   unusually fast-scoring runs are flagged for review.
 * Replaying costs Worker CPU: ≈ 0.7 ms per 1,000 ticks (a 4-minute run ≈ 10 ms). The Workers **free** plan
   allows 10 ms CPU per request, so long runs need **Workers Paid** ($5/month), which the Arcade already recommends.

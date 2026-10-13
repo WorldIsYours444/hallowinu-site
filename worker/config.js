@@ -142,9 +142,9 @@ export const CONFIG = {
     id: 'escape-the-trenches',
     name: 'Escape The Trenches',
     rewardsEnabled: true,            // false = runs are still verified and ranked, but no points are credited
-    // Season SOL prizes: OFF by default. Runner points go to lifetime Arcade Points + the runner's own
-    // leaderboard. Turn on (admin setting ett.seasonCredit) only after you accept the anti-cheat limits (docs/ESCAPE_TRENCHES.md).
-    seasonCredit: false,
+    // Season SOL prizes: runner points also count for the Season Top 10 (all points count).
+    // Anti-cheat limits apply (server replay + daily cap + review flags, docs/ESCAPE_TRENCHES.md). Admin setting ett.seasonCredit can switch it off.
+    seasonCredit: true,
     dailyCap: 1000,                  // max points credited per player per UTC day (unlimited PLAYS, capped CREDIT)
     xpPerPoint: 1,                   // XP = credited points (levels are cosmetic)
     finishGraceMs: 2500,             // network/rounding allowance in the real-time pacing check
@@ -188,7 +188,8 @@ export const CONFIG = {
      THE HAUNT — X raid board. All tunables live here.
      ========================================================= */
   haunt: {
-    currency: 'HAUNT_XP',              // separate from Arcade Points: never counts toward Season SOL prizes
+    currency: 'HAUNT_XP',              // own ledger currency + own leaderboard
+    seasonCredit: true,                // approved Haunt XP also counts for the Season Top 10 (admin setting haunt.seasonCredit can switch it off)
     sourceType: 'HAUNT_X_REPLY',          // legacy ledger source for X replies (per-type below)
     defaultReward: 5,
     /* Submission types. Rewards are decided HERE (server) — never by the browser.
@@ -272,6 +273,7 @@ export const OVERRIDABLE_SETTINGS = {
   'games.pumpkin-hunt.dailyLimit': 'int',
   'games.quiz.dailyLimit': 'int',
   'haunt.enabled': 'boolean',
+  'haunt.seasonCredit': 'boolean',
   'ett.rewardsEnabled': 'boolean',
   'ett.seasonCredit': 'boolean',
   'ett.dailyCap': 'int',

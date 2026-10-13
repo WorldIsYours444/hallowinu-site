@@ -20,7 +20,7 @@ The browser never sends a reward; a missing `type` = `X_REPLY` (v1 clients). Wro
 ## Entity boundaries
 * `haunt_targets` = system/admin content. Only admins create them (verified through X on creation).
 * `haunt_submissions` = user content. A submission can never become a target or instructions; it is rendered escaped, text only.
-* Haunt XP (`currency = HAUNT_XP` in `point_transactions`) is separate from Arcade Points and **never** counts toward Season SOL prizes. It does add to player XP/level.
+* Haunt XP (`currency = HAUNT_XP` in `point_transactions`) is separate from Arcade Points (own leaderboard), but approved Haunt XP **also counts as Season points** for the Season Top 10 (`CONFIG.haunt.seasonCredit`, admin setting `haunt.seasonCredit`). Invalidation reverses it while the season runs. It also adds to player XP/level.
 
 ## Verification order (cheap first, one paid call)
 1. URL syntax → 2. session + connected X account → 3. duplicate status (DB) → 4. technical rate limit (per player + IP) →

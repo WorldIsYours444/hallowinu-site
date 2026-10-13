@@ -6,7 +6,7 @@
 import { CONFIG, levelForXp } from '../config.js';
 import { ApiError, now, randomId, isUniqueViolation, dayKey, nextDayStart } from '../lib/util.js';
 import { rateLimit, auditStmt, loadSettings } from '../lib/platform.js';
-import { RANKED } from '../lib/seasons.js';
+import { RANKED, getActiveSeason } from '../lib/seasons.js';
 import { fetchTweet, todayCostMicros, xConfigured, XNotFound, XUnavailable } from './xclient.js';
 import { parseStatusUrl, parseTikTokUrl, isShortTikTok } from './content.js';
 import * as XReply from './providers/x-reply.js';
@@ -254,19 +254,35 @@ async function pending(env, sub, checks, reason, retryAt, detail) {
   return { status: 'VERIFICATION_PENDING', reason };
 }
 
-/* One atomic batch: ledger row (UNIQUE haunt:<id>) + player caches + submission state. A second award is impossible. */
+/* Season credit: approved Haunt XP also counts for the running Season Top 10 (unless switched off). */
+async function seasonCreditId(env) {
+  const st = await loadSettings(env);
+  const on = typeof st['haunt.seasonCredit'] === 'boolean' ? st['haunt.seasonCredit'] : H.seasonCredit;
+  if (!on) return null;
+  const season = await getActiveSeason(env);
+  return season ? season.id : null;
+}
+
+/* One atomic batch: ledger row (UNIQUE haunt:<id>) + player caches + season points + submission state. A second award is impossible. */
 async function approve(env, sub, target, reward, checks, evidence, status, fromStatuses = "('VERIFYING','VERIFICATION_PENDING')", actor = null) {
   const t = now();
   const ref = `haunt:${sub.id}`;
   const T = H.types[sub.submission_type];
   const cond = `EXISTS (SELECT 1 FROM haunt_submissions WHERE id = ? AND status IN ${fromStatuses})`;
   const label = target ? `THE HAUNT #${target.id} (${T.label})` : `THE HAUNT (${T.label})`;
+  const seasonId = await seasonCreditId(env);
+  const seasonStmt = seasonId && reward > 0 ? [env.DB.prepare(
+    `INSERT INTO season_player_stats (season_id, player_id, points, games_played, updated_at)
+     SELECT ?, ?, ?, 0, ? WHERE EXISTS (SELECT 1 FROM point_transactions WHERE reference_id = ? AND season_id = ?)
+     ON CONFLICT(season_id, player_id) DO UPDATE SET points = points + excluded.points, updated_at = excluded.updated_at`)
+    .bind(seasonId, sub.player_id, reward, t, ref, seasonId)] : [];
   try {
     await env.DB.batch([
       env.DB.prepare(
         `INSERT INTO point_transactions (player_id, season_id, game, amount, reason, reference_id, created_at, source_type, source_id, currency)
-         SELECT ?, NULL, 'haunt', ?, ?, ?, ?, ?, ?, ? WHERE ${cond}`)
-        .bind(sub.player_id, reward, label, ref, t, T.ledgerSource, sub.id, H.currency, sub.id),
+         SELECT ?, ?, 'haunt', ?, ?, ?, ?, ?, ?, ? WHERE ${cond}`)
+        .bind(sub.player_id, seasonId, reward, label, ref, t, T.ledgerSource, sub.id, H.currency, sub.id),
+      ...seasonStmt,
       env.DB.prepare(
         `UPDATE players SET haunt_xp = haunt_xp + ?, xp = xp + ?, haunt_count = haunt_count + 1, haunt_last_at = ?, last_seen_at = ?
          WHERE id = ? AND ${cond} AND EXISTS (SELECT 1 FROM point_transactions WHERE reference_id = ?)`)
@@ -490,6 +506,12 @@ export async function adminInvalidate(env, actor, id, reason) {
         VALUES (?, NULL, 'haunt', ?, ?, ?, ?, 'HAUNT_INVALIDATION', ?, ?)`).bind(s.player_id, -s.points_awarded, `Invalidated: ${reason}`.slice(0, 200), `haunt-void:${id}`, t, id, H.currency),
       env.DB.prepare('UPDATE players SET haunt_xp = MAX(0, haunt_xp - ?), xp = MAX(0, xp - ?), haunt_count = MAX(0, haunt_count - 1) WHERE id = ?').bind(s.points_awarded, s.points_awarded, s.player_id),
     );
+    // reverse the season credit too, as long as that season is still running (frozen/finalized standings never change)
+    const credit = await env.DB.prepare(
+      `SELECT pt.season_id FROM point_transactions pt JOIN seasons se ON se.id = pt.season_id
+       WHERE pt.reference_id = ? AND se.status IN ('ACTIVE','UPCOMING')`).bind(`haunt:${id}`).first();
+    if (credit && credit.season_id) stmts.push(env.DB.prepare('UPDATE season_player_stats SET points = MAX(0, points - ?) WHERE season_id = ? AND player_id = ?')
+      .bind(s.points_awarded, credit.season_id, s.player_id));
   }
   try { await env.DB.batch(stmts); } catch (e) { if (isUniqueViolation(e)) throw new ApiError(409, 'ALREADY_INVALIDATED', 'Already invalidated.'); throw e; }
   return { ok: true };

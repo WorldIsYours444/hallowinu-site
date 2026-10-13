@@ -73,7 +73,7 @@ describe('THE HAUNT', () => {
   beforeEach(() => { clock.set(MID); calls = []; tweets.clear(); tiktoks.clear(); installX(); });
   afterEach(() => { globalThis.fetch = realFetch; });
 
-  test('valid reply: auto-approved, +5 Haunt XP via ledger, Arcade points + season untouched', async () => {
+  test('valid reply: auto-approved, +5 Haunt XP via ledger, Arcade points untouched, season credited', async () => {
     const { env, targetId } = await setup();
     const r = await raider(env);
     const before = await env.DB.prepare('SELECT total_points, xp FROM players WHERE id=?').bind(r.player.id).first();
@@ -90,8 +90,9 @@ describe('THE HAUNT', () => {
     assert.equal(p.haunt_xp, 5); assert.equal(p.haunt_count, 1); assert.equal(p.xp, before.xp + 5);
     assert.equal(p.total_points, before.total_points, 'Arcade points unchanged');
     const led = await env.DB.prepare("SELECT * FROM point_transactions WHERE source_type='HAUNT_X_REPLY'").first();
-    assert.equal(led.amount, 5); assert.equal(led.currency, 'HAUNT_XP'); assert.equal(led.source_id, s.submission.id); assert.equal(led.season_id, null);
-    assert.equal((await env.DB.prepare('SELECT COUNT(*) n FROM season_player_stats').first()).n, 0, 'never counts toward Season SOL prizes');
+    assert.equal(led.amount, 5); assert.equal(led.currency, 'HAUNT_XP'); assert.equal(led.source_id, s.submission.id); assert.ok(led.season_id, 'Haunt XP counts for the running season');
+    const sps = await env.DB.prepare('SELECT points, games_played FROM season_player_stats WHERE season_id=? AND player_id=?').bind(led.season_id, r.player.id).first();
+    assert.equal(sps.points, 5, 'season points include Haunt XP'); assert.equal(sps.games_played, 0);
     const st = await r.c.get('/api/haunt');
     assert.equal(st.me.xp, 5); assert.equal(st.me.rank, 1); assert.equal(st.targets[0].mine, 'AUTO_APPROVED');
   });
@@ -306,6 +307,7 @@ describe('THE HAUNT', () => {
     const p = await env.DB.prepare('SELECT haunt_xp, haunt_count FROM players WHERE id=?').bind(r.player.id).first();
     assert.equal(p.haunt_xp, 0); assert.equal(p.haunt_count, 0);
     assert.equal((await env.DB.prepare("SELECT SUM(amount) s FROM point_transactions WHERE currency='HAUNT_XP' AND player_id=?").bind(r.player.id).first()).s, 0);
+    assert.equal((await env.DB.prepare('SELECT points FROM season_player_stats WHERE player_id=?').bind(r.player.id).first()).points, 0, 'season credit reversed too');
     assert.equal((await a.post(`haunt/submissions/${s.submission.id}/invalidate`, { reason: 'again' })).error, 'ALREADY_INVALIDATED');
   });
 
