@@ -344,21 +344,22 @@ async function leaderboard(env, player, scope) {
        FROM season_final_standings f LEFT JOIN prize_entitlements e ON e.season_id=f.season_id AND e.player_id=f.player_id
        WHERE f.season_id=? ORDER BY f.rank LIMIT ?`).bind(season.id, size).all();
     rows = results.map(r => ({ rank: r.rank, name: r.display_name, points: r.points, me: !!player && r.player_id === player.id,
-      prize: r.amount_lamports != null ? { lamports: String(r.amount_lamports), sol: lamportsToSolString(r.amount_lamports), status: r.pstatus } : null }));
+      prize: r.amount_lamports != null ? { prizeRank: r.prank ?? null, bps: r.prank ? (bps[r.prank - 1] ?? null) : null, lamports: String(r.amount_lamports), sol: lamportsToSolString(r.amount_lamports), status: r.pstatus } : null }));
   } else {
     // Prize positions go to the top PRIZE-ELIGIBLE players (wallet + X + Telegram verified), in ranking order.
     const ranking = await seasonRanking(env, season.id, Math.max(size, 1000));
     let slot = 0;
     rows = ranking.slice(0, size).map(r => {
       const eligible = !!r.payout_verified;
-      const prize = eligible && slot < bps.length ? { prizeRank: slot + 1, lamports: prizes[slot].lamports, sol: prizes[slot].sol, status: 'ESTIMATED' } : null;
+      const prize = eligible && slot < bps.length ? { prizeRank: slot + 1, bps: bps[slot], lamports: prizes[slot].lamports, sol: prizes[slot].sol, status: 'ESTIMATED' } : null;
       if (eligible && slot < bps.length) slot++;
       return { rank: r.rank, name: r.display_name, points: r.points, me: !!player && r.player_id === player.id, eligible, prize };
     });
   }
   let me = null;
   if (player && !rows.some(r => r.me)) { const pr = await profile(env, player); if (pr.seasonRank) me = { rank: pr.seasonRank, points: pr.seasonPoints, name: pr.displayName }; }
-  return { scope, season: { id: season.id, name: season.name, status: season.status, phase: seasonPhase(season) }, rows, me };
+  return { scope, season: { id: season.id, name: season.name, status: season.status, phase: seasonPhase(season), endsAt: season.ends_at,
+    poolLamports: String(pool), poolSol: lamportsToSolString(pool), finalized }, prizes, rows, me };
 }
 
 /* Rank lookup for the official Telegram bot. A player only appears here after they
