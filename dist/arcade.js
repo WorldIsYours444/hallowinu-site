@@ -826,11 +826,12 @@
         <h4>RULES</h4>
         <ul>
           <li>Free to play. Sign in with your Phantom wallet (a free message signature — never a transaction) and pick a player name.</li>
-          <li>Every game awards Arcade Points. Season points count only while the season is live; lifetime points never reset.</li>
+          <li>Every game awards Arcade Points. Season points = Arcade + The Haunt + Escape The Trenches, counted only while the season is live; lifetime points never reset.</li>
           <li>Daily limits reset at 00:00 UTC: Trick or Treat 3×, Pumpkin Hunt 2×, Quiz 5 rewarded questions. Daily Spin: once every 24 hours.</li>
           <li>Prizes go to the Top 10 <b>prize-eligible</b> players (wallet + X + Telegram verified) by season points. Ties go to whoever reached the score first.</li>
           <li>Amounts are estimates until the season ends. At the end, standings and pool are frozen, checked for cheating and reviewed; payouts are approved manually, never automatically.</li>
-          <li>Cheating, bots or multiple accounts lead to disqualification; lower ranks move up. Arcade Points have no cash value. Not available where prohibited by law.</li>
+          <li><b>Fair play:</b> Only human play counts. Bots, scripts, macros, auto-clickers, AI agents or any other automated or non-human-driven system are not allowed: points earned that way do not count and the account can be disqualified. The same goes for cheating and multiple accounts; lower ranks move up.</li>
+          <li>Arcade Points have no cash value. Not available where prohibited by law.</li>
         </ul>
         ${tot ? `<h4>TRICK OR TREAT ODDS</h4><p>TREAT: ${tot.treat.map(o => `${o.weight}% → ${o.points}`).join(' · ')}<br>TRICK: ${tot.trick.map(o => `${o.weight}% → ${o.points}`).join(' · ')}</p>` : ''}
         ${r.previous.length ? `<h4>PREVIOUS SEASONS</h4>${r.previous.map(s => `<p><b style="color:var(--ghost)">${esc(s.name)}</b> · pool ◎ ${sol(s.poolLamports)} · ${esc(s.status === 'FINALIZING' ? 'UNDER REVIEW' : s.status)}</p><ul class="hist">${s.winners.map(w => `<li><span>#${w.rank} ${esc(w.name)} · ${fmt(w.points)} pts</span><b>◎ ${esc(w.sol)} <small style="color:var(--muted)">${esc(w.status)}</small></b></li>`).join('')}</ul>`).join('')}` : ''}

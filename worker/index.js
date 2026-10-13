@@ -508,7 +508,7 @@ async function admin(request, env, url, sub) {
     if (overlap) throw new ApiError(409, 'OVERLAP', `Overlaps season ${overlap.id}.`);
     await env.DB.batch([
       env.DB.prepare("INSERT INTO seasons (id,name,starts_at,ends_at,status,distribution_json,rules_json,created_at) VALUES (?,?,?,?,'UPCOMING',?,?,?)")
-        .bind(id, name, startsAt, endsAt, JSON.stringify(bps), JSON.stringify(body.rules || {}), now()),
+        .bind(id, name, startsAt, endsAt, JSON.stringify(bps), JSON.stringify(body.rules || CONFIG.seasons.defaultRules), now()),
       auditStmt(env, actor, 'season.create', id, { name, startsAt, endsAt, bps }),
     ]);
     await POOL.assignUnassigned(env, actor);   // community money received while no season was open

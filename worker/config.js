@@ -254,6 +254,8 @@ export const CONFIG = {
     // #1 3.00 · #2 1.75 · #3 1.25 · #4 0.90 · #5 0.75 · #6 0.60 · #7 0.50 · #8 0.45 · #9 0.40 · #10 0.40 (per 10 SOL).
     // Every rank scales proportionally with the CURRENT VERIFIED pool.
     defaultDistributionBps: [3000, 1750, 1250, 900, 750, 600, 500, 450, 400, 400],
+    // Public rules shown with every new season (admin can override per season).
+    defaultRules: { summary: 'Top 10 season points (Arcade + The Haunt + Escape The Trenches) share the verified prize pool. Only human play counts: points from bots, scripts or any other non-human-driven system do not count and can lead to disqualification. No purchase necessary. Points have no cash value.', dayBoundary: '00:00 UTC' },
     leaderboardSize: 100,
   },
 
